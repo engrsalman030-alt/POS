@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { execute, query, saveDb } from '../db/database';
+import { execute, query, saveDb, getDb } from '../db/database';
 import { AccountingService } from '../services/accountingService';
 
 export interface Company {
@@ -19,6 +19,7 @@ export const useCompanyStore = defineStore('company', {
     }),
     actions: {
         async loadCompany() {
+            await getDb(); // Ensure database is initialized before query
             const rows = query('SELECT * FROM company LIMIT 1') as any[];
             if (rows.length > 0) {
                 const is_setup = Boolean(rows[0].is_setup);
