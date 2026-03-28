@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { execute, query, saveDb } from '../db/database';
-import type { SalesInvoice, PurchaseBill, Payment } from '../types/transactions';
+import type { SalesInvoice, PurchaseBill } from '../types/transactions';
 import { AccountingService } from '../services/accountingService';
 import { InventoryService } from '../services/inventoryService';
 
@@ -10,25 +10,42 @@ export const useTransactionStore = defineStore('transactions', {
         bills: [] as PurchaseBill[]
     }),
     actions: {
+        // Actions to create transactions
         async fetchInvoices() {
-            this.invoices = query('SELECT * FROM sales_invoices ORDER BY date DESC') as any;
+            const invoices = query('SELECT * FROM sales_invoices ORDER BY date DESC') as any[];
+            for (const inv of invoices) {
+                inv.items = query('SELECT * FROM sales_invoice_items WHERE invoice_id = ?', [inv.id]) as any[];
+            }
+            this.invoices = invoices;
         },
         async fetchBills() {
-            this.bills = query('SELECT * FROM purchase_bills ORDER BY date DESC') as any;
+            const bills = query('SELECT * FROM purchase_bills ORDER BY date DESC') as any[];
+            for (const bill of bills) {
+                bill.items = query('SELECT * FROM purchase_bill_items WHERE bill_id = ?', [bill.id]) as any[];
+            }
+            this.bills = bills;
         },
 
         async createInvoice(invoice: Omit<SalesInvoice, 'id' | 'status'>) {
             const id = crypto.randomUUID();
-            // Basic insert logic (Simplified for now, in real app we'd insert line items too)
+            
+            // 1. Insert Header
             execute(
-                `INSERT INTO sales_invoices (id, date, customer_id, total_amount, status) 
-        VALUES (?, ?, ?, ?, ?)`,
-                [id, invoice.date, invoice.customer_id, invoice.total_amount, 'Submitted']
+                `INSERT INTO sales_invoices (id, date, customer_id, total_amount, discount_amount, tax_amount, status, outstanding_amount, shift_id) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [id, invoice.date, invoice.customer_id, invoice.total_amount, invoice.discount_amount || 0, invoice.tax_amount || 0, 'Submitted', invoice.total_amount, invoice.shift_id]
             );
 
-            // Post to accounting
+            // 2. Insert Line Items & Handle Stock
             let totalCogs = 0;
             for (const item of invoice.items) {
+                const itemId = crypto.randomUUID();
+                execute(
+                    `INSERT INTO sales_invoice_items (id, invoice_id, item_id, quantity, rate, tax_amount, total) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [itemId, id, item.item_id, item.quantity, item.rate, item.tax_amount || 0, item.total]
+                );
+
                 const cogs = await InventoryService.calculateCogs(item.item_id, item.quantity);
                 totalCogs += cogs;
 
@@ -45,24 +62,33 @@ export const useTransactionStore = defineStore('transactions', {
                 });
             }
 
+            // 3. Post to accounting
             await AccountingService.postSalesInvoice({ ...invoice, id, status: 'Submitted' } as any, totalCogs);
+            
             saveDb();
             await this.fetchInvoices();
+            return id;
         },
 
         async createBill(bill: Omit<PurchaseBill, 'id' | 'status'>) {
             const id = crypto.randomUUID();
+
+            // 1. Insert Header
             execute(
-                `INSERT INTO purchase_bills (id, date, supplier_id, total_amount, status) 
-        VALUES (?, ?, ?, ?, ?)`,
-                [id, bill.date, bill.supplier_id, bill.total_amount, 'Submitted']
+                `INSERT INTO purchase_bills (id, date, supplier_id, total_amount, tax_amount, status, outstanding_amount) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [id, bill.date, bill.supplier_id, bill.total_amount, bill.tax_amount || 0, 'Submitted', bill.total_amount]
             );
 
-            // Post to accounting
-            await AccountingService.postPurchaseBill({ ...bill, id, status: 'Submitted' } as any);
-
-            // Record stock movement
+            // 2. Insert Line Items & Handle Stock
             for (const item of bill.items) {
+                const itemId = crypto.randomUUID();
+                execute(
+                    `INSERT INTO purchase_bill_items (id, bill_id, item_id, quantity, rate, tax_amount, total) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [itemId, id, item.item_id, item.quantity, item.rate, item.tax_amount || 0, item.total]
+                );
+
                 await InventoryService.recordStockTransaction({
                     item_id: item.item_id,
                     date: bill.date,
@@ -75,8 +101,26 @@ export const useTransactionStore = defineStore('transactions', {
                 });
             }
 
+            // 3. Post to accounting
+            await AccountingService.postPurchaseBill({ ...bill, id, status: 'Submitted' } as any);
+
             saveDb();
             await this.fetchBills();
+            return id;
+        },
+
+        async createPayment(payment: Omit<import('../types/transactions').Payment, 'id'>) {
+            const id = crypto.randomUUID();
+            const fullPayment = { ...payment, id };
+            
+            // Post to journals via Accounting Service
+            await AccountingService.postPayment(fullPayment as any);
+            
+            // If linked to an invoice/bill, we might want to update status here
+            // For now, simple posting is enough
+            
+            saveDb();
+            return id;
         }
     }
 });

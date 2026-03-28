@@ -31,9 +31,12 @@ export interface SalesInvoice {
     items: SalesInvoiceItem[];
     tax_id?: string;
     tax_amount: number;
+    discount_amount: number;
     total_amount: number;
     paid_amount: number;
     outstanding_amount: number;
+    shift_id?: string; // Linking invoice to shift
+    notes?: string;
 }
 
 export interface SalesInvoiceItem {
@@ -54,6 +57,8 @@ export interface Payment {
     payment_type: 'Pay' | 'Receive';
     account_id: string; // Bank or Cash
     amount: number;
-    reference_type: 'SalesInvoice' | 'PurchaseBill' | 'General';
-    reference_id: string;
+    reference_type?: string;
+    reference_id?: string;
+    shift_id?: string; // Linking payment to shift
+    memo?: string;
 }

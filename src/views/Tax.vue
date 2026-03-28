@@ -1,82 +1,111 @@
 <template>
-  <div class="p-8 max-w-4xl mx-auto">
-    <header class="flex justify-between items-center mb-8">
+  <div class="p-8 max-w-4xl mx-auto font-sans">
+    
+    <!-- Header -->
+    <header class="mb-8 flex justify-between items-end pb-4 border-b border-border">
       <div>
-        <h1 class="text-2xl font-bold text-slate-900">Tax Settings</h1>
-        <p class="text-slate-500 text-sm">Configure tax rules for sales and purchases.</p>
+        <h1 class="text-2xl font-bold text-text-primary">Tax Settings</h1>
+        <p class="text-sm mt-1 text-text-secondary">Configure tax rules for sales and purchases.</p>
       </div>
-      <button @click="showModal = true" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
+      <button @click="showModal = true"
+        class="px-4 py-2 rounded text-sm font-bold transition-all bg-text-primary text-card-bg hover:opacity-90">
         + Create Tax Rule
       </button>
     </header>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <table class="w-full text-left">
-        <thead class="bg-slate-50 border-b border-slate-100">
+    <div class="border border-border rounded-lg overflow-hidden bg-card-bg">
+      <table class="w-full text-left border-collapse">
+        <thead class="bg-hover-bg border-b border-border">
           <tr>
-            <th class="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Tax Name</th>
-            <th class="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Rate (%)</th>
-            <th class="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Status</th>
+            <th class="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-text-muted">Tax Name</th>
+            <th class="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-right text-text-muted">Rate (%)</th>
+            <th class="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-text-muted">Status</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-50">
-          <tr v-for="tax in taxes" :key="tax.id" class="hover:bg-slate-50/50 transition-colors">
-            <td class="px-6 py-4 font-bold text-slate-700">{{ tax.name }}</td>
-            <td class="px-6 py-4 text-right font-mono font-bold text-slate-900">{{ tax.rate }}%</td>
-            <td class="px-6 py-4">
-                <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase">Active</span>
+        <tbody>
+          <tr v-for="tax in taxStore.taxes" :key="tax.id"
+            class="group text-sm border-b border-hover-bg/50 transition-colors hover:bg-hover-bg cursor-pointer">
+            <td class="px-6 py-4 font-semibold text-text-primary">{{ tax.name }}</td>
+            <td class="px-6 py-4 text-right font-mono font-bold text-text-primary">{{ tax.rate }}%</td>
+            <td class="px-6 py-4 flex items-center justify-between">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-hover-bg text-text-secondary">
+                {{ tax.is_active ? 'Active' : 'Inactive' }}
+              </span>
+              <button @click.stop="handleDelete(tax.id)" class="opacity-0 group-hover:opacity-100 p-1 text-rose-500 hover:bg-rose-50 rounded transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              </button>
             </td>
           </tr>
-          <tr v-if="taxes.length === 0">
-            <td colspan="3" class="px-6 py-20 text-center text-slate-400 italic">No tax rules defined.</td>
+          <tr v-if="taxStore.taxes.length === 0">
+            <td colspan="3" class="px-6 py-20 text-center text-sm text-text-muted">No tax rules defined.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <!-- Modal for new tax -->
-    <div v-if="showModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="font-bold text-slate-900">New Tax Rule</h3>
-                <button @click="showModal = false" class="text-slate-400 hover:text-slate-600 text-xl">×</button>
-            </div>
-            <form @submit.prevent="handleAdd" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Tax Name</label>
-                    <input v-model="form.name" type="text" required placeholder="e.g. VAT 15%" class="w-full px-4 py-2 bg-slate-50 border-none rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm outline-none">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Tax Rate (%)</label>
-                    <input v-model.number="form.rate" type="number" step="0.01" required class="w-full px-4 py-2 bg-slate-50 border-none rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm outline-none">
-                </div>
-                <div class="pt-6 border-t border-slate-50 flex gap-3">
-                    <button type="button" @click="showModal = false" class="flex-1 px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-700">Cancel</button>
-                    <button type="submit" class="flex-2 px-6 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">Save Rule</button>
-                </div>
-            </form>
+    <div v-if="showModal" class="fixed inset-0 flex items-center justify-center p-6 z-[100] bg-black/40 backdrop-blur-[2px]">
+      <div class="w-full max-w-md rounded-lg overflow-hidden border border-border shadow-lg bg-card-bg">
+ 
+        <div class="px-6 py-4 flex justify-between items-center bg-hover-bg border-b border-border">
+          <h3 class="font-bold text-sm uppercase tracking-widest text-text-secondary">New Tax Rule</h3>
+          <button @click="showModal = false" class="text-xl text-text-muted hover:text-text-primary">&times;</button>
         </div>
+
+        <form @submit.prevent="handleAdd" class="p-8 space-y-5">
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Tax Name</label>
+            <input v-model="form.name" type="text" required placeholder="e.g. VAT 15%"
+              class="w-full px-3 py-2 border border-border rounded text-sm outline-none bg-app-bg text-text-primary focus:border-text-primary">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Tax Rate (%)</label>
+            <input v-model.number="form.rate" type="number" step="0.01" required
+              class="w-full px-3 py-2 border border-border rounded text-sm outline-none font-mono bg-app-bg text-text-primary focus:border-text-primary">
+          </div>
+          <div class="pt-4 flex gap-3">
+            <button type="button" @click="showModal = false"
+              class="flex-1 px-4 py-2 border border-border rounded text-sm font-bold transition-all bg-card-bg text-text-secondary hover:bg-hover-bg">
+              Dismiss
+            </button>
+            <button type="submit"
+              class="flex-1 px-4 py-2 rounded text-sm font-bold transition-all bg-text-primary text-card-bg hover:opacity-90">
+              Save Rule
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useTaxStore } from '../stores/tax';
 
+const taxStore = useTaxStore();
 const showModal = ref(false);
-const taxes = ref<any[]>([
-    { id: '1', name: 'Standard VAT', rate: 15 },
-    { id: '2', name: 'Service Tax', rate: 5 }
-]);
 
 const form = ref({
     name: '',
-    rate: 0
+    rate: 0,
+    is_active: 1
 });
 
-function handleAdd() {
-    taxes.value.push({ id: crypto.randomUUID(), ...form.value });
+onMounted(() => {
+    taxStore.fetchTaxes();
+});
+
+async function handleAdd() {
+    await taxStore.addTax({ ...form.value });
     showModal.value = false;
-    form.value = { name: '', rate: 0 };
+    form.value = { name: '', rate: 0, is_active: 1 };
+}
+
+async function handleDelete(id: string) {
+    if (confirm('Are you sure you want to delete this tax rule?')) {
+        await taxStore.deleteTax(id);
+    }
 }
 </script>

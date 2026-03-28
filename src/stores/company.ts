@@ -10,12 +10,15 @@ export interface Company {
     fiscal_year_start: string;
     is_setup: boolean;
     ntn?: string;
+    address?: string;
+    phone?: string;
 }
 
 export const useCompanyStore = defineStore('company', {
     state: () => ({
         company: null as Company | null,
-        isInitialized: false
+        isInitialized: false,
+        existingCompanies: [] as Company[]
     }),
     actions: {
         async loadCompany() {
@@ -29,10 +32,42 @@ export const useCompanyStore = defineStore('company', {
                 this.company = null;
                 this.isInitialized = false;
             }
+            await this.fetchCompanies();
+        },
+        async fetchCompanies() {
+            await getDb();
+            const rows = query('SELECT * FROM company') as any[];
+            this.existingCompanies = rows.map(r => ({ 
+                ...r, 
+                is_setup: Boolean(r.is_setup) 
+            }));
+        },
+        async updateCompany(data: Partial<Company>) {
+            if (!this.company) return;
+            const updated = { ...this.company, ...data };
+            execute(
+                `UPDATE company SET name = ?, country = ?, currency = ?, ntn = ?, address = ?, phone = ? WHERE id = ?`,
+                [updated.name, updated.country, updated.currency, updated.ntn || '', updated.address || '', updated.phone || '', updated.id]
+            );
+            saveDb();
+            this.company = updated;
         },
         async setupCompany(form: any) {
-            const id = this.company?.id || crypto.randomUUID();
-            execute('DELETE FROM company', []);
+            await getDb();
+            // Check if company already exists by name
+            const existing = query('SELECT * FROM company WHERE name = ?', [form.name]) as any[];
+            
+            if (existing.length > 0) {
+                // Resume existing company
+                const id = existing[0].id;
+                execute('UPDATE company SET is_setup = 1 WHERE id = ?', [id]);
+                saveDb();
+                await this.loadCompany();
+                return;
+            }
+
+            // Create new company
+            const id = crypto.randomUUID();
             execute(
                 `INSERT INTO company (id, name, country, currency, fiscal_year_start, is_setup, ntn)
                  VALUES (?, ?, ?, ?, ?, 1, ?)`,
@@ -44,6 +79,15 @@ export const useCompanyStore = defineStore('company', {
             await AccountingService.seedTaxes();
 
             await this.loadCompany();
+        },
+        async logout() {
+            if (this.company) {
+                execute('UPDATE company SET is_setup = 0 WHERE id = ?', [this.company.id]);
+                saveDb();
+            }
+            this.company = null;
+            this.isInitialized = false;
+            window.location.href = '/setup';
         }
     }
 });

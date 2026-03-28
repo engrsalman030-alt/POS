@@ -87,17 +87,17 @@ export const AccountingService = {
         if (existing.length > 0) return;
 
         const items = [
-            { id: 'item-1', name: 'LED Bulb 12W', sku: 'LED-12W', type: 'Product', is_inventory: 1, purchase_rate: 120, sales_rate: 200, default_income_account_id: 'sales_income', default_expense_account_id: 'cogs', default_inventory_account_id: 'inventory' },
-            { id: 'item-2', name: 'Extension Board 4-Port', sku: 'EXT-4P', type: 'Product', is_inventory: 1, purchase_rate: 350, sales_rate: 550, default_income_account_id: 'sales_income', default_expense_account_id: 'cogs', default_inventory_account_id: 'inventory' },
-            { id: 'item-3', name: 'USB Cable Type-C', sku: 'USB-TC', type: 'Product', is_inventory: 1, purchase_rate: 80, sales_rate: 150, default_income_account_id: 'sales_income', default_expense_account_id: 'cogs', default_inventory_account_id: 'inventory' },
-            { id: 'item-4', name: 'Wireless Mouse', sku: 'WM-001', type: 'Product', is_inventory: 1, purchase_rate: 450, sales_rate: 750, default_income_account_id: 'sales_income', default_expense_account_id: 'cogs', default_inventory_account_id: 'inventory' },
-            { id: 'item-5', name: 'Installation Service', sku: 'SVC-INST', type: 'Service', is_inventory: 0, purchase_rate: 0, sales_rate: 2000, default_income_account_id: 'sales_income', default_expense_account_id: 'cogs', default_inventory_account_id: 'inventory' },
+            { id: 'item-1', name: 'LED Bulb 12W', sku: 'LED-12W', type: 'Product', is_inventory: 1, purchase_rate: 120, sales_rate: 200, category: 'Electrical', default_income_account_id: 'sales_income', default_expense_account_id: 'cogs', default_inventory_account_id: 'inventory' },
+            { id: 'item-2', name: 'Extension Board 4-Port', sku: 'EXT-4P', type: 'Product', is_inventory: 1, purchase_rate: 350, sales_rate: 550, category: 'Electrical', default_income_account_id: 'sales_income', default_expense_account_id: 'cogs', default_inventory_account_id: 'inventory' },
+            { id: 'item-3', name: 'USB Cable Type-C', sku: 'USB-TC', type: 'Product', is_inventory: 1, purchase_rate: 80, sales_rate: 150, category: 'Accessories', default_income_account_id: 'sales_income', default_expense_account_id: 'cogs', default_inventory_account_id: 'inventory' },
+            { id: 'item-4', name: 'Wireless Mouse', sku: 'WM-001', type: 'Product', is_inventory: 1, purchase_rate: 450, sales_rate: 750, category: 'Accessories', default_income_account_id: 'sales_income', default_expense_account_id: 'cogs', default_inventory_account_id: 'inventory' },
+            { id: 'item-5', name: 'Installation Service', sku: 'SVC-INST', type: 'Service', is_inventory: 0, purchase_rate: 0, sales_rate: 2000, category: 'Services', default_income_account_id: 'sales_income', default_expense_account_id: 'cogs', default_inventory_account_id: 'inventory' },
         ];
 
         for (const item of items) {
             execute(
-                'INSERT INTO items (id, name, sku, type, is_inventory, purchase_rate, sales_rate, default_income_account_id, default_expense_account_id, default_inventory_account_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [item.id, item.name, item.sku, item.type, item.is_inventory, item.purchase_rate, item.sales_rate, item.default_income_account_id, item.default_expense_account_id, item.default_inventory_account_id]
+                'INSERT INTO items (id, name, sku, type, is_inventory, purchase_rate, sales_rate, category, default_income_account_id, default_expense_account_id, default_inventory_account_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [item.id, item.name, item.sku, item.type, item.is_inventory, item.purchase_rate, item.sales_rate, item.category, item.default_income_account_id, item.default_expense_account_id, item.default_inventory_account_id]
             );
         }
         saveDb();
@@ -240,7 +240,7 @@ export const AccountingService = {
             date: payment.date,
             reference_type: 'Payment',
             reference_id: payment.id,
-            memo: `Payment for ${payment.party_id}`,
+            memo: payment.memo || `Payment for ${payment.party_id}`,
             status: 'Submitted',
             items
         });

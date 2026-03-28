@@ -1,245 +1,244 @@
 <template>
-  <div class="p-8" style="background:#F6F6F6; min-height:100vh; font-family:'Inter',sans-serif;">
+  <div class="p-4 md:p-8 bg-app-bg min-height-screen font-sans">
 
     <!-- Header -->
-    <header class="flex justify-between items-center mb-8">
+    <header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pb-4 border-b border-border">
       <div>
-        <h1 class="text-2xl font-bold" style="color:#171717;">Welcome, {{ userName }}</h1>
-        <p class="mt-1 text-sm" style="color:#999;">Here is what's happening with your business today.</p>
+        <h1 class="text-2xl font-bold text-text-primary">Welcome, {{ userName }}</h1>
+        <p class="text-sm mt-1 text-text-secondary">Here is what's happening with your business today.</p>
       </div>
-      <button
-        @click="$router.push('/sales?new=1')"
-        class="px-4 py-2 rounded-lg text-sm font-semibold transition-all active:scale-95"
-        style="background:#46B37E; color:#fff; box-shadow:0 2px 8px rgba(70,179,126,0.3);"
-        onmouseover="this.style.background='#278F5E'"
-        onmouseout="this.style.background='#46B37E'"
-      >
-        + New Invoice
-      </button>
+      <div class="text-left md:text-right">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-text-muted">Last Updated</p>
+        <p class="text-sm font-semibold text-text-primary">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</p>
+      </div>
     </header>
 
-    <!-- Stat Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+      <StatCard 
+        title="Today's Shift Sales"
+        :value="metrics.todaysShiftSales"
+        icon="⏱️"
+        :trend="trends.shiftSales"
+      />
+      <StatCard 
+        title="Cash & Bank"
+        :value="metrics.cash"
+        icon="🏦"
+        :trend="trends.cash"
+      />
+      <StatCard 
+        title="Receivables"
+        :value="metrics.receivables"
+        icon="📥"
+        :trend="trends.receivables"
+      />
+      <StatCard 
+        title="Payables"
+        :value="metrics.payables"
+        icon="📤"
+        :trend="trends.payables"
+      />
+      <StatCard 
+        title="Inventory Value"
+        :value="metrics.inventory"
+        icon="📦"
+        :trend="trends.inventory"
+      />
+    </div>
+
+    <!-- Reports & Actions Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       
-      <div class="rounded-xl p-5" style="background:#fff; border:1px solid #E2E2E2;">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-xs font-semibold uppercase tracking-widest" style="color:#999;">Cash & Bank</p>
-          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background:#EDFBF4;">💰</span>
+      <!-- Profit & Loss Summary -->
+      <div class="lg:col-span-2 rounded border bg-card-bg border-border overflow-hidden">
+        <div class="px-6 py-4 flex justify-between items-center bg-hover-bg border-b border-border">
+          <h2 class="text-xs font-bold uppercase tracking-widest text-text-secondary">Profit & Loss Summary</h2>
+          <router-link to="/reports" class="text-[10px] font-bold uppercase tracking-widest text-text-primary underline">View Full Report →</router-link>
         </div>
-        <p class="text-xl font-bold" style="color:#171717;">{{ formatCurrency(metrics.cash) }}</p>
-        <p class="text-xs mt-1" style="color:#46B37E;">Available balance</p>
+        <div class="p-6 md:p-8 overflow-x-auto">
+          <div class="space-y-6">
+            <div>
+              <div class="flex justify-between mb-2">
+                <span class="text-sm font-medium text-text-secondary">Income</span>
+                <span class="text-sm font-bold text-text-primary">{{ formatCurrency(metrics.income) }}</span>
+              </div>
+              <div class="h-1.5 w-full rounded-full overflow-hidden bg-hover-bg">
+                <div class="h-full transition-all duration-1000 bg-text-primary" :style="{ width: incomePercent + '%' }"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-2">
+                <span class="text-sm font-medium text-text-secondary">Expenses</span>
+                <span class="text-sm font-bold text-text-primary">{{ formatCurrency(metrics.expenses) }}</span>
+              </div>
+              <div class="h-1.5 w-full rounded-full overflow-hidden bg-hover-bg">
+                <div class="h-full transition-all duration-1000 bg-text-secondary" :style="{ width: expensePercent + '%' }"></div>
+              </div>
+            </div>
+            <div class="pt-6 mt-6 border-t border-hover-bg">
+              <div class="flex justify-between items-end">
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-widest mb-1 text-text-muted">Net Profit</p>
+                  <p class="text-3xl font-bold" :class="metrics.net_profit < 0 ? 'text-rose-500' : 'text-text-primary'">
+                    {{ formatCurrency(metrics.net_profit) }}
+                  </p>
+                </div>
+                <div class="text-right shrink-0">
+                   <p class="text-[10px] font-bold uppercase tracking-widest mb-1 text-text-muted">Profit Margin</p>
+                   <p class="text-sm font-bold text-text-primary">{{ ((metrics.net_profit / (metrics.income || 1)) * 100).toFixed(1) }}%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="rounded-xl p-5" style="background:#fff; border:1px solid #E2E2E2;">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-xs font-semibold uppercase tracking-widest" style="color:#999;">Receivables</p>
-          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background:#EEF4FF;">📥</span>
+      <!-- Quick Actions / Tasks -->
+      <div class="lg:col-span-1 border rounded bg-card-bg border-border overflow-hidden">
+        <div class="px-6 py-4 bg-hover-bg border-b border-border">
+          <h2 class="text-xs font-bold uppercase tracking-widest text-text-secondary">Quick Actions</h2>
         </div>
-        <p class="text-xl font-bold" style="color:#171717;">{{ formatCurrency(metrics.receivables) }}</p>
-        <p class="text-xs mt-1" style="color:#4C9CF1;">Amount to collect</p>
-      </div>
-
-      <div class="rounded-xl p-5" style="background:#fff; border:1px solid #E2E2E2;">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-xs font-semibold uppercase tracking-widest" style="color:#999;">Payables</p>
-          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background:#FFF0F0;">📤</span>
+        <div class="p-2">
+          <router-link v-for="action in quickActions" :key="action.label" :to="action.link"
+            class="flex items-center gap-4 p-4 rounded transition-colors group hover:bg-hover-bg">
+            <div class="w-10 h-10 rounded flex items-center justify-center border border-border bg-hover-bg transition-all group-hover:border-text-primary">
+              <span class="text-lg">{{ action.icon }}</span>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-text-primary">{{ action.label }}</p>
+              <p class="text-[10px] text-text-muted">{{ action.desc }}</p>
+            </div>
+          </router-link>
         </div>
-        <p class="text-xl font-bold" style="color:#171717;">{{ formatCurrency(metrics.payables) }}</p>
-        <p class="text-xs mt-1" style="color:#E03636;">Amount to pay</p>
-      </div>
-
-      <div class="rounded-xl p-5" style="background:#fff; border:1px solid #E2E2E2;">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-xs font-semibold uppercase tracking-widest" style="color:#999;">Inventory Value</p>
-          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background:#FFFBEE;">📦</span>
-        </div>
-        <p class="text-xl font-bold" style="color:#171717;">{{ formatCurrency(metrics.inventory) }}</p>
-        <p class="text-xs mt-1" style="color:#E79913;">Stock on hand</p>
       </div>
 
     </div>
 
-    <!-- Bottom Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-      <!-- Profit Analysis -->
-      <div class="lg:col-span-2 rounded-xl p-6" style="background:#fff; border:1px solid #E2E2E2;">
-        <h2 class="text-sm font-bold mb-6 flex items-center gap-2" style="color:#171717;">
-          <span class="w-6 h-6 rounded flex items-center justify-center text-xs" style="background:#EDFBF4;">📊</span>
-          Profit Analysis
-        </h2>
-
-        <div class="flex justify-between items-end mb-5">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-widest" style="color:#999;">Total Revenue</p>
-            <p class="text-2xl font-bold mt-1" style="color:#171717;">{{ formatCurrency(pl.totalIncome) }}</p>
-          </div>
-          <div class="text-right">
-            <p class="text-xs font-semibold uppercase tracking-widest" style="color:#999;">Net Profit</p>
-            <p class="text-2xl font-bold mt-1" :style="{ color: pl.netProfit >= 0 ? '#278F5E' : '#E03636' }">
-              {{ formatCurrency(pl.netProfit) }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Progress Bar -->
-        <div class="w-full h-2 rounded-full overflow-hidden flex mb-5" style="background:#F0F0F0;">
-          <div
-            class="h-full transition-all duration-1000 rounded-full"
-            :style="{ width: profitRatio + '%', background: '#46B37E' }"
-          ></div>
-          <div class="h-full flex-1" style="background:#FFCDD2;"></div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-4 pt-4" style="border-top:1px solid #F0F0F0;">
-          <div>
-            <p class="font-semibold uppercase" style="font-size:10px; color:#C7C7C7;">Total Expenses</p>
-            <p class="text-sm font-bold mt-1" style="color:#525252;">{{ formatCurrency(pl.totalExpenses) }}</p>
-          </div>
-          <div>
-            <p class="font-semibold uppercase" style="font-size:10px; color:#C7C7C7;">Expense Ratio</p>
-            <p class="text-sm font-bold mt-1" style="color:#525252;">{{ expenseRatio }}%</p>
-          </div>
-          <div class="text-right">
-            <p class="font-semibold uppercase" style="font-size:10px; color:#C7C7C7;">Profit Margin</p>
-            <p class="text-sm font-bold mt-1" style="color:#525252;">{{ profitMargin }}%</p>
-          </div>
+    <!-- Inventory Alert (Conditional) -->
+    <div v-if="lowStockItems.length > 0" class="mt-8 p-6 rounded-lg border flex items-center justify-between bg-rose-500/10 border-rose-500/20">
+      <div class="flex items-center gap-4">
+        <span class="text-2xl">⚠️</span>
+        <div>
+          <h3 class="font-bold text-sm text-rose-500">Low Stock Alert</h3>
+          <p class="text-xs mt-1 text-rose-500/80">{{ lowStockItems.length }} items are below their reorder level.</p>
         </div>
       </div>
-
-      <!-- Quick Actions -->
-      <div class="rounded-xl p-6" style="background:#fff; border:1px solid #E2E2E2;">
-        <h2 class="text-sm font-bold mb-5" style="color:#171717;">Quick Actions</h2>
-        <div class="space-y-2">
-
-          <button
-            @click="$router.push('/accounts')"
-            class="w-full flex items-center justify-between p-3 rounded-lg transition-all text-left group"
-            style="border:1px solid #F0F0F0;"
-            onmouseover="this.style.background='#F6F6F6'; this.style.borderColor='#E2E2E2'"
-            onmouseout="this.style.background='transparent'; this.style.borderColor='#F0F0F0'"
-          >
-            <div class="flex items-center gap-3">
-              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background:#EDFBF4;">📁</span>
-              <div>
-                <p class="text-sm font-medium" style="color:#171717;">Chart of Accounts</p>
-                <p style="font-size:11px; color:#999;">Manage account structure</p>
-              </div>
-            </div>
-            <span style="color:#C7C7C7; font-size:12px;">→</span>
-          </button>
-
-          <button
-            @click="$router.push('/inventory')"
-            class="w-full flex items-center justify-between p-3 rounded-lg transition-all text-left"
-            style="border:1px solid #F0F0F0;"
-            onmouseover="this.style.background='#F6F6F6'; this.style.borderColor='#E2E2E2'"
-            onmouseout="this.style.background='transparent'; this.style.borderColor='#F0F0F0'"
-          >
-            <div class="flex items-center gap-3">
-              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background:#FFFBEE;">📦</span>
-              <div>
-                <p class="text-sm font-medium" style="color:#171717;">Manage Stock</p>
-                <p style="font-size:11px; color:#999;">Items & inventory levels</p>
-              </div>
-            </div>
-            <span style="color:#C7C7C7; font-size:12px;">→</span>
-          </button>
-
-          <button
-            @click="$router.push('/reports')"
-            class="w-full flex items-center justify-between p-3 rounded-lg transition-all text-left"
-            style="border:1px solid #F0F0F0;"
-            onmouseover="this.style.background='#F6F6F6'; this.style.borderColor='#E2E2E2'"
-            onmouseout="this.style.background='transparent'; this.style.borderColor='#F0F0F0'"
-          >
-            <div class="flex items-center gap-3">
-              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background:#EEF4FF;">📊</span>
-              <div>
-                <p class="text-sm font-medium" style="color:#171717;">Export Reports</p>
-                <p style="font-size:11px; color:#999;">P&L, Balance Sheet</p>
-              </div>
-            </div>
-            <span style="color:#C7C7C7; font-size:12px;">→</span>
-          </button>
-
-          <button
-            @click="$router.push('/sales?new=1')"
-            class="w-full flex items-center justify-center gap-2 p-3 rounded-lg transition-all text-sm font-semibold mt-2"
-            style="background:#EDFBF4; color:#278F5E; border:1px solid #c6f0db;"
-            onmouseover="this.style.background='#278F5E'; this.style.color='#fff'"
-            onmouseout="this.style.background='#EDFBF4'; this.style.color='#278F5E'"
-          >
-            + New Sales Invoice
-          </button>
-
-        </div>
-      </div>
-
+      <router-link to="/inventory" class="px-4 py-2 rounded text-xs font-bold transition-all bg-rose-500 text-white hover:bg-rose-600">
+        Resolve Now
+      </router-link>
     </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useCompanyStore } from '../stores/company';
+import { useInventoryStore } from '../stores/inventory';
+import { useShiftStore } from '../stores/shift';
 import { ReportService } from '../services/reportService';
-import { query } from '../db/database';
+import { shiftService } from '../services/shiftService';
 import StatCard from '../components/StatCard.vue';
 
 const companyStore = useCompanyStore();
+const inventoryStore = useInventoryStore();
+const shiftStore = useShiftStore();
 const userName = computed(() => companyStore.company?.name || 'User');
 
 const metrics = ref({
+  income: 0,
+  expenses: 0,
+  net_profit: 0,
   cash: 0,
   receivables: 0,
   payables: 0,
-  inventory: 0
+  inventory: 0,
+  todaysShiftSales: 0
 });
 
-const pl = ref({
-  totalIncome: 0,
-  totalExpenses: 0,
-  netProfit: 0
+const trends = ref({
+  cash: [] as number[],
+  receivables: [] as number[],
+  payables: [] as number[],
+  inventory: [] as number[],
+  shiftSales: [] as number[]
 });
 
-const profitRatio = computed(() => {
-    if (pl.value.totalIncome === 0) return 0;
-    return Math.max(0, Math.min(100, (pl.value.netProfit / pl.value.totalIncome) * 100));
+const pl = ref<any>(null);
+
+const incomePercent = computed(() => {
+    const total = metrics.value.income + metrics.value.expenses;
+    if (total === 0) return 0;
+    return (metrics.value.income / total) * 100;
 });
 
-const expenseRatio = computed(() => {
-    if (pl.value.totalIncome === 0) return 0;
-    return Math.round((pl.value.totalExpenses / pl.value.totalIncome) * 100);
+const expensePercent = computed(() => {
+    const total = metrics.value.income + metrics.value.expenses;
+    if (total === 0) return 0;
+    return (metrics.value.expenses / total) * 100;
 });
 
-const profitMargin = computed(() => {
-    if (pl.value.totalIncome === 0) return 0;
-    return Math.round((pl.value.netProfit / pl.value.totalIncome) * 100);
+const quickActions = [
+  { label: 'New Invoice', desc: 'Sell items to customer', link: '/sales', icon: '📝' },
+  { label: 'Add Purchase', desc: 'Record a new vendor bill', link: '/purchases', icon: '📥' },
+  { label: 'Shift History', desc: 'View end-of-day reports', link: '/reports', icon: '⏱️' },
+  { label: 'Bank Entry', desc: 'Reconcile cash/bank', link: '/bank', icon: '🏦' }
+];
+
+const lowStockItems = computed(() => {
+    return inventoryStore.items.filter(i => i.stock_quantity <= 5);
 });
 
 onMounted(async () => {
-  await loadMetrics();
+  await shiftStore.initializeActiveShift();
+  await Promise.all([
+    loadMetrics(),
+    loadTrends()
+  ]);
 });
 
 async function loadMetrics() {
-  const date = new Date().toISOString().split('T')[0];
+  const date = (new Date().toISOString().split('T')[0]) as string;
   const bs = await ReportService.getBalanceSheet(date);
   const plData = await ReportService.getProfitAndLoss('1900-01-01', date);
 
-  pl.value = plData;
+  pl.value = plData as any;
+  metrics.value.income = (plData as any).totalIncome || 0;
+  metrics.value.expenses = (plData as any).totalExpenses || 0;
+  metrics.value.net_profit = (plData as any).netProfit || 0;
 
   // Extract specific metrics
-  metrics.value.cash = bs.assets.find(a => a.name === 'Cash' || a.name === 'Bank')?.balance || 0;
-  metrics.value.receivables = bs.assets.find(a => a.name === 'Accounts Receivable')?.balance || 0;
-  metrics.value.payables = bs.liabilities.find(a => a.name === 'Accounts Payable')?.balance || 0;
-  metrics.value.inventory = bs.assets.find(a => a.name === 'Inventory')?.balance || 0;
+  metrics.value.cash = bs.assets
+    .filter(a => a.name === 'Cash' || a.name === 'Bank')
+    .reduce((sum, a) => sum + (a.balance as number || 0), 0);
+  metrics.value.receivables = (bs.assets.find(a => a.name === 'Accounts Receivable')?.balance as any) || 0;
+  metrics.value.payables = (bs.liabilities.find(a => a.name === 'Accounts Payable')?.balance as any) || 0;
+  metrics.value.inventory = (bs.assets.find(a => a.name === 'Inventory')?.balance as any) || 0;
+  metrics.value.todaysShiftSales = shiftService.getTodaysShiftSales();
+}
+
+async function loadTrends() {
+  const days = 14;
+  const [cashHistory, receivablesHistory, payablesHistory, inventoryHistory] = await Promise.all([
+    ReportService.getHistoricalBalances('Asset', days, ['Cash', 'Bank']),
+    ReportService.getHistoricalBalances('Asset', days, ['Accounts Receivable']),
+    ReportService.getHistoricalBalances('Liability', days, ['Accounts Payable']),
+    ReportService.getHistoricalBalances('Asset', days, ['Inventory'])
+  ]);
+
+  trends.value.cash = cashHistory;
+  trends.value.receivables = receivablesHistory;
+  trends.value.payables = payablesHistory;
+  trends.value.inventory = inventoryHistory;
+  trends.value.shiftSales = shiftService.getHistoricalShiftSales(14);
 }
 
 function formatCurrency(val: number) {
   return new Intl.NumberFormat('en-PK', {
     style: 'currency',
-    currency: companyStore.company?.currency || 'PKR'
+    currency: companyStore.company?.currency || 'PKR',
+    minimumFractionDigits: 0
   }).format(val || 0);
 }
 </script>

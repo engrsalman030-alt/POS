@@ -29,16 +29,41 @@ CREATE TABLE IF NOT EXISTS items (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   sku TEXT UNIQUE,
+  barcode TEXT,
   type TEXT NOT NULL, -- Product, Service
+  category TEXT,
+  brand TEXT,
   is_inventory INTEGER DEFAULT 1,
   default_income_account_id TEXT,
   default_expense_account_id TEXT, -- COGS
   default_inventory_account_id TEXT,
   purchase_rate REAL DEFAULT 0,
   sales_rate REAL DEFAULT 0,
+  wholesale_rate REAL DEFAULT 0,
+  min_sales_rate REAL DEFAULT 0,
+  discount_allowed INTEGER DEFAULT 1,
   stock_quantity REAL DEFAULT 0,
   stock_value REAL DEFAULT 0,
+  reorder_level REAL DEFAULT 0,
+  uom TEXT DEFAULT 'Units',
+  warehouse TEXT,
+  image TEXT,
   is_active INTEGER DEFAULT 1,
+  -- Pharmacy Fields
+  batch_number TEXT,
+  expiry_date TEXT,
+  mfg_date TEXT,
+  medicine_type TEXT,
+  prescription_required INTEGER DEFAULT 0,
+  -- Mobile Fields
+  imei_number TEXT,
+  serial_number TEXT,
+  warranty_period TEXT,
+  -- Grocery Fields
+  weight REAL,
+  pack_size TEXT,
+  unit_type TEXT,
+  notes TEXT,
   FOREIGN KEY (default_income_account_id) REFERENCES accounts(id),
   FOREIGN KEY (default_expense_account_id) REFERENCES accounts(id),
   FOREIGN KEY (default_inventory_account_id) REFERENCES accounts(id)
@@ -47,14 +72,36 @@ CREATE TABLE IF NOT EXISTS items (
 CREATE TABLE IF NOT EXISTS parties (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  type TEXT NOT NULL, -- Customer, Supplier
+  type TEXT NOT NULL, -- Customer, Supplier, Both
+  company_name TEXT,
+  contact_person TEXT,
   email TEXT,
   phone TEXT,
-  address TEXT,
+  whatsapp TEXT,
+  website TEXT,
+  address TEXT, -- Legacy/Default
+  billing_address TEXT,
+  shipping_address TEXT,
+  city TEXT,
+  country TEXT,
+  postal_code TEXT,
   tax_id TEXT,
-  is_active INTEGER DEFAULT 1,
+  cnic TEXT,
+  reg_number TEXT,
+  credit_limit REAL DEFAULT 0,
+  payment_terms TEXT,
   receivable_account_id TEXT,
   payable_account_id TEXT,
+  opening_balance REAL DEFAULT 0,
+  balance_type TEXT DEFAULT 'Debit',
+  loyalty_program INTEGER DEFAULT 0,
+  customer_group TEXT,
+  supplier_category TEXT,
+  price_list TEXT,
+  default_currency TEXT,
+  is_active INTEGER DEFAULT 1,
+  notes TEXT,
+  tags TEXT,
   FOREIGN KEY (receivable_account_id) REFERENCES accounts(id),
   FOREIGN KEY (payable_account_id) REFERENCES accounts(id)
 );
@@ -107,7 +154,9 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   total_amount REAL DEFAULT 0,
   paid_amount REAL DEFAULT 0,
   outstanding_amount REAL DEFAULT 0,
-  FOREIGN KEY (customer_id) REFERENCES parties(id)
+  shift_id TEXT,
+  FOREIGN KEY (customer_id) REFERENCES parties(id),
+  FOREIGN KEY (shift_id) REFERENCES shifts(id)
 );
 
 CREATE TABLE IF NOT EXISTS sales_invoice_items (
@@ -159,8 +208,20 @@ CREATE TABLE IF NOT EXISTS payments (
   amount REAL DEFAULT 0,
   reference_type TEXT,
   reference_id TEXT,
+  shift_id TEXT,
   FOREIGN KEY (party_id) REFERENCES parties(id),
-  FOREIGN KEY (account_id) REFERENCES accounts(id)
+  FOREIGN KEY (account_id) REFERENCES accounts(id),
+  FOREIGN KEY (shift_id) REFERENCES shifts(id)
+);
+
+CREATE TABLE IF NOT EXISTS shifts (
+  id TEXT PRIMARY KEY,
+  start_time TEXT NOT NULL,
+  end_time TEXT,
+  opening_balance REAL DEFAULT 0,
+  closing_balance REAL DEFAULT 0,
+  status TEXT DEFAULT 'Open',
+  notes TEXT
 );
 `;
 
@@ -181,6 +242,75 @@ export async function getDb(): Promise<Database> {
 
   // Always run schema to ensure all tables exist (IF NOT EXISTS is safe)
   db.run(SCHEMA);
+
+  // Enhanced Migration Logic
+  const migrations = [
+    // Items table migrations
+    { table: 'items', column: 'barcode', type: 'TEXT' },
+    { table: 'items', column: 'brand', type: 'TEXT' },
+    { table: 'items', column: 'wholesale_rate', type: 'REAL DEFAULT 0' },
+    { table: 'items', column: 'min_sales_rate', type: 'REAL DEFAULT 0' },
+    { table: 'items', column: 'discount_allowed', type: 'INTEGER DEFAULT 1' },
+    { table: 'items', column: 'reorder_level', type: 'REAL DEFAULT 0' },
+    { table: 'items', column: 'uom', type: "TEXT DEFAULT 'Units'" },
+    { table: 'items', column: 'warehouse', type: 'TEXT' },
+    { table: 'items', column: 'batch_number', type: 'TEXT' },
+    { table: 'items', column: 'expiry_date', type: 'TEXT' },
+    { table: 'items', column: 'mfg_date', type: 'TEXT' },
+    { table: 'items', column: 'medicine_type', type: 'TEXT' },
+    { table: 'items', column: 'prescription_required', type: 'INTEGER DEFAULT 0' },
+    { table: 'items', column: 'imei_number', type: 'TEXT' },
+    { table: 'items', column: 'serial_number', type: 'TEXT' },
+    { table: 'items', column: 'warranty_period', type: 'TEXT' },
+    { table: 'items', column: 'weight', type: 'REAL' },
+    { table: 'items', column: 'pack_size', type: 'TEXT' },
+    { table: 'items', column: 'unit_type', type: 'TEXT' },
+    { table: 'items', column: 'notes', type: 'TEXT' },
+    
+    // Parties table migrations
+    { table: 'parties', column: 'company_name', type: 'TEXT' },
+    { table: 'parties', column: 'contact_person', type: 'TEXT' },
+    { table: 'parties', column: 'whatsapp', type: 'TEXT' },
+    { table: 'parties', column: 'website', type: 'TEXT' },
+    { table: 'parties', column: 'billing_address', type: 'TEXT' },
+    { table: 'parties', column: 'shipping_address', type: 'TEXT' },
+    { table: 'parties', column: 'city', type: 'TEXT' },
+    { table: 'parties', column: 'country', type: 'TEXT' },
+    { table: 'parties', column: 'postal_code', type: 'TEXT' },
+    { table: 'parties', column: 'reg_number', type: 'TEXT' },
+    { table: 'parties', column: 'credit_limit', type: 'REAL DEFAULT 0' },
+    { table: 'parties', column: 'payment_terms', type: 'TEXT' },
+    { table: 'parties', column: 'opening_balance', type: 'REAL DEFAULT 0' },
+    { table: 'parties', column: 'balance_type', type: "TEXT DEFAULT 'Debit'" },
+    { table: 'parties', column: 'loyalty_program', type: 'INTEGER DEFAULT 0' },
+    { table: 'parties', column: 'customer_group', type: 'TEXT' },
+    { table: 'parties', column: 'supplier_category', type: 'TEXT' },
+    { table: 'parties', column: 'price_list', type: 'TEXT' },
+    { table: 'parties', column: 'default_currency', type: 'TEXT' },
+    { table: 'parties', column: 'notes', type: 'TEXT' },
+    { table: 'parties', column: 'tags', type: 'TEXT' },
+    
+    // Shift migrations
+    { table: 'sales_invoices', column: 'shift_id', type: 'TEXT' },
+    { table: 'payments', column: 'shift_id', type: 'TEXT' },
+  ];
+
+  for (const m of migrations) {
+    try {
+      db.run(`ALTER TABLE ${m.table} ADD COLUMN ${m.column} ${m.type};`);
+    } catch (e) {
+      // Column likely already exists
+    }
+  }
+
+  // Ensure mandatory legacy columns exist (re-running for safety)
+  try { db.run("ALTER TABLE items ADD COLUMN image TEXT;"); } catch (e) {}
+  try { db.run("ALTER TABLE parties ADD COLUMN cnic TEXT;"); } catch (e) {}
+  try { 
+    db.run("ALTER TABLE items ADD COLUMN category TEXT;");
+    db.run("UPDATE items SET category = 'General' WHERE category IS NULL;");
+  } catch (e) {}
+
   saveDb();
 
   return db;

@@ -1,197 +1,188 @@
 <template>
-  <div class="p-8 max-w-6xl mx-auto" style="font-family:'Inter',sans-serif;">
-
+  <div class="p-4 md:p-8 max-w-7xl mx-auto min-h-screen relative font-sans">
+    
     <!-- Header -->
-    <header class="flex justify-between items-center mb-8">
+    <header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-4 border-b border-border">
       <div>
-        <h1 class="text-2xl font-bold" style="color:#171717;">Parties</h1>
-        <p class="text-sm mt-1" style="color:#999;">Manage relationships and account balances.</p>
+        <h1 class="text-2xl font-bold text-text-primary">Parties</h1>
+        <p class="text-sm mt-1 text-text-secondary">Manage customers, suppliers and their balances.</p>
       </div>
-      <button @click="showModal = true"
-        class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-        style="background:#46B37E; color:#fff; box-shadow:0 2px 8px rgba(70,179,126,0.3);"
-        onmouseover="this.style.background='#278F5E'"
-        onmouseout="this.style.background='#46B37E'">
-        + Add New Party
-      </button>
+      <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+        <!-- Filter Tabs -->
+        <div class="flex bg-hover-bg p-1 rounded-lg border border-border">
+          <button 
+            v-for="f in ['All', 'Customer', 'Supplier']" 
+            :key="f"
+            @click="filter = f as any"
+            :class="['px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all', filter === f ? 'bg-card-bg shadow-sm text-text-primary' : 'text-text-muted hover:text-text-secondary']"
+          >
+            {{ f }}s
+          </button>
+        </div>
+        <button @click="showModal = true"
+          class="flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-bold transition-all bg-text-primary text-card-bg hover:opacity-90 hover:shadow-lg active:scale-95 text-center"
+        >
+          + Add Party
+        </button>
+      </div>
     </header>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Card Grid -->
+    <div class="space-y-8">
+      <TransitionGroup 
+        name="list" 
+        tag="div" 
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+      >
+        <PartyCard 
+          v-for="p in paginatedParties" 
+          :key="p.id" 
+          :party="p"
+          @click="selectedParty = p"
+        />
+      </TransitionGroup>
 
-      <!-- Customers -->
-      <div class="rounded-xl overflow-hidden" style="background:#fff; border:1px solid #E2E2E2;">
-        <div class="px-6 py-4 flex justify-between items-center" style="background:#EDFBF4; border-bottom:1px solid #c6f0db;">
-          <h2 class="text-xs font-bold uppercase tracking-widest" style="color:#278F5E;">Customers</h2>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:#46B37E; color:#fff;">
-            {{ partyStore.customers.length }}
-          </span>
-        </div>
-        <div style="min-height:100px;">
-          <div v-for="p in partyStore.customers" :key="p.id"
-            class="px-6 py-4 flex justify-between items-center transition-colors"
-            style="border-bottom:1px solid #F6F6F6;"
-            onmouseover="this.style.background='#F6F6F6'"
-            onmouseout="this.style.background='transparent'">
-            <div>
-              <p class="font-semibold text-sm" style="color:#171717;">{{ p.name }}</p>
-              <p class="text-xs mt-0.5" style="color:#C7C7C7;">{{ p.email || 'No email' }}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-[10px] font-bold uppercase" style="color:#C7C7C7;">Balance</p>
-              <p class="text-sm font-bold mt-0.5" style="color:#171717;">{{ formatCurrency(0) }}</p>
-            </div>
-          </div>
-          <div v-if="partyStore.customers.length === 0"
-            class="p-10 text-center text-sm" style="color:#C7C7C7;">
-            No customers yet.
-          </div>
-        </div>
-      </div>
-
-      <!-- Suppliers -->
-      <div class="rounded-xl overflow-hidden" style="background:#fff; border:1px solid #E2E2E2;">
-        <div class="px-6 py-4 flex justify-between items-center" style="background:#FFF0F0; border-bottom:1px solid #ffd6d6;">
-          <h2 class="text-xs font-bold uppercase tracking-widest" style="color:#E03636;">Suppliers</h2>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:#E03636; color:#fff;">
-            {{ partyStore.suppliers.length }}
-          </span>
-        </div>
-        <div style="min-height:100px;">
-          <div v-for="p in partyStore.suppliers" :key="p.id"
-            class="px-6 py-4 flex justify-between items-center transition-colors"
-            style="border-bottom:1px solid #F6F6F6;"
-            onmouseover="this.style.background='#F6F6F6'"
-            onmouseout="this.style.background='transparent'">
-            <div>
-              <p class="font-semibold text-sm" style="color:#171717;">{{ p.name }}</p>
-              <p class="text-xs mt-0.5" style="color:#C7C7C7;">{{ p.email || 'No email' }}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-[10px] font-bold uppercase" style="color:#C7C7C7;">Payable</p>
-              <p class="text-sm font-bold mt-0.5" style="color:#171717;">{{ formatCurrency(0) }}</p>
-            </div>
-          </div>
-          <div v-if="partyStore.suppliers.length === 0"
-            class="p-10 text-center text-sm" style="color:#C7C7C7;">
-            No suppliers yet.
-          </div>
-        </div>
-      </div>
+      <!-- Pagination Component -->
+      <Pagination 
+        :currentPage="currentPage" 
+        :totalPages="totalPages" 
+        @next="nextPage" 
+        @prev="prevPage"
+        @setPage="setPage"
+      />
     </div>
 
-    <!-- Modal -->
-    <div v-if="showModal" class="fixed inset-0 flex items-center justify-center p-6 z-50"
-      style="background:rgba(23,23,23,0.5); backdrop-filter:blur(4px);">
-      <div class="w-full max-w-lg rounded-xl overflow-hidden shadow-2xl" style="background:#fff;">
+    <!-- Empty State -->
+    <div v-if="paginatedParties.length === 0" class="py-20 text-center">
+       <div class="w-16 h-16 bg-hover-bg rounded-full flex items-center justify-center mx-auto mb-4 border border-border">
+         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-muted/50"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+       </div>
+       <p class="text-sm font-medium text-text-muted">No {{ filter.toLowerCase() }}s found matching your criteria.</p>
+    </div>
 
-        <div class="px-6 py-4 flex justify-between items-center" style="border-bottom:1px solid #E2E2E2;">
-          <h3 class="font-bold text-base" style="color:#171717;">New Party</h3>
-          <button @click="showModal = false"
-            class="w-7 h-7 rounded-full flex items-center justify-center text-lg"
-            style="color:#999;"
-            onmouseover="this.style.background='#F6F6F6'"
-            onmouseout="this.style.background='transparent'">×</button>
+    <!-- Detail Sidebar -->
+    <PartyDetailSide 
+      :party="selectedParty" 
+      @close="selectedParty = null" 
+      @edit="handleEditRequest"
+    />
+
+    <!-- Add Modal (Updated with ERP Form) -->
+    <div v-if="showModal" class="fixed inset-0 flex items-center justify-center p-6 z-[100] bg-black/40 backdrop-blur-[4px] overflow-y-auto">
+      <div class="w-full max-w-4xl my-auto rounded-3xl overflow-hidden border border-border shadow-2xl animate-in fade-in zoom-in duration-300 bg-app-bg">
+
+        <div class="px-8 py-6 flex justify-between items-center bg-card-bg border-b border-border">
+          <div class="flex items-center gap-4">
+             <div class="w-12 h-12 bg-text-primary text-card-bg rounded-2xl flex items-center justify-center shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+             </div>
+             <div>
+               <h3 class="font-black text-xl text-text-primary">{{ isEditMode ? 'Edit Party Profile' : 'Professional Party Onboarding' }}</h3>
+               <p class="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mt-0.5">ERP-Level Business Records</p>
+             </div>
+          </div>
+          <button @click="closeModal" class="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-hover-bg text-text-muted hover:text-rose-500 transition-all active:scale-95">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
         </div>
 
-        <form @submit.prevent="handleAdd" class="p-6 space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style="color:#999;">Party Type</label>
-              <select v-model="form.type"
-                class="w-full px-4 py-2.5 rounded-lg text-sm outline-none"
-                style="background:#F6F6F6; border:1px solid #E2E2E2; color:#171717;">
-                <option value="Customer">Customer</option>
-                <option value="Supplier">Supplier</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style="color:#999;">Company / Person Name</label>
-            <input v-model="form.name" type="text" required placeholder="e.g. ABC Trading"
-              class="w-full px-4 py-2.5 rounded-lg text-sm outline-none transition-all"
-              style="background:#F6F6F6; border:1px solid #E2E2E2; color:#171717;"
-              onfocus="this.style.borderColor='#46B37E'; this.style.background='#fff'"
-              onblur="this.style.borderColor='#E2E2E2'; this.style.background='#F6F6F6'">
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style="color:#999;">NTN / CNIC</label>
-              <input v-model="form.tax_id" type="text" placeholder="e.g. 1234567-8"
-                class="w-full px-4 py-2.5 rounded-lg text-sm outline-none transition-all"
-                style="background:#F6F6F6; border:1px solid #E2E2E2; color:#171717;"
-                onfocus="this.style.borderColor='#46B37E'; this.style.background='#fff'"
-                onblur="this.style.borderColor='#E2E2E2'; this.style.background='#F6F6F6'">
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style="color:#999;">Email</label>
-              <input v-model="form.email" type="email"
-                class="w-full px-4 py-2.5 rounded-lg text-sm outline-none transition-all"
-                style="background:#F6F6F6; border:1px solid #E2E2E2; color:#171717;"
-                onfocus="this.style.borderColor='#46B37E'; this.style.background='#fff'"
-                onblur="this.style.borderColor='#E2E2E2'; this.style.background='#F6F6F6'">
-            </div>
-          </div>
-
-          <div class="pt-4 flex gap-3" style="border-top:1px solid #F0F0F0;">
-            <button type="button" @click="showModal = false"
-              class="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
-              style="background:#F6F6F6; color:#525252; border:1px solid #E2E2E2;"
-              onmouseover="this.style.background='#EDEDED'"
-              onmouseout="this.style.background='#F6F6F6'">Cancel</button>
-            <button type="submit"
-              class="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
-              style="background:#46B37E; color:#fff; box-shadow:0 2px 8px rgba(70,179,126,0.3);"
-              onmouseover="this.style.background='#278F5E'"
-              onmouseout="this.style.background='#46B37E'">Create Party</button>
-          </div>
-        </form>
+        <div class="p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
+           <PartyForm 
+             :initialData="isEditMode ? selectedParty : null" 
+             @submit="handleFormSubmit" 
+             @cancel="closeModal" 
+           />
+        </div>
       </div>
     </div>
 
   </div>
 </template>
 
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-div { font-family: 'Inter', sans-serif; }
-</style>
-
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { usePartyStore } from '../stores/parties';
-import { useCompanyStore } from '../stores/company';
+import type { Party } from '../types/party';
+import PartyCard from '../components/PartyCard.vue';
+import PartyDetailSide from '../components/PartyDetailSide.vue';
+import { usePagination } from '../composables/usePagination';
+import Pagination from '../components/Pagination.vue';
+import PartyForm from '../components/PartyForm.vue';
 
 const partyStore = usePartyStore();
-const companyStore = useCompanyStore();
 const showModal = ref(false);
+const isEditMode = ref(false);
+const filter = ref<'All' | 'Customer' | 'Supplier'>('All');
+const selectedParty = ref<Party | null>(null);
 
-const form = ref({
-    name: '',
-    type: 'Customer' as any,
-    email: '',
-    phone: '',
-    address: '',
-    tax_id: '',
-    receivable_account_id: 'ar',
-    payable_account_id: 'ap'
+const filteredParties = computed(() => {
+  if (filter.value === 'All') return partyStore.parties;
+  return partyStore.parties.filter(p => p.type === filter.value);
 });
+
+const { 
+    currentPage, 
+    totalPages, 
+    paginatedItems: paginatedParties, 
+    nextPage, 
+    prevPage, 
+    setPage 
+} = usePagination(computed(() => filteredParties.value), 12);
+
+// Reset pagination when filter changes
+watch(filter, () => {
+    currentPage.value = 1;
+});
+
+// Form state is now handled internally by PartyForm.
+// We only need to track the party being edited if in edit mode.
+
 
 onMounted(() => {
     partyStore.fetchParties();
 });
 
-async function handleAdd() {
-    await partyStore.addParty(form.value);
-    showModal.value = false;
-    form.value = { name: '', type: 'Customer', email: '', phone: '', address: '', tax_id: '', receivable_account_id: 'ar', payable_account_id: 'ap' };
+function handleEditRequest(party: Party) {
+    isEditMode.value = true;
+    selectedParty.value = party;
+    showModal.value = true;
 }
 
-function formatCurrency(val: number) {
-  return new Intl.NumberFormat('en-PK', {
-    style: 'currency',
-    currency: companyStore.company?.currency || 'PKR'
-  }).format(val || 0);
+function closeModal() {
+    showModal.value = false;
+    isEditMode.value = false;
+}
+
+async function handleFormSubmit(partyData: Party) {
+    if (isEditMode.value) {
+        await partyStore.updateParty(partyData);
+        // Update selectedParty if the currently viewed party was edited
+        if (selectedParty.value && selectedParty.value.id === partyData.id) {
+            selectedParty.value = { ...partyData };
+        }
+    } else {
+        await partyStore.addParty(partyData);
+    }
+    closeModal();
 }
 </script>
+
+<style scoped>
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.5s ease;
+}
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+.list-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+/* Ensure leave animation works correctly with grid */
+.list-leave-active {
+  position: absolute;
+}
+</style>

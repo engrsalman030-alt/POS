@@ -1,155 +1,169 @@
 <template>
-  <div class="p-8 max-w-5xl mx-auto" style="font-family:'Inter',sans-serif;">
+  <div class="p-8 max-w-5xl mx-auto font-sans">
 
-    <header class="flex justify-between items-center mb-8 pb-6" style="border-bottom:1px solid #E2E2E2;">
+    <!-- Minimalist Header & Controls -->
+    <header class="mb-6 flex justify-between items-end pb-4 border-b border-border">
       <div>
-        <h1 class="text-2xl font-bold" style="color:#171717;">Financial Reports</h1>
-        <p class="text-sm mt-1" style="color:#999;">Real-time financial performance and position.</p>
+        <h1 class="text-2xl font-bold text-text-primary">Financial Reports</h1>
+        <p class="text-sm mt-1 text-text-secondary">Overview of your financial performance.</p>
       </div>
-      <div class="flex p-1 rounded-lg" style="background:#F6F6F6; border:1px solid #E2E2E2;">
-        <button @click="activeTab = 'pl'"
-          class="px-5 py-2 rounded-md text-xs font-bold uppercase tracking-widest transition-all"
-          :style="activeTab === 'pl'
-            ? 'background:#fff; color:#278F5E; box-shadow:0 1px 4px rgba(0,0,0,0.08);'
-            : 'color:#999;'">
-          Profit & Loss
-        </button>
-        <button @click="activeTab = 'bs'"
-          class="px-5 py-2 rounded-md text-xs font-bold uppercase tracking-widest transition-all"
-          :style="activeTab === 'bs'
-            ? 'background:#fff; color:#278F5E; box-shadow:0 1px 4px rgba(0,0,0,0.08);'
-            : 'color:#999;'">
-          Balance Sheet
+
+      <div class="flex items-center gap-4">
+        <select v-model="activeTab" class="px-3 py-1.5 text-sm font-medium rounded outline-none transition-all cursor-pointer bg-hover-bg border border-border text-text-primary">
+          <option value="pl">Profit & Loss Statement</option>
+          <option value="bs">Balance Sheet</option>
+          <option value="shifts">Shift Performance</option>
+        </select>
+
+        <select v-if="activeTab === 'shifts'" v-model="shiftTimeframe" @change="refreshData" class="px-3 py-1.5 text-sm font-medium rounded outline-none transition-all cursor-pointer bg-hover-bg border border-border text-text-primary">
+          <option value="daily">Daily</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Annually</option>
+        </select>
+
+        <button @click="refreshData" class="px-3 py-1.5 rounded text-sm font-medium transition-all bg-card-bg border border-border text-text-primary hover:bg-hover-bg">
+          Refresh
         </button>
       </div>
     </header>
 
-    <!-- P&L -->
-    <div v-if="activeTab === 'pl'" class="space-y-6">
+    <!-- Tabular Report View (Frappe Books Style) -->
+    <div class="bg-card-bg rounded-lg border border-border overflow-hidden">
+      
+      <!-- Table Header -->
+      <div class="flex px-6 py-3 font-semibold text-xs tracking-widest uppercase bg-hover-bg border-b border-border text-text-secondary">
+        <div class="flex-1">Account</div>
+        <div class="w-48 text-right text-xs">Total</div>
+      </div>
 
-      <div class="rounded-xl p-6" style="background:#fff; border:1px solid #E2E2E2;">
-        <h3 class="text-xs font-bold uppercase tracking-widest mb-5" style="color:#999;">Income</h3>
-        <div class="space-y-3">
-          <div v-for="row in plData.income" :key="row.name"
-            class="flex justify-between items-center py-2" style="border-bottom:1px solid #F6F6F6;">
-            <span class="text-sm" style="color:#525252;">{{ row.name }}</span>
-            <span class="font-mono font-semibold text-sm" style="color:#171717;">{{ formatCurrency(row.balance) }}</span>
-          </div>
-          <div class="flex justify-between items-center pt-3">
-            <span class="text-xs font-bold uppercase tracking-widest" style="color:#278F5E;">Total Income</span>
-            <span class="text-xl font-bold" style="color:#278F5E;">{{ formatCurrency(plData.totalIncome) }}</span>
-          </div>
+      <!-- P&L Report Body -->
+      <div v-if="activeTab === 'pl'" class="text-sm text-text-primary">
+        
+        <!-- Income Group -->
+        <div class="flex px-6 py-3 font-bold bg-card-bg">
+          <div class="flex-1 uppercase text-xs tracking-wider text-text-secondary">Income</div>
+        </div>
+        <div v-for="row in plData.income" :key="row.name" class="flex px-6 py-2 transition-colors border-b border-hover-bg/50 hover:bg-hover-bg">
+          <div class="flex-1 pl-4">{{ row.name }}</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(row.balance) }}</div>
+        </div>
+        <div class="flex px-6 py-3 font-bold mt-1 border-t border-border bg-card-bg">
+          <div class="flex-1">Total Income</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(plData.totalIncome) }}</div>
+        </div>
+
+        <div class="h-4 bg-hover-bg border-b border-border border-t border-border"></div>
+
+        <!-- Expense Group -->
+        <div class="flex px-6 py-3 font-bold bg-card-bg">
+          <div class="flex-1 uppercase text-xs tracking-wider text-text-secondary">Operating Expenses</div>
+        </div>
+        <div v-for="row in plData.expenses" :key="row.name" class="flex px-6 py-2 transition-colors border-b border-hover-bg/50 hover:bg-hover-bg">
+          <div class="flex-1 pl-4">{{ row.name }}</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(row.balance) }}</div>
+        </div>
+        <div class="flex px-6 py-3 font-bold mt-1 border-t border-border bg-card-bg">
+          <div class="flex-1">Total Expenses</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(plData.totalExpenses) }}</div>
+        </div>
+
+        <!-- Net Profit Final Total -->
+        <div class="flex px-6 py-4 font-extrabold text-base border-t-2 border-text-primary bg-hover-bg">
+          <div class="flex-1">Net Profit / Loss</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(plData.netProfit) }}</div>
         </div>
       </div>
 
-      <div class="rounded-xl p-6" style="background:#fff; border:1px solid #E2E2E2;">
-        <h3 class="text-xs font-bold uppercase tracking-widest mb-5" style="color:#999;">Expenses</h3>
-        <div class="space-y-3">
-          <div v-for="row in plData.expenses" :key="row.name"
-            class="flex justify-between items-center py-2" style="border-bottom:1px solid #F6F6F6;">
-            <span class="text-sm" style="color:#525252;">{{ row.name }}</span>
-            <span class="font-mono font-semibold text-sm" style="color:#171717;">{{ formatCurrency(row.balance) }}</span>
-          </div>
-          <div class="flex justify-between items-center pt-3">
-            <span class="text-xs font-bold uppercase tracking-widest" style="color:#E03636;">Total Expenses</span>
-            <span class="text-xl font-bold" style="color:#E03636;">{{ formatCurrency(plData.totalExpenses) }}</span>
-          </div>
+      <!-- Balance Sheet Report Body -->
+      <div v-if="activeTab === 'bs'" class="text-sm text-text-primary">
+        
+        <!-- Assets Group -->
+        <div class="flex px-6 py-3 font-bold bg-card-bg">
+          <div class="flex-1 uppercase text-xs tracking-wider text-text-secondary">Assets</div>
         </div>
+        <div v-for="row in bsData.assets" :key="row.name" class="flex px-6 py-2 transition-colors border-b border-hover-bg/50 hover:bg-hover-bg">
+          <div class="flex-1 pl-4">{{ row.name }}</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(row.balance) }}</div>
+        </div>
+        <div class="flex px-6 py-3 font-bold mt-1 border-t border-border bg-card-bg">
+          <div class="flex-1">Total Assets</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(bsData.totalAssets) }}</div>
+        </div>
+
+        <div class="h-4 bg-hover-bg border-b border-border border-t border-border"></div>
+
+        <!-- Liabilities Group -->
+        <div class="flex px-6 py-3 font-bold bg-card-bg">
+          <div class="flex-1 uppercase text-xs tracking-wider text-text-secondary">Liabilities</div>
+        </div>
+        <div v-for="row in bsData.liabilities" :key="row.name" class="flex px-6 py-2 transition-colors border-b border-hover-bg/50 hover:bg-hover-bg">
+          <div class="flex-1 pl-4">{{ row.name }}</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(row.balance) }}</div>
+        </div>
+        <div class="flex px-6 py-3 font-bold mt-1 border-t border-border bg-card-bg">
+          <div class="flex-1">Total Liabilities</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(bsData.totalLiabilities) }}</div>
+        </div>
+
+        <div class="h-4 bg-hover-bg border-b border-border border-t border-border"></div>
+
+        <!-- Equity Group -->
+        <div class="flex px-6 py-3 font-bold bg-card-bg">
+          <div class="flex-1 uppercase text-xs tracking-wider text-text-secondary">Equity</div>
+        </div>
+        <div v-for="row in bsData.equity" :key="row.name" class="flex px-6 py-2 transition-colors border-b border-hover-bg/50 hover:bg-hover-bg">
+          <div class="flex-1 pl-4">{{ row.name }}</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(row.balance) }}</div>
+        </div>
+        <div class="flex px-6 py-2 transition-colors border-b border-hover-bg/50 hover:bg-hover-bg">
+          <div class="flex-1 pl-4 italic text-xs">Current Year Earnings</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(bsData.netProfit) }}</div>
+        </div>
+        <div class="flex px-6 py-3 font-bold mt-1 border-t border-border bg-card-bg">
+          <div class="flex-1">Total Equity</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(bsData.totalEquity) }}</div>
+        </div>
+
+        <!-- Verification Banner (Replacing chunky equation block with minimalist footer) -->
+        <div class="flex px-6 py-4 font-extrabold text-base border-t-2 border-text-primary bg-hover-bg">
+          <div class="flex-1">Total Liabilities & Equity</div>
+          <div class="w-48 text-right font-mono">{{ formatCurrency(bsData.totalLiabilities + bsData.totalEquity) }}</div>
+        </div>
+
       </div>
 
-      <!-- Net Profit Banner -->
-      <div class="rounded-xl p-6 flex justify-between items-center"
-        style="background:#278F5E; box-shadow:0 4px 16px rgba(39,143,94,0.25);">
-        <div>
-          <h3 class="text-xs font-bold uppercase tracking-widest" style="color:rgba(255,255,255,0.6);">Net Profit / Loss</h3>
-          <p class="text-3xl font-bold mt-1" style="color:#fff;">{{ formatCurrency(plData.netProfit) }}</p>
-        </div>
-        <div class="text-right">
-          <p class="text-xs font-bold" style="color:rgba(255,255,255,0.6);">Profit Margin</p>
-          <p class="text-lg font-bold mt-1" style="color:#fff;">{{ profitMargin }}%</p>
-        </div>
-      </div>
     </div>
 
-    <!-- Balance Sheet -->
-    <div v-if="activeTab === 'bs'" class="space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        <!-- Assets -->
-        <div class="rounded-xl p-6" style="background:#fff; border:1px solid #E2E2E2;">
-          <h3 class="text-xs font-bold uppercase tracking-widest mb-5" style="color:#278F5E;">Assets</h3>
-          <div class="space-y-3">
-            <div v-for="row in bsData.assets" :key="row.name"
-              class="flex justify-between items-center py-2" style="border-bottom:1px solid #F6F6F6;">
-              <span class="text-sm" style="color:#525252;">{{ row.name }}</span>
-              <span class="font-mono font-semibold text-sm" style="color:#171717;">{{ formatCurrency(row.balance) }}</span>
-            </div>
-          </div>
-          <div class="flex justify-between items-center pt-4 mt-2" style="border-top:1px solid #E2E2E2;">
-            <span class="text-xs font-bold uppercase tracking-widest" style="color:#999;">Total Assets</span>
-            <span class="text-xl font-bold" style="color:#171717;">{{ formatCurrency(bsData.totalAssets) }}</span>
-          </div>
-        </div>
-
-        <div class="space-y-6">
-          <!-- Liabilities -->
-          <div class="rounded-xl p-6" style="background:#fff; border:1px solid #E2E2E2;">
-            <h3 class="text-xs font-bold uppercase tracking-widest mb-5" style="color:#E03636;">Liabilities</h3>
-            <div class="space-y-3">
-              <div v-for="row in bsData.liabilities" :key="row.name"
-                class="flex justify-between items-center py-2" style="border-bottom:1px solid #F6F6F6;">
-                <span class="text-sm" style="color:#525252;">{{ row.name }}</span>
-                <span class="font-mono font-semibold text-sm" style="color:#171717;">{{ formatCurrency(row.balance) }}</span>
-              </div>
-            </div>
-            <div class="flex justify-between items-center pt-3">
-              <span class="text-[10px] font-bold uppercase tracking-widest" style="color:#999;">Total Liabilities</span>
-              <span class="font-bold" style="color:#171717;">{{ formatCurrency(bsData.totalLiabilities) }}</span>
-            </div>
-          </div>
-
-          <!-- Equity -->
-          <div class="rounded-xl p-6" style="background:#fff; border:1px solid #E2E2E2;">
-            <h3 class="text-xs font-bold uppercase tracking-widest mb-5" style="color:#4C9CF1;">Equity</h3>
-            <div class="space-y-3">
-              <div v-for="row in bsData.equity" :key="row.name"
-                class="flex justify-between items-center py-2" style="border-bottom:1px solid #F6F6F6;">
-                <span class="text-sm" style="color:#525252;">{{ row.name }}</span>
-                <span class="font-mono font-semibold text-sm" style="color:#171717;">{{ formatCurrency(row.balance) }}</span>
-              </div>
-              <div class="flex justify-between items-center py-2" style="border-bottom:1px solid #F6F6F6;">
-                <span class="text-sm italic" style="color:#999;">Net Profit (Current Period)</span>
-                <span class="font-mono font-semibold text-sm" style="color:#171717;">{{ formatCurrency(bsData.netProfit) }}</span>
-              </div>
-            </div>
-            <div class="flex justify-between items-center pt-3">
-              <span class="text-[10px] font-bold uppercase tracking-widest" style="color:#999;">Total Equity</span>
-              <span class="font-bold" style="color:#171717;">{{ formatCurrency(bsData.totalEquity) }}</span>
-            </div>
-          </div>
-        </div>
+    <!-- Shift Performance Report Body -->
+    <div v-if="activeTab === 'shifts'" class="bg-card-bg mt-6 rounded-lg border border-border overflow-hidden text-sm text-text-primary">
+      <div class="flex px-6 py-3 font-semibold text-xs tracking-widest uppercase bg-hover-bg border-b border-border text-text-secondary">
+        <div class="flex-1">Period</div>
+        <div class="w-32 text-center text-xs">Shifts</div>
+        <div class="w-48 text-right text-xs">Total Sales</div>
+        <div class="w-48 text-right text-xs">Opening Bal.</div>
+        <div class="w-48 text-right text-xs">Closing Bal.</div>
       </div>
 
-      <!-- Accounting Equation -->
-      <div class="rounded-xl p-6 flex justify-between items-center"
-        style="background:#171717; border:1px solid #2a2a2a;">
-        <div>
-          <h3 class="text-[10px] font-bold uppercase tracking-widest" style="color:rgba(255,255,255,0.3);">Accounting Equation</h3>
-          <p class="text-lg font-medium mt-2 flex items-center gap-3" style="color:#fff;">
-            <span>{{ formatCurrency(bsData.totalAssets) }}</span>
-            <span style="color:#444; font-weight:900;">=</span>
-            <span>{{ formatCurrency(bsData.totalLiabilities + bsData.totalEquity) }}</span>
-          </p>
-        </div>
-        <div class="px-4 py-2 rounded-lg"
-          :style="Math.abs(bsData.totalAssets - (bsData.totalLiabilities + bsData.totalEquity)) < 0.01
-            ? 'background:#EDFBF4; color:#278F5E;'
-            : 'background:#FFF0F0; color:#E03636;'">
-          <span class="text-xs font-bold uppercase tracking-widest">
-            {{ Math.abs(bsData.totalAssets - (bsData.totalLiabilities + bsData.totalEquity)) < 0.01 ? 'Balanced ✓' : 'Out of Balance ✗' }}
-          </span>
-        </div>
+      <div v-for="row in shiftData" :key="row.period" class="flex px-6 py-2 transition-colors border-b border-hover-bg/50 hover:bg-hover-bg items-center">
+        <div class="flex-1 font-bold">{{ row.period }}</div>
+        <div class="w-32 text-center font-mono">{{ row.total_shifts }}</div>
+        <div class="w-48 text-right font-mono text-brand">{{ formatCurrency(row.total_sales) }}</div>
+        <div class="w-48 text-right font-mono">{{ formatCurrency(row.total_opening) }}</div>
+        <div class="w-48 text-right font-mono">{{ formatCurrency(row.total_closing) }}</div>
       </div>
+
+      <div v-if="shiftData.length === 0" class="p-8 text-center text-text-muted italic">
+        No shift data found for this timeframe.
+      </div>
+    </div>
+    
+    <div v-if="activeTab === 'bs'" class="mt-3 text-right">
+       <span class="text-xs font-bold uppercase tracking-widest px-2 py-1 rounded"
+          :class="Math.abs(bsData.totalAssets - (bsData.totalLiabilities + bsData.totalEquity)) < 0.01
+            ? 'bg-hover-bg text-text-secondary'
+            : 'bg-rose-500/10 text-rose-500'">
+          {{ Math.abs(bsData.totalAssets - (bsData.totalLiabilities + bsData.totalEquity)) < 0.01 ? 'Balanced ✓' : 'Out of Balance ✗' }}
+        </span>
     </div>
 
   </div>
@@ -161,25 +175,33 @@ div { font-family: 'Inter', sans-serif; }
 </style>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { ReportService } from '../services/reportService';
+import { shiftService } from '../services/shiftService';
 import { useCompanyStore } from '../stores/company';
 
 const companyStore = useCompanyStore();
 const activeTab = ref('pl');
+const shiftTimeframe = ref<'daily'|'monthly'|'yearly'>('daily');
 
 const plData = ref<any>({ income: [], expenses: [], totalIncome: 0, totalExpenses: 0, netProfit: 0 });
 const bsData = ref<any>({ assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilities: 0, totalEquity: 0, netProfit: 0 });
+const shiftData = ref<any[]>([]);
 
-const profitMargin = computed(() => {
-    if (plData.value.totalIncome === 0) return 0;
-    return Math.round((plData.value.netProfit / plData.value.totalIncome) * 100);
-});
+async function refreshData() {
+    const today = new Date().toISOString().split('T')[0] as string;
+    
+    if (activeTab.value === 'pl') {
+      plData.value = await ReportService.getProfitAndLoss('1900-01-01', today);
+    } else if (activeTab.value === 'bs') {
+      bsData.value = await ReportService.getBalanceSheet(today);
+    } else if (activeTab.value === 'shifts') {
+      shiftData.value = shiftService.getShiftPerformance(shiftTimeframe.value);
+    }
+}
 
-onMounted(async () => {
-    const today = new Date().toISOString().split('T')[0];
-    plData.value = await ReportService.getProfitAndLoss('1900-01-01', today);
-    bsData.value = await ReportService.getBalanceSheet(today);
+onMounted(() => {
+    refreshData();
 });
 
 function formatCurrency(val: number) {

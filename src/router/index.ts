@@ -55,10 +55,22 @@ const routes = [
         component: () => import('../views/Reports.vue')
     },
     {
+        path: '/settings',
+        name: 'Settings',
+        component: () => import('../views/Settings.vue')
+    },
+    {
+        path: '/pos',
+        name: 'POS',
+        component: () => import('../views/POS.vue'),
+        meta: { hideSidebar: true }
+    },
+    {
         path: '/guide',
         name: 'Guide',
         component: () => import('../views/Guide.vue')
     }
+
 ];
 
 const router = createRouter({

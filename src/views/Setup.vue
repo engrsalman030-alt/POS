@@ -1,44 +1,32 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-6"
-    style="background:#F6F6F6; font-family:'Inter',sans-serif;">
+  <div class="min-h-screen flex items-center justify-center p-6 bg-app-bg font-sans">
 
-    <div class="max-w-md w-full rounded-xl overflow-hidden shadow-sm"
-      style="background:#fff; border:1px solid #E2E2E2;">
+    <div class="max-w-md w-full rounded-lg overflow-hidden border border-border shadow-sm bg-card-bg">
 
-      <!-- Top accent bar -->
-      <div class="h-1 w-full" style="background:#46B37E;"></div>
-
-      <div class="p-8">
+      <div class="p-10">
         <!-- Header -->
-        <div class="text-center mb-8">
-          <div class="inline-flex items-center justify-center w-14 h-14 rounded-xl mb-4"
-            style="background:#EDFBF4;">
-            <span class="text-3xl">🏗️</span>
-          </div>
-          <h1 class="text-2xl font-bold" style="color:#171717;">Setup Your Company</h1>
-          <p class="text-sm mt-2" style="color:#999;">Initialize your local-first accounting system</p>
+        <div class="text-center mb-10">
+          <h1 class="text-2xl font-bold text-text-primary">Setup Your Company</h1>
+          <p class="text-sm mt-2 font-medium text-text-muted">Initialize your local-first accounting system</p>
         </div>
 
         <!-- Form -->
-        <form @submit.prevent="handleSetup" class="space-y-4">
+        <form @submit.prevent="handleSetup" class="space-y-6">
 
           <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style="color:#999;">Company Name</label>
+            <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Company Name</label>
             <input v-model="form.name" type="text" required
               placeholder="e.g. Acme Pakistan (Pvt) Ltd"
-              class="w-full px-4 py-2.5 rounded-lg text-sm outline-none transition-all"
-              style="background:#F6F6F6; border:1px solid #E2E2E2; color:#171717;"
-              onfocus="this.style.borderColor='#46B37E'; this.style.background='#fff'"
-              onblur="this.style.borderColor='#E2E2E2'; this.style.background='#F6F6F6'">
+              class="w-full px-3 py-2 border border-border bg-app-bg rounded text-sm outline-none transition-all focus:border-text-primary focus:bg-card-bg text-text-primary placeholder:text-text-muted"
+            >
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-5">
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style="color:#999;">Base Currency</label>
+              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Base Currency</label>
               <select v-model="form.currency"
-                class="w-full px-4 py-2.5 rounded-lg text-sm outline-none"
-                style="background:#F6F6F6; border:1px solid #E2E2E2; color:#171717;"
-                onfocus="this.style.borderColor='#46B37E'" onblur="this.style.borderColor='#E2E2E2'">
+                class="w-full px-3 py-2 border border-border bg-app-bg rounded text-sm outline-none focus:border-text-primary text-text-primary"
+              >
                 <option value="PKR">PKR (Rs.)</option>
                 <option value="USD">USD ($)</option>
                 <option value="EUR">EUR (€)</option>
@@ -46,54 +34,63 @@
               </select>
             </div>
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style="color:#999;">NTN / Registration</label>
-              <input v-model="form.ntn" type="text" placeholder="e.g. 1234567-8"
-                class="w-full px-4 py-2.5 rounded-lg text-sm outline-none transition-all"
-                style="background:#F6F6F6; border:1px solid #E2E2E2; color:#171717;"
-                onfocus="this.style.borderColor='#46B37E'; this.style.background='#fff'"
-                onblur="this.style.borderColor='#E2E2E2'; this.style.background='#F6F6F6'">
+              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">NTN / Tax ID</label>
+              <input v-model="form.ntn" type="text" placeholder="Optional"
+                class="w-full px-3 py-2 border border-border bg-app-bg rounded text-sm outline-none font-mono focus:border-text-primary focus:bg-card-bg text-text-primary placeholder:text-text-muted"
+              >
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-5">
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style="color:#999;">Country</label>
+              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Country</label>
               <input v-model="form.country" type="text" placeholder="Pakistan"
-                class="w-full px-4 py-2.5 rounded-lg text-sm outline-none transition-all"
-                style="background:#F6F6F6; border:1px solid #E2E2E2; color:#171717;"
-                onfocus="this.style.borderColor='#46B37E'; this.style.background='#fff'"
-                onblur="this.style.borderColor='#E2E2E2'; this.style.background='#F6F6F6'">
+                class="w-full px-3 py-2 border border-border bg-app-bg rounded text-sm outline-none focus:border-text-primary focus:bg-card-bg text-text-primary placeholder:text-text-muted"
+              >
             </div>
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style="color:#999;">Fiscal Year Start</label>
+              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Fiscal Year Start</label>
               <input v-model="form.fiscalYearStart" type="date" required
-                class="w-full px-4 py-2.5 rounded-lg text-sm outline-none transition-all"
-                style="background:#F6F6F6; border:1px solid #E2E2E2; color:#171717;"
-                onfocus="this.style.borderColor='#46B37E'; this.style.background='#fff'"
-                onblur="this.style.borderColor='#E2E2E2'; this.style.background='#F6F6F6'">
+                class="w-full px-3 py-2 border border-border bg-app-bg rounded text-sm outline-none focus:border-text-primary focus:bg-card-bg text-text-primary"
+              >
             </div>
           </div>
 
           <!-- Info Box -->
-          <div class="p-4 rounded-lg" style="background:#EDFBF4; border:1px solid #c6f0db;">
-            <p class="text-xs font-semibold flex items-center gap-2" style="color:#278F5E;">
-              <span>🇵🇰</span> Pakistani Context Active
-            </p>
-            <p class="text-[10px] mt-1" style="color:#46B37E;">
-              Defaulted to PKR and July-June fiscal cycle. NTN field added for tax compliance.
+          <div class="p-4 rounded border border-border bg-hover-bg/30">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-text-secondary">Contextual Setup</p>
+            <p class="text-[10px] mt-1 text-text-muted">
+              Defaulting to PKR and local fiscal cycles. Tax IDs will be used for reporting.
             </p>
           </div>
 
           <!-- Submit -->
           <button type="submit" :disabled="loading"
-            class="w-full py-3 rounded-lg text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-50 mt-2"
-            style="background:#46B37E; color:#fff; box-shadow:0 2px 8px rgba(70,179,126,0.3);"
-            onmouseover="this.style.background='#278F5E'"
-            onmouseout="this.style.background='#46B37E'">
-            {{ loading ? 'Initializing...' : 'Create Company' }}
+            class="w-full py-2.5 rounded text-sm font-bold transition-all disabled:opacity-50 mt-2 bg-text-primary text-card-bg hover:opacity-90 uppercase tracking-widest"
+          >
+            {{ loading ? 'Initializing...' : (isExistingCompany ? 'Login to Company' : 'Create Company') }}
           </button>
 
         </form>
+
+        <!-- Existing Companies Section -->
+        <div v-if="companyStore.existingCompanies.length > 0" class="mt-10 pt-8 border-t border-border/50">
+          <p class="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Existing Companies</p>
+          <div class="space-y-2">
+            <button 
+              v-for="comp in companyStore.existingCompanies" 
+              :key="comp.id"
+              @click="selectCompany(comp)"
+              class="w-full text-left p-3 rounded-lg border border-border bg-hover-bg/30 hover:bg-hover-bg hover:border-text-muted transition-all flex items-center justify-between group"
+            >
+              <div>
+                <p class="text-sm font-bold text-text-primary group-hover:text-brand transition-colors">{{ comp.name }}</p>
+                <p class="text-[10px] text-text-muted mt-0.5">{{ comp.country }} • {{ comp.currency }}</p>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-muted group-hover:translate-x-1 transition-transform"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -105,17 +102,28 @@
 </style>
 
 <script setup lang="ts">
-import { reactive, ref, toRaw, onMounted } from 'vue';
+import { reactive, ref, toRaw, onMounted, computed } from 'vue';
 import { useCompanyStore } from '../stores/company';
-import { wipeDatabase } from '../db/database';
 
 const companyStore = useCompanyStore();
 const loading = ref(false);
 
-onMounted(() => {
-    // Aggressively clear old tests so the user starts with 0 items, 0 parties, 0 bills
-    wipeDatabase();
+onMounted(async () => {
+    // We no longer aggressively clear old tests so that the user doesn't lose data upon logout.
+    await companyStore.fetchCompanies();
 });
+
+const isExistingCompany = computed(() => {
+  return companyStore.existingCompanies.some(c => c.name.toLowerCase() === form.name.toLowerCase());
+});
+
+function selectCompany(comp: any) {
+  form.name = comp.name;
+  form.currency = comp.currency;
+  form.country = comp.country;
+  form.ntn = comp.ntn || '';
+  // Trigger setup immediately or just let them click the button
+}
 
 // Default fiscal year start: July 1st of current year
 const currentYear = new Date().getFullYear();

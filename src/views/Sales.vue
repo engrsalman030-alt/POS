@@ -1,159 +1,110 @@
 <template>
-  <div class="p-8 max-w-6xl mx-auto" style="font-family:'Inter',sans-serif;">
+  <div class="p-8 max-w-6xl mx-auto font-sans">
 
-    <header class="flex justify-between items-center mb-8">
+    <!-- Header -->
+    <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-4 border-b border-border">
       <div>
-        <h1 class="text-2xl font-bold" style="color:#171717;">Sales Invoices</h1>
-        <p class="text-sm mt-1" style="color:#999;">Issue invoices to customers and track receivables.</p>
+        <h1 class="text-2xl font-bold text-text-primary">Sales Invoices</h1>
+        <p class="text-sm mt-1 text-text-secondary">Issue invoices to customers and track receivables.</p>
       </div>
       <button @click="showModal = true"
-        class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-        style="background:#46B37E; color:#fff; box-shadow:0 2px 8px rgba(70,179,126,0.3);"
-        onmouseover="this.style.background='#278F5E'"
-        onmouseout="this.style.background='#46B37E'">
+        class="w-full sm:w-auto px-4 py-2 rounded text-sm font-bold transition-all bg-text-primary text-card-bg hover:opacity-90">
         + Create Invoice
       </button>
     </header>
 
-    <div class="rounded-xl overflow-hidden" style="background:#fff; border:1px solid #E2E2E2;">
-      <table class="w-full text-left">
-        <thead style="background:#F6F6F6; border-bottom:1px solid #E2E2E2;">
-          <tr>
-            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest" style="color:#C7C7C7;">Date</th>
-            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest" style="color:#C7C7C7;">Customer</th>
-            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest" style="color:#C7C7C7;">Status</th>
-            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-right" style="color:#C7C7C7;">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="inv in transactionStore.invoices" :key="inv.id"
-            class="text-sm transition-colors"
-            style="border-bottom:1px solid #F6F6F6;"
-            onmouseover="this.style.background='#F6F6F6'"
-            onmouseout="this.style.background='transparent'">
-            <td class="px-6 py-4 font-mono text-xs" style="color:#999;">{{ inv.date }}</td>
-            <td class="px-6 py-4 font-semibold" style="color:#171717;">{{ getCustomerName(inv.customer_id) }}</td>
-            <td class="px-6 py-4">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                style="background:#EDFBF4; color:#278F5E;">{{ inv.status }}</span>
-            </td>
-            <td class="px-6 py-4 text-right font-bold" style="color:#171717;">{{ formatCurrency(inv.total_amount) }}</td>
-          </tr>
-          <tr v-if="transactionStore.invoices.length === 0">
-            <td colspan="4" class="px-6 py-20 text-center text-sm" style="color:#C7C7C7;">No invoices found.</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="space-y-6">
+      <!-- Professional List UI -->
+      <div class="grid grid-cols-1 gap-4">
+        <div v-for="inv in paginatedInvoices" :key="inv.id" 
+          @click="openDetail(inv)"
+          class="group bg-card-bg border border-border rounded-2xl p-6 hover:shadow-xl hover:border-brand/30 transition-all cursor-pointer relative overflow-hidden">
+          
+          <!-- Background Accent -->
+          <div class="absolute top-0 right-0 w-32 h-32 bg-brand/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+          
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-hover-bg flex items-center justify-center font-black text-brand text-xs shadow-sm border border-border/50">
+                INV
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                   <h3 class="font-black text-sm text-text-primary uppercase tracking-tight">{{ getCustomerName(inv.customer_id) }}</h3>
+                   <span :class="['px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border', 
+                      inv.status === 'Paid' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                      inv.status === 'Submitted' ? 'bg-brand/10 text-brand border-brand/20' : 
+                      'bg-hover-bg text-text-muted border-border']">
+                     {{ inv.status }}
+                   </span>
+                </div>
+                <p class="text-[10px] text-text-muted font-bold mt-0.5 font-mono">{{ inv.date || 'No Date' }} • Ref: {{ (inv.id || 'xxxx').split('-')[0]?.toUpperCase() }}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end">
+              <div class="text-right">
+                <p class="text-[9px] font-black uppercase tracking-[0.15em] text-text-muted mb-0.5">Total Amount</p>
+                <p class="text-lg font-black text-text-primary tracking-tighter">{{ formatCurrency(inv.total_amount) }}</p>
+              </div>
+              <button class="w-10 h-10 rounded-xl bg-hover-bg flex items-center justify-center text-text-muted hover:bg-brand hover:text-white transition-all active:scale-90">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div v-if="paginatedInvoices.length === 0" class="py-20 text-center bg-card-bg border border-dashed border-border rounded-3xl">
+           <p class="text-sm font-bold text-text-muted">No sales invoices found.</p>
+        </div>
+      </div>
+      
+      <!-- Pagination Component -->
+      <Pagination 
+        :currentPage="currentPage" 
+        :totalPages="totalPages" 
+        @next="nextPage" 
+        @prev="prevPage"
+        @setPage="setPage"
+      />
     </div>
 
-    <!-- Modal -->
-    <div v-if="showModal" class="fixed inset-0 flex items-center justify-center p-6 z-50"
-      style="background:rgba(23,23,23,0.5); backdrop-filter:blur(4px);">
-      <div class="w-full max-w-4xl flex flex-col overflow-hidden rounded-xl shadow-2xl"
-        style="background:#fff; max-height:90vh;">
+    <!-- Invoice Detail Modal -->
+    <div v-if="showDetailModal && selectedInvoice" class="fixed inset-0 flex items-center justify-center p-6 z-[100] bg-black/40 backdrop-blur-[4px] overflow-y-auto">
+      <div class="animate-in fade-in zoom-in duration-300 w-full flex justify-center py-10">
+        <InvoiceDetail 
+          :invoice="selectedInvoice" 
+          :customerName="getCustomerName(selectedInvoice.customer_id)"
+          @close="showDetailModal = false"
+        />
+      </div>
+    </div>
 
-        <div class="px-6 py-4 flex justify-between items-center" style="background:#F6F6F6; border-bottom:1px solid #E2E2E2;">
-          <h3 class="font-bold text-base" style="color:#171717;">New Sales Invoice</h3>
-          <button @click="showModal = false" style="color:#999; font-size:20px;"
-            onmouseover="this.style.color='#171717'" onmouseout="this.style.color='#999'">×</button>
+    <!-- Create Invoice Modal -->
+    <div v-if="showModal" class="fixed inset-0 flex items-center justify-center p-6 z-[100] bg-black/40 backdrop-blur-[4px] overflow-y-auto">
+      <div class="w-full max-w-5xl my-auto rounded-3xl overflow-hidden border border-border shadow-2xl animate-in fade-in zoom-in duration-300 bg-app-bg">
+
+        <div class="px-8 py-6 flex justify-between items-center bg-card-bg border-b border-border">
+          <div class="flex items-center gap-4">
+             <div class="w-12 h-12 bg-text-primary text-card-bg rounded-2xl flex items-center justify-center shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="8" x2="16" y1="10" y2="10"/><line x1="8" x2="12" y1="14" y2="14"/></svg>
+             </div>
+             <div>
+               <h3 class="font-black text-xl text-text-primary">New Sales Invoice</h3>
+               <p class="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mt-0.5">ERP General Ledger Impact</p>
+             </div>
+          </div>
+          <button @click="showModal = false" class="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-hover-bg text-text-muted hover:text-rose-500 transition-all active:scale-95">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
         </div>
 
-        <form @submit.prevent="handleSave" class="flex-1 overflow-y-auto p-8 space-y-8">
-          <div class="grid grid-cols-2 gap-6">
-            <div>
-              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style="color:#999;">Customer</label>
-              <select v-model="form.customer_id" required
-                class="w-full px-4 py-2.5 rounded-lg text-sm outline-none"
-                style="background:#F6F6F6; border:1px solid #E2E2E2; color:#171717;"
-                onfocus="this.style.borderColor='#46B37E'" onblur="this.style.borderColor='#E2E2E2'">
-                <option value="">Select Customer</option>
-                <option v-for="c in partyStore.customers" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style="color:#999;">Date</label>
-              <input v-model="form.date" type="date" required
-                class="w-full px-4 py-2.5 rounded-lg text-sm outline-none"
-                style="background:#F6F6F6; border:1px solid #E2E2E2; color:#171717;"
-                onfocus="this.style.borderColor='#46B37E'" onblur="this.style.borderColor='#E2E2E2'">
-            </div>
-          </div>
-
-          <div class="space-y-3">
-            <h4 class="text-[10px] font-bold uppercase tracking-widest" style="color:#999;">Line Items</h4>
-            <div class="rounded-xl p-6" style="background:#F6F6F6; border:1px solid #E2E2E2;">
-              <table class="w-full border-separate border-spacing-y-2">
-                <thead>
-                  <tr class="text-left">
-                    <th class="text-[10px] uppercase tracking-widest px-2 pb-2" style="color:#C7C7C7;">Item</th>
-                    <th class="text-[10px] uppercase tracking-widest px-2 pb-2 w-24" style="color:#C7C7C7;">Qty</th>
-                    <th class="text-[10px] uppercase tracking-widest px-2 pb-2 w-32" style="color:#C7C7C7;">Rate</th>
-                    <th class="text-[10px] uppercase tracking-widest px-2 pb-2 text-right" style="color:#C7C7C7;">Total</th>
-                    <th class="w-10"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(item, idx) in form.items" :key="idx">
-                    <td class="px-3 py-2.5 rounded-l-lg" style="background:#fff; border:1px solid #E2E2E2; border-right:none;">
-                      <select v-model="item.item_id" @change="onItemChange(idx)"
-                        class="w-full text-sm outline-none" style="background:transparent; color:#171717;">
-                        <option value="">Choose item...</option>
-                        <option v-for="i in inventoryStore.items" :key="i.id" :value="i.id">{{ i.name }}</option>
-                      </select>
-                    </td>
-                    <td class="px-3 py-2.5" style="background:#fff; border-top:1px solid #E2E2E2; border-bottom:1px solid #E2E2E2;">
-                      <input v-model.number="item.quantity" type="number"
-                        class="w-full text-sm outline-none text-center" style="background:transparent; color:#171717;">
-                    </td>
-                    <td class="px-3 py-2.5" style="background:#fff; border-top:1px solid #E2E2E2; border-bottom:1px solid #E2E2E2;">
-                      <input v-model.number="item.rate" type="number" step="0.01"
-                        class="w-full text-sm outline-none" style="background:transparent; color:#171717;">
-                    </td>
-                    <td class="px-3 py-2.5 text-right font-semibold text-sm" style="background:#fff; border-top:1px solid #E2E2E2; border-bottom:1px solid #E2E2E2; color:#171717;">
-                      {{ formatCurrency(item.quantity * item.rate) }}
-                    </td>
-                    <td class="px-2 py-2.5 text-center rounded-r-lg" style="background:#fff; border:1px solid #E2E2E2; border-left:none;">
-                      <button @click="removeItem(idx)" type="button" style="color:#E03636;">×</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <button @click="addItem" type="button"
-                class="mt-3 text-xs font-semibold transition-all"
-                style="color:#278F5E;"
-                onmouseover="this.style.color='#46B37E'"
-                onmouseout="this.style.color='#278F5E'">+ Add Line Item</button>
-            </div>
-          </div>
-
-          <div class="flex flex-col items-end gap-2 pt-6" style="border-top:1px solid #F0F0F0;">
-            <div class="flex justify-between w-64 items-center">
-              <span class="text-xs font-semibold uppercase" style="color:#999;">Subtotal</span>
-              <span class="text-lg font-bold" style="color:#171717;">{{ formatCurrency(total) }}</span>
-            </div>
-            <div class="flex justify-between w-64 items-center">
-              <span class="text-xs font-semibold uppercase" style="color:#999;">Taxes (0%)</span>
-              <span class="text-lg font-bold" style="color:#171717;">{{ formatCurrency(0) }}</span>
-            </div>
-            <div class="flex justify-between w-64 items-center p-4 rounded-lg mt-2"
-              style="background:#EDFBF4; border:1px solid #c6f0db;">
-              <span class="text-xs font-bold uppercase" style="color:#278F5E;">Grand Total</span>
-              <span class="text-xl font-bold" style="color:#278F5E;">{{ formatCurrency(total) }}</span>
-            </div>
-          </div>
-        </form>
-
-        <div class="px-6 py-4 flex gap-4" style="background:#F6F6F6; border-top:1px solid #E2E2E2;">
-          <button type="button" @click="showModal = false"
-            class="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
-            style="background:#fff; color:#525252; border:1px solid #E2E2E2;"
-            onmouseover="this.style.background='#F6F6F6'"
-            onmouseout="this.style.background='#fff'">Cancel</button>
-          <button @click="handleSave" :disabled="!isFormValid"
-            class="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30"
-            style="background:#46B37E; color:#fff; box-shadow:0 2px 8px rgba(70,179,126,0.3);"
-            onmouseover="this.style.background='#278F5E'"
-            onmouseout="this.style.background='#46B37E'">Save & Post to Ledger</button>
+        <div class="p-8 max-h-[85vh] overflow-y-auto custom-scrollbar">
+           <TransactionForm 
+             type="Sales"
+             @submit="handleSave" 
+             @cancel="showModal = false" 
+           />
         </div>
       </div>
     </div>
@@ -173,31 +124,33 @@ import { useTransactionStore } from '../stores/transactions';
 import { usePartyStore } from '../stores/parties';
 import { useInventoryStore } from '../stores/inventory';
 import { useCompanyStore } from '../stores/company';
+import { usePagination } from '../composables/usePagination';
+import Pagination from '../components/Pagination.vue';
+import TransactionForm from '../components/TransactionForm.vue';
+import InvoiceDetail from '../components/InvoiceDetail.vue';
 
 const transactionStore = useTransactionStore();
 const partyStore = usePartyStore();
 const inventoryStore = useInventoryStore();
 const companyStore = useCompanyStore();
 
+const { 
+    currentPage, 
+    totalPages, 
+    paginatedItems: paginatedInvoices, 
+    nextPage, 
+    prevPage, 
+    setPage 
+} = usePagination(computed(() => transactionStore.invoices), 10);
+
 const showModal = ref(false);
+const showDetailModal = ref(false);
+const selectedInvoice = ref<any>(null);
 
-const form = ref({
-    customer_id: '',
-    date: new Date().toISOString().split('T')[0],
-    items: [
-        { item_id: '', quantity: 1, rate: 0, total: 0 }
-    ],
-    tax_amount: 0,
-    total_amount: 0
-});
-
-const total = computed(() => {
-    return form.value.items.reduce((sum, i) => sum + (i.quantity * i.rate), 0);
-});
-
-const isFormValid = computed(() => {
-    return form.value.customer_id && form.value.items.length > 0 && form.value.items.every(i => i.item_id && i.quantity > 0);
-});
+function openDetail(inv: any) {
+  selectedInvoice.value = inv;
+  showDetailModal.value = true;
+}
 
 const route = useRoute();
 
@@ -212,38 +165,9 @@ onMounted(() => {
     }
 });
 
-function addItem() {
-    form.value.items.push({ item_id: '', quantity: 1, rate: 0, total: 0 });
-}
-
-function removeItem(idx: number) {
-    if (form.value.items.length > 1) {
-        form.value.items.splice(idx, 1);
-    }
-}
-
-function onItemChange(idx: number) {
-    const item = inventoryStore.items.find(i => i.id === form.value.items[idx].item_id);
-    if (item) {
-        form.value.items[idx].rate = item.sales_rate;
-    }
-}
-
-async function handleSave() {
-    await transactionStore.createInvoice({
-        ...form.value,
-        total_amount: total.value,
-        paid_amount: 0,
-        outstanding_amount: total.value
-    });
+async function handleSave(formData: any) {
+    await transactionStore.createInvoice(formData);
     showModal.value = false;
-    form.value = {
-        customer_id: '',
-        date: new Date().toISOString().split('T')[0],
-        items: [{ item_id: '', quantity: 1, rate: 0, total: 0 }],
-        tax_amount: 0,
-        total_amount: 0
-    };
 }
 
 function getCustomerName(id: string) {

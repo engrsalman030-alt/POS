@@ -1,10 +1,40 @@
 <template>
-  <div class="flex flex-col items-center justify-center p-6 bg-white rounded-2xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
-    <div :class="['w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-xl', colorClasses]">
-      {{ icon }}
+  <div class="p-5 bg-card-bg rounded-xl border border-border shadow-sm hover:shadow-md transition-all group flex flex-col h-full">
+    <div class="flex justify-between items-start mb-4">
+      <div>
+        <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">{{ title }}</p>
+        <h3 class="text-2xl font-bold text-text-primary tracking-tight">{{ formattedValue }}</h3>
+      </div>
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center border border-border bg-hover-bg transition-colors group-hover:border-text-primary">
+        <span class="text-sm">{{ icon }}</span>
+      </div>
     </div>
-    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">{{ title }}</p>
-    <p class="text-2xl font-black text-slate-900 mt-1">{{ formattedValue }}</p>
+    
+    <div class="mt-auto pt-4 flex items-end justify-between gap-4">
+      <!-- Sparkline SVG -->
+      <div v-if="trend && trend.length > 1" class="flex-1 h-12">
+        <svg class="w-full h-full overflow-visible" preserveAspectRatio="none">
+          <path
+            :d="pathData"
+            fill="none"
+            :stroke="trendColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+      <div v-else class="h-12 flex items-center text-[10px] text-text-muted italic">
+        No trend data
+      </div>
+      
+      <div v-if="percentageChange !== null" class="text-right shrink-0">
+        <p :class="['text-[10px] font-bold', percentageChange >= 0 ? 'text-emerald-500' : 'text-rose-500']">
+          {{ percentageChange >= 0 ? '+' : '' }}{{ percentageChange.toFixed(1) }}%
+        </p>
+        <p class="text-[8px] text-text-muted uppercase font-black mt-0.5">vs last period</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -16,25 +46,49 @@ const props = defineProps<{
   title: string;
   value: number;
   icon: string;
-  color: 'emerald' | 'indigo' | 'rose' | 'amber';
+  trend?: number[];
 }>();
 
 const companyStore = useCompanyStore();
 
 const formattedValue = computed(() => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-PK', {
     style: 'currency',
-    currency: companyStore.company?.currency || 'USD'
+    currency: companyStore.company?.currency || 'PKR',
+    minimumFractionDigits: 0
   }).format(props.value || 0);
 });
 
-const colorClasses = computed(() => {
-  const maps = {
-    emerald: 'bg-emerald-50 text-emerald-600',
-    indigo: 'bg-indigo-50 text-indigo-600',
-    rose: 'bg-rose-50 text-rose-600',
-    amber: 'bg-amber-50 text-amber-600'
-  };
-  return maps[props.color];
+const percentageChange = computed(() => {
+  if (!props.trend || props.trend.length < 2) return null;
+  const oldVal = props.trend[0] ?? 0;
+  const newVal = props.trend[props.trend.length - 1] ?? 0;
+  if (oldVal === 0) return newVal === 0 ? 0 : 100;
+  return ((newVal - oldVal) / Math.abs(oldVal)) * 100;
+});
+
+const trendColor = computed(() => {
+  if (percentageChange.value === null) return '#E2E2E2';
+  return percentageChange.value >= 0 ? '#10B981' : '#F43F5E';
+});
+
+const pathData = computed(() => {
+  if (!props.trend || props.trend.length < 2) return '';
+  
+  const height = 40; // Reference height
+  const points = props.trend;
+  const max = Math.max(...points, 1);
+  const min = Math.min(...points, 0);
+  const range = max - min || 1;
+
+  return points.map((val, i) => {
+    const x = (i / (points.length - 1)) * 100;
+    const y = height - ((val - min) / range) * height;
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
 });
 </script>
+
+<style scoped>
+/* SVG styles */
+</style>

@@ -8,11 +8,43 @@ export const useInventoryStore = defineStore('inventory', {
         items: [] as Item[]
     }),
     actions: {
+        // Actions
         async fetchItems() {
             this.items = query('SELECT * FROM items ORDER BY name ASC') as unknown as Item[];
         },
-        async addItem(item: Omit<Item, 'id' | 'stock_quantity' | 'stock_value' | 'is_active'>) {
-            await InventoryService.addItem(item as any);
+        async addItem(item: Omit<Item, 'id' | 'stock_quantity' | 'stock_value' | 'is_active'>, openingQuantity: number = 0) {
+            const newItemId = await InventoryService.addItem(item as any);
+
+            if (openingQuantity > 0) {
+                await InventoryService.recordStockTransaction({
+                    item_id: newItemId,
+                    date: new Date().toISOString(),
+                    type: 'In',
+                    quantity: openingQuantity,
+                    rate: item.purchase_rate || 0,
+                    value: openingQuantity * (item.purchase_rate || 0),
+                    reference_type: 'Opening Stock',
+                    reference_id: crypto.randomUUID()
+                });
+            }
+
+            await this.fetchItems();
+        },
+        async updateItem(item: Item) {
+            await InventoryService.updateItem(item);
+            await this.fetchItems();
+        },
+        async addStock(itemId: string, quantity: number, rate: number = 0) {
+            await InventoryService.recordStockTransaction({
+                item_id: itemId,
+                date: new Date().toISOString(),
+                type: 'In',
+                quantity: quantity,
+                rate: rate,
+                value: quantity * rate,
+                reference_type: 'Manual Adjustment',
+                reference_id: crypto.randomUUID()
+            });
             await this.fetchItems();
         }
     }
