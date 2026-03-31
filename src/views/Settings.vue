@@ -99,7 +99,7 @@
             
             <div class="pt-4 border-t border-border mt-2">
               <button @click="handleResetData" 
-                class="w-full px-4 py-2 border rounded text-sm font-bold transition-all bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100 uppercase tracking-widest">
+                class="w-full px-4 py-2 border rounded text-sm font-bold transition-all bg-danger-bg border-danger/20 text-danger hover:bg-danger/20 uppercase tracking-widest">
                 Reset Application Data
               </button>
               <p class="text-[10px] text-text-muted mt-2 text-center italic">This will delete all your local data permanently.</p>

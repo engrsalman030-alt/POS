@@ -131,6 +131,7 @@ CREATE TABLE IF NOT EXISTS stock_ledger (
   date TEXT NOT NULL,
   type TEXT NOT NULL, -- In, Out
   quantity REAL NOT NULL,
+  bonus_quantity REAL DEFAULT 0,
   rate REAL NOT NULL,
   value REAL NOT NULL,
   reference_type TEXT,
@@ -154,6 +155,8 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   total_amount REAL DEFAULT 0,
   paid_amount REAL DEFAULT 0,
   outstanding_amount REAL DEFAULT 0,
+  sales_manager TEXT,
+  frappe_reference TEXT,
   shift_id TEXT,
   FOREIGN KEY (customer_id) REFERENCES parties(id),
   FOREIGN KEY (shift_id) REFERENCES shifts(id)
@@ -164,6 +167,9 @@ CREATE TABLE IF NOT EXISTS sales_invoice_items (
   invoice_id TEXT NOT NULL,
   item_id TEXT,
   quantity REAL DEFAULT 0,
+  bonus_quantity REAL DEFAULT 0,
+  batch_number TEXT,
+  expiry_date TEXT,
   rate REAL DEFAULT 0,
   tax_id TEXT,
   tax_amount REAL DEFAULT 0,
@@ -182,6 +188,8 @@ CREATE TABLE IF NOT EXISTS purchase_bills (
   total_amount REAL DEFAULT 0,
   paid_amount REAL DEFAULT 0,
   outstanding_amount REAL DEFAULT 0,
+  sales_manager TEXT,
+  frappe_reference TEXT,
   FOREIGN KEY (supplier_id) REFERENCES parties(id)
 );
 
@@ -190,6 +198,9 @@ CREATE TABLE IF NOT EXISTS purchase_bill_items (
   bill_id TEXT NOT NULL,
   item_id TEXT,
   quantity REAL DEFAULT 0,
+  bonus_quantity REAL DEFAULT 0,
+  batch_number TEXT,
+  expiry_date TEXT,
   rate REAL DEFAULT 0,
   tax_id TEXT,
   tax_amount REAL DEFAULT 0,
@@ -290,9 +301,24 @@ export async function getDb(): Promise<Database> {
     { table: 'parties', column: 'notes', type: 'TEXT' },
     { table: 'parties', column: 'tags', type: 'TEXT' },
     
+    // Transaction items migrations
+    { table: 'sales_invoice_items', column: 'bonus_quantity', type: 'REAL DEFAULT 0' },
+    { table: 'sales_invoice_items', column: 'batch_number', type: 'TEXT' },
+    { table: 'sales_invoice_items', column: 'expiry_date', type: 'TEXT' },
+    { table: 'purchase_bill_items', column: 'bonus_quantity', type: 'REAL DEFAULT 0' },
+    { table: 'purchase_bill_items', column: 'batch_number', type: 'TEXT' },
+    { table: 'purchase_bill_items', column: 'expiry_date', type: 'TEXT' },
+    { table: 'stock_ledger', column: 'bonus_quantity', type: 'REAL DEFAULT 0' },
+    
     // Shift migrations
     { table: 'sales_invoices', column: 'shift_id', type: 'TEXT' },
     { table: 'payments', column: 'shift_id', type: 'TEXT' },
+    
+    // Distribution Metadata migrations
+    { table: 'sales_invoices', column: 'sales_manager', type: 'TEXT' },
+    { table: 'sales_invoices', column: 'frappe_reference', type: 'TEXT' },
+    { table: 'purchase_bills', column: 'sales_manager', type: 'TEXT' },
+    { table: 'purchase_bills', column: 'frappe_reference', type: 'TEXT' },
   ];
 
   for (const m of migrations) {

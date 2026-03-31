@@ -11,12 +11,17 @@ export interface PurchaseBill {
     total_amount: number;
     paid_amount: number;
     outstanding_amount: number;
+    sales_manager?: string;
+    frappe_reference?: string;
 }
 
 export interface PurchaseBillItem {
     id: string;
     item_id: string;
     quantity: number;
+    bonus_quantity?: number;
+    batch_number?: string;
+    expiry_date?: string;
     rate: number;
     tax_id?: string;
     tax_amount: number;
@@ -37,12 +42,17 @@ export interface SalesInvoice {
     outstanding_amount: number;
     shift_id?: string; // Linking invoice to shift
     notes?: string;
+    sales_manager?: string;
+    frappe_reference?: string;
 }
 
 export interface SalesInvoiceItem {
     id: string;
     item_id: string;
     quantity: number;
+    bonus_quantity?: number;
+    batch_number?: string;
+    expiry_date?: string;
     rate: number;
     tax_id?: string;
     tax_amount: number;

@@ -1,5 +1,5 @@
 <template>
-  <div class="invoice-detail bg-white dark:bg-card-bg rounded-3xl overflow-hidden shadow-2xl border border-border max-w-4xl w-full mx-auto font-sans text-text-primary">
+  <div class="invoice-detail bg-card-bg rounded-3xl overflow-hidden shadow-2xl border border-border max-w-4xl w-full mx-auto font-sans text-text-primary">
     
     <!-- Professional Header -->
     <header class="p-8 border-b border-border bg-hover-bg/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -39,17 +39,19 @@
               </span>
             </div>
             <p v-if="invoice.reference" class="text-[10px] font-black uppercase tracking-widest text-text-secondary">Ref: {{ invoice.reference }}</p>
+            <p v-if="invoice.sales_manager" class="text-[10px] font-black uppercase tracking-widest text-text-secondary">Manager: {{ invoice.sales_manager }}</p>
+            <p v-if="invoice.frappe_reference" class="text-[10px] font-black uppercase tracking-widest text-emerald-600">FR: {{ invoice.frappe_reference }}</p>
           </div>
         </div>
       </div>
 
       <!-- Items Table -->
       <div class="rounded-3xl border border-border overflow-hidden bg-hover-bg/10">
-        <table class="w-full text-left">
+        <table class="w-full text-left border-collapse">
           <thead class="bg-hover-bg border-b border-border">
             <tr>
               <th class="py-5 px-6 text-[10px] font-black uppercase tracking-widest text-text-muted">Item Description</th>
-              <th class="py-5 px-4 text-[10px] font-black uppercase tracking-widest text-text-muted text-center w-24">Qty</th>
+              <th class="py-5 px-4 text-[10px] font-black uppercase tracking-widest text-text-muted text-center w-32 tracking-tighter">Billed + Bonus</th>
               <th class="py-5 px-4 text-[10px] font-black uppercase tracking-widest text-text-muted text-right w-32">Rate</th>
               <th class="py-5 px-6 text-[10px] font-black uppercase tracking-widest text-text-muted text-right w-40">Amount</th>
             </tr>
@@ -58,11 +60,14 @@
             <tr v-for="item in invoice.items" :key="item.item_id" class="group hover:bg-hover-bg/30 transition-colors">
               <td class="py-5 px-6">
                 <p class="text-sm font-black text-text-primary">{{ getItemName(item) }}</p>
-                <p v-if="getItemDescription(item)" class="text-[10px] text-text-muted font-bold mt-1 italic line-clamp-2">{{ getItemDescription(item) }}</p>
+                <p v-if="item.batch_number" class="text-[10px] text-emerald-600 font-bold mt-1">Batch: {{ item.batch_number }} <span v-if="item.expiry_date" class="text-text-muted ml-2">Exp: {{ item.expiry_date }}</span></p>
                 <p class="text-[9px] text-text-muted font-bold mt-0.5 uppercase tracking-tighter">SKU: {{ item.item_id.slice(0,6) }}</p>
               </td>
               <td class="py-5 px-4 text-center">
-                <span class="text-xs font-black text-text-secondary tabular-nums">{{ item.quantity }}</span>
+                <div class="inline-flex flex-col items-center">
+                  <span class="text-xs font-black text-text-secondary tabular-nums">{{ item.quantity }}</span>
+                  <span v-if="item.bonus_quantity > 0" class="text-[9px] font-black text-emerald-600 tabular-nums animate-in fade-in transition-all">+{{ item.bonus_quantity }} Bonus</span>
+                </div>
               </td>
               <td class="py-5 px-4 text-right">
                 <span class="text-xs font-bold text-text-secondary tabular-nums">{{ formatCurrency(item.rate) }}</span>
@@ -78,19 +83,23 @@
       <!-- Footer Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-end pt-4">
         <div class="bg-hover-bg/20 p-6 rounded-2xl border border-border border-dashed">
-          <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mb-3 italic">Notes</h4>
+          <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mb-3 italic">Notes / Remarks</h4>
           <p class="text-[11px] text-text-secondary leading-relaxed italic font-medium">
             {{ invoice.notes || 'No terms or internal notes provided for this transaction.' }}
           </p>
+          <div v-if="invoice.frappe_reference" class="mt-4 pt-4 border-t border-border border-dashed">
+             <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Frappe Books Ref</p>
+             <p class="text-xs font-bold text-text-primary mt-1">{{ invoice.frappe_reference }}</p>
+          </div>
         </div>
         <div class="space-y-4">
            <div class="flex justify-between items-center px-4">
               <span class="text-xs font-bold text-text-muted uppercase tracking-widest">Subtotal</span>
               <span class="text-xs font-black text-text-secondary tabular-nums">{{ formatCurrency(invoice.total_amount + (invoice.discount_amount || 0) - (invoice.tax_amount || 0)) }}</span>
            </div>
-           <div v-if="invoice.tax_amount > 0" class="flex justify-between items-center px-4">
-              <span class="text-xs font-bold text-text-muted uppercase tracking-widest">Tax (0%)</span>
-              <span class="text-xs font-black text-emerald-500 tabular-nums">+{{ formatCurrency(invoice.tax_amount) }}</span>
+           <div v-if="totalBonusUnits > 0" class="flex justify-between items-center px-4">
+              <span class="text-xs font-bold text-emerald-600 uppercase tracking-widest">Total Bonus</span>
+              <span class="text-xs font-black text-emerald-600 tabular-nums">{{ totalBonusUnits }} Units</span>
            </div>
            <div v-if="invoice.discount_amount > 0" class="flex justify-between items-center px-4">
               <span class="text-xs font-bold text-text-muted uppercase tracking-widest">Discount</span>
@@ -121,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useCompanyStore } from '../stores/company';
 import { useInventoryStore } from '../stores/inventory';
 
@@ -135,6 +144,10 @@ const emit = defineEmits(['close']);
 const companyStore = useCompanyStore();
 const inventoryStore = useInventoryStore();
 
+const totalBonusUnits = computed(() => {
+  return props.invoice.items.reduce((sum: number, item: any) => sum + (item.bonus_quantity || 0), 0);
+});
+
 onMounted(() => {
   inventoryStore.fetchItems();
 });
@@ -145,10 +158,6 @@ function getItemInfo(itemId: string) {
 
 function getItemName(item: any) {
   return item.name || getItemInfo(item.item_id)?.name || 'Unknown Item';
-}
-
-function getItemDescription(item: any) {
-  return getItemInfo(item.item_id)?.notes || '';
 }
 
 function formatCurrency(val: number) {
@@ -173,87 +182,101 @@ function handlePrint() {
           <title>Invoice #${props.invoice.id.slice(0, 8)}</title>
           <script src="https://cdn.tailwindcss.com"><\/script>
           <style>
+             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
             @media print {
-              @page { margin: 20mm; }
-              body { -webkit-print-color-adjust: exact; }
+              @page { margin: 15mm; }
+              body { -webkit-print-color-adjust: exact; font-family: 'Inter', sans-serif; }
             }
           </style>
         </head>
-        <body class="bg-white p-10 font-sans">
-          <div class="max-w-4xl mx-auto border-2 border-black p-10">
-             <div class="flex justify-between items-start border-b-4 border-black pb-8 mb-10">
+        <body class="bg-white p-6">
+          <div class="max-w-4xl mx-auto border-2 border-slate-900 p-8 rounded-3xl">
+             <div class="flex justify-between items-start border-b-4 border-slate-900 pb-6 mb-8">
                 <div>
-                  <h1 class="text-4xl font-black uppercase tracking-tighter">${companyStore.company?.name || 'VTS SOLUTIONS'}</h1>
-                  <p class="text-sm font-bold text-gray-600 mt-2">${companyStore.company?.address || 'Main POS Terminal'}</p>
+                  <h1 class="text-3xl font-black uppercase tracking-tighter">${companyStore.company?.name || 'VTS SOLUTIONS'}</h1>
+                  <p class="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">${companyStore.company?.address || 'Main POS Terminal'}</p>
                 </div>
                 <div class="text-right">
-                  <h2 class="text-6xl font-black text-gray-100 uppercase tracking-widest leading-none mb-4">INVOICE</h2>
-                  <p class="text-xl font-black uppercase">#${props.invoice.id.slice(0, 8).toUpperCase()}</p>
-                  <p class="text-sm font-bold text-gray-500 mt-1">${props.invoice.date}</p>
+                  <h2 class="text-5xl font-black text-slate-100 uppercase tracking-widest leading-none mb-2">INVOICE</h2>
+                  <p class="text-lg font-black uppercase">#${props.invoice.id.slice(0, 8).toUpperCase()}</p>
+                  <p class="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">${props.invoice.date}</p>
                 </div>
              </div>
 
-             <div class="grid grid-cols-2 gap-20 mb-16">
+             <div class="grid grid-cols-2 gap-10 mb-10">
                 <div>
-                   <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Billed To:</h4>
-                   <h3 class="text-2xl font-black">${props.customerName}</h3>
-                   <p class="text-gray-600 mt-1 italic">Customer Status: Verified</p>
+                   <h4 class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 italic">Billed To:</h4>
+                   <h3 class="text-xl font-black text-emerald-700">${props.customerName}</h3>
+                   <div class="mt-4 space-y-1">
+                      ${props.invoice.sales_manager ? `<p class="text-[10px] font-bold text-slate-600">Sales Manager: ${props.invoice.sales_manager}</p>` : ''}
+                      ${props.invoice.frappe_reference ? `<p class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Ref: ${props.invoice.frappe_reference}</p>` : ''}
+                   </div>
                 </div>
                 <div class="text-right">
-                   <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Reference:</h4>
-                   <p class="text-lg font-bold">${props.invoice.reference || 'SYSTEM-POS'}</p>
+                   <h4 class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 italic">Reference:</h4>
+                   <p class="text-base font-black text-slate-900">${props.invoice.reference || 'SYSTEM-POS'}</p>
                 </div>
              </div>
 
-             <table class="w-full text-sm mb-16">
-                <thead class="bg-black text-white">
-                   <tr>
-                      <th class="py-4 px-6 text-left font-black uppercase">Description</th>
-                      <th class="py-4 px-6 text-center font-black uppercase">Qty</th>
-                      <th class="py-4 px-6 text-right font-black uppercase">Price</th>
-                      <th class="py-4 px-6 text-right font-black uppercase">Total</th>
-                   </tr>
+             <table class="w-full text-xs mb-10">
+                <thead class="bg-slate-900 text-white">
+                    <tr>
+                       <th class="py-3 px-4 text-left font-black uppercase tracking-widest">Description</th>
+                       <th class="py-3 px-4 text-center font-black uppercase tracking-widest">Billed + Bonus</th>
+                       <th class="py-3 px-4 text-right font-black uppercase tracking-widest">Price</th>
+                       <th class="py-3 px-4 text-right font-black uppercase tracking-widest">Total</th>
+                    </tr>
                 </thead>
-                <tbody class="divide-y-2 divide-gray-100">
+                <tbody class="divide-y-2 divide-slate-100">
                    ${props.invoice.items.map((i: any) => `
-                     <tr>
-                        <td class="py-6 px-6 font-bold">
-                           <div class="text-lg">${getItemName(i)}</div>
-                           ${getItemDescription(i) ? `<div class="text-xs text-gray-500 font-medium italic mt-1">${getItemDescription(i)}</div>` : ''}
-                        </td>
-                        <td class="py-6 px-6 text-center font-mono">${i.quantity}</td>
-                        <td class="py-6 px-6 text-right font-mono">${formatCurrency(i.rate)}</td>
-                        <td class="py-6 px-6 text-right font-black">${formatCurrency(i.total)}</td>
-                     </tr>
+                      <tr>
+                         <td class="py-4 px-4 font-bold">
+                            <div class="text-sm font-black">${getItemName(i)}</div>
+                            ${i.batch_number ? `<div class="text-[9px] text-emerald-600 font-bold mt-1 uppercase">Batch: ${i.batch_number} ${i.expiry_date ? `<span class="text-slate-400 ml-2">Exp: ${i.expiry_date}</span>` : ''}</div>` : ''}
+                         </td>
+                         <td class="py-4 px-4 text-center">
+                            <div class="font-mono font-bold text-sm">${i.quantity}</div>
+                            ${i.bonus_quantity ? `<div class="text-[9px] text-emerald-600 font-black">+${i.bonus_quantity} BONUS</div>` : ''}
+                         </td>
+                         <td class="py-4 px-4 text-right font-mono font-bold">${formatCurrency(i.rate)}</td>
+                         <td class="py-4 px-4 text-right font-black text-slate-900">${formatCurrency(i.total)}</td>
+                      </tr>
                    `).join('')}
                 </tbody>
              </table>
 
-             <div class="flex justify-end">
-                <div class="w-80 space-y-4">
-                   <div class="flex justify-between font-bold text-gray-600">
+             <div class="flex justify-end pt-6 border-t-2 border-slate-100">
+                <div class="w-72 space-y-3">
+                   <div class="flex justify-between font-bold text-slate-500 text-[11px] uppercase tracking-widest">
                       <span>Subtotal</span>
-                      <span>${formatCurrency(props.invoice.total_amount + (props.invoice.discount_amount || 0))}</span>
+                      <span class="text-slate-900">${formatCurrency(props.invoice.total_amount + (props.invoice.discount_amount || 0))}</span>
                    </div>
-                   <div class="flex justify-between font-bold text-red-500">
+                   ${totalBonusUnits.value > 0 ? `
+                   <div class="flex justify-between font-bold text-emerald-600 text-[11px] uppercase tracking-widest">
+                      <span>Total Bonus</span>
+                      <span>${totalBonusUnits.value} Units</span>
+                   </div>
+                   ` : ''}
+                   <div class="flex justify-between font-bold text-rose-500 text-[11px] uppercase tracking-widest">
                       <span>Discount</span>
                       <span>-${formatCurrency(props.invoice.discount_amount || 0)}</span>
                    </div>
-                   <div class="pt-6 border-t-4 border-black flex justify-between items-center">
-                      <span class="text-2xl font-black uppercase">Total Amount</span>
-                      <span class="text-3xl font-black text-blue-600">${formatCurrency(props.invoice.total_amount)}</span>
+                   <div class="pt-4 border-t-4 border-slate-900 flex justify-between items-center">
+                      <span class="text-lg font-black uppercase tracking-tighter">Grand Total</span>
+                      <span class="text-2xl font-black text-emerald-700 tabular-nums">${formatCurrency(props.invoice.total_amount)}</span>
                    </div>
                 </div>
              </div>
 
-             <div class="mt-20 pt-10 border-t border-gray-200 text-center">
-                <p class="text-xs font-black text-gray-400 uppercase tracking-[0.4em]">Thank you for your business</p>
+             <div class="mt-16 pt-6 border-t border-slate-100 text-center">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Professional Pharmacy Distribution Receipt</p>
              </div>
           </div>
 
           <script>
             window.onload = function() {
               window.print();
+              setTimeout(() => { window.close(); }, 500);
             };
           <\/script>
         </body>

@@ -60,11 +60,39 @@
        <p class="text-sm font-medium text-text-muted">No {{ filter.toLowerCase() }}s found matching your criteria.</p>
     </div>
 
+    <!-- Payment Modal -->
+    <div v-if="showPaymentModal" class="fixed inset-0 flex items-center justify-center p-6 z-[100] bg-black/40 backdrop-blur-[4px] overflow-y-auto">
+      <div class="w-full max-w-2xl my-auto rounded-3xl overflow-hidden border border-border shadow-2xl animate-in fade-in zoom-in duration-300 bg-app-bg">
+        <div class="px-8 py-6 flex justify-between items-center bg-card-bg border-b border-border">
+          <div class="flex items-center gap-4">
+             <div class="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+             </div>
+             <div>
+               <h3 class="font-black text-xl text-text-primary">Record Payment</h3>
+               <p class="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mt-0.5">Adjust Accounts for {{ selectedParty?.name }}</p>
+             </div>
+          </div>
+          <button @click="showPaymentModal = false" class="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-hover-bg text-text-muted hover:text-rose-500 transition-all active:scale-95">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+        <div class="p-8">
+           <PaymentForm 
+             :party="selectedParty" 
+             @submit="handlePaymentSubmit" 
+             @cancel="showPaymentModal = false" 
+           />
+        </div>
+      </div>
+    </div>
+
     <!-- Detail Sidebar -->
     <PartyDetailSide 
       :party="selectedParty" 
       @close="selectedParty = null" 
       @edit="handleEditRequest"
+      @recordPayment="openPaymentModal"
     />
 
     <!-- Add Modal (Updated with ERP Form) -->
@@ -108,9 +136,13 @@ import PartyDetailSide from '../components/PartyDetailSide.vue';
 import { usePagination } from '../composables/usePagination';
 import Pagination from '../components/Pagination.vue';
 import PartyForm from '../components/PartyForm.vue';
+import PaymentForm from '../components/PaymentForm.vue';
+import { useTransactionStore } from '../stores/transactions';
 
 const partyStore = usePartyStore();
+const transactionStore = useTransactionStore();
 const showModal = ref(false);
+const showPaymentModal = ref(false);
 const isEditMode = ref(false);
 const filter = ref<'All' | 'Customer' | 'Supplier'>('All');
 const selectedParty = ref<Party | null>(null);
@@ -151,6 +183,16 @@ function handleEditRequest(party: Party) {
 function closeModal() {
     showModal.value = false;
     isEditMode.value = false;
+}
+
+function openPaymentModal() {
+    showPaymentModal.value = true;
+}
+
+async function handlePaymentSubmit(paymentData: any) {
+    await transactionStore.createPayment(paymentData);
+    await partyStore.fetchParties(); // Refresh balances
+    showPaymentModal.value = false;
 }
 
 async function handleFormSubmit(partyData: Party) {

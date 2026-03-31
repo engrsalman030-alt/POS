@@ -51,6 +51,7 @@ export interface StockTransaction {
     date: string;
     type: 'In' | 'Out';
     quantity: number;
+    bonus_quantity?: number;
     rate: number;
     value: number;
     reference_type: string; // 'Bill', 'Invoice', 'Adjustment'

@@ -54,9 +54,9 @@ export const InventoryService = {
     async recordStockTransaction(tx: Omit<StockTransaction, 'id'>) {
         const id = crypto.randomUUID();
         execute(
-            `INSERT INTO stock_ledger (id, item_id, date, type, quantity, rate, value, reference_type, reference_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [id, tx.item_id, tx.date, tx.type, tx.quantity, tx.rate, tx.value, tx.reference_type, tx.reference_id]
+            `INSERT INTO stock_ledger (id, item_id, date, type, quantity, bonus_quantity, rate, value, reference_type, reference_id) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [id, tx.item_id, tx.date, tx.type, tx.quantity, tx.bonus_quantity || 0, tx.rate, tx.value, tx.reference_type, tx.reference_id]
         );
 
         // Update item stock quantity and value
@@ -66,7 +66,7 @@ export const InventoryService = {
             stock_quantity = stock_quantity + ?, 
             stock_value = stock_value + ? 
             WHERE id = ?`,
-            [tx.quantity * multiplier, tx.value * multiplier, tx.item_id]
+            [(tx.quantity + (tx.bonus_quantity || 0)) * multiplier, tx.value * multiplier, tx.item_id]
         );
 
         saveDb();

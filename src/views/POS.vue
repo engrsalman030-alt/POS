@@ -32,7 +32,7 @@
     <main class="flex-1 flex overflow-hidden bg-app-bg">
       
       <!-- Column 1: Item Catalog -->
-      <section class="w-[480px] xl:w-[540px] flex flex-col border-r border-border shrink-0 bg-white dark:bg-card-bg">
+      <section class="w-[480px] xl:w-[540px] flex flex-col border-r border-border shrink-0 bg-card-bg">
         <div class="p-6 space-y-6">
           <!-- Search Bar -->
           <div class="flex gap-2">
@@ -100,46 +100,81 @@
       </section>
 
       <!-- Column 2: Current Order -->
-      <section class="w-[420px] flex flex-col border-r border-border shrink-0 bg-white dark:bg-card-bg/50">
+      <section class="flex-1 min-w-[500px] flex flex-col border-r border-border shrink-0 bg-card-bg/50">
         <div class="px-6 py-5 flex items-center justify-between border-b border-border bg-card-bg">
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <h2 class="text-sm font-black text-text-primary">Current Order</h2>
-            <span class="px-2 py-0.5 rounded bg-hover-bg text-[10px] font-black text-text-muted">#1024</span>
+            <span class="px-2 py-0.5 rounded bg-hover-bg text-[10px] font-black text-text-muted">#{{ Math.floor(Math.random() * 10000) }}</span>
           </div>
-          <button @click="posStore.clearCart()" class="text-[10px] font-black uppercase tracking-widest text-rose-500 flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-            Clear
-          </button>
+          <div class="flex items-center gap-4">
+            <button @click="posStore.holdOrder()" class="text-[10px] font-black uppercase tracking-widest text-orange-500 flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="M3 12h18"/></svg>
+              Hold
+            </button>
+            <button @click="posStore.clearCart()" class="text-[10px] font-black uppercase tracking-widest text-rose-500 flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- Order Items Table Header -->
+        <div class="grid grid-cols-12 gap-2 px-6 py-3 bg-hover-bg/30 border-b border-border text-[9px] font-black uppercase tracking-widest text-text-muted">
+          <div class="col-span-4">Item Name</div>
+          <div class="col-span-2">Batch/Exp</div>
+          <div class="col-span-1 text-center">Billed</div>
+          <div class="col-span-1 text-center">Free</div>
+          <div class="col-span-2 text-right">Price</div>
+          <div class="col-span-2 text-right">Total</div>
         </div>
 
         <!-- Order Items List -->
         <div class="flex-1 overflow-y-auto p-4 space-y-2">
-          <div v-for="(item, index) in posStore.cart" :key="index" 
-            class="bg-card-bg rounded-2xl border border-border/50 p-4 transition-all hover:border-brand/30 group"
+          <div v-for="(item, index) in posStore.cart" :key="item.id" 
+            class="bg-card-bg rounded-xl border border-border/50 p-3 transition-all hover:border-brand/30 group"
           >
-            <div class="flex justify-between items-start mb-4">
-              <div>
-                <h4 class="text-xs font-black text-text-primary">{{ item.name }}</h4>
-                <p class="text-[10px] text-text-muted font-bold mt-1">{{ formatCurrency(item.sales_rate) }} / unit</p>
+            <div class="grid grid-cols-12 gap-2 items-center">
+              <!-- Item Name & Category -->
+              <div class="col-span-4 min-w-0">
+                <h4 class="text-xs font-black text-text-primary truncate">{{ item.name }}</h4>
+                <p class="text-[9px] text-text-muted font-bold mt-0.5 truncate uppercase">{{ item.brand }}</p>
               </div>
-              <p class="text-sm font-black text-text-primary">{{ formatCurrency(item.quantity * item.sales_rate) }}</p>
-            </div>
-            
-            <div class="flex items-center justify-between">
-              <div class="flex items-center bg-hover-bg/50 rounded-lg p-1 border border-border">
-                <button @click="item.quantity > 1 ? item.quantity-- : posStore.cart.splice(index, 1)" class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-card-bg text-text-primary transition-all active:scale-90">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/></svg>
-                </button>
-                <span class="w-10 text-center text-xs font-black text-text-primary font-mono">{{ item.quantity }}</span>
-                <button @click="item.quantity++" class="w-8 h-8 flex items-center justify-center rounded-md bg-brand text-white shadow-lg shadow-brand/20 active:scale-90 transition-all font-black text-xs">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                </button>
+
+              <!-- Batch & Expiry -->
+              <div class="col-span-2 space-y-1">
+                <input v-model="item.batch_number" @change="posStore.updateBatch(item.id, item.batch_number)" placeholder="Batch"
+                  class="w-full bg-hover-bg/50 border border-border rounded px-2 py-1 text-[10px] font-black outline-none focus:border-brand transition-all" />
+                <input v-model="item.expiry_date" @change="posStore.updateExpiry(item.id, item.expiry_date)" placeholder="Exp"
+                  class="w-full bg-hover-bg/50 border border-border rounded px-2 py-1 text-[10px] font-black outline-none focus:border-brand transition-all" />
               </div>
-              
-              <div class="flex items-center gap-1.5">
-                <button @click="posStore.cart.splice(index, 1)" class="w-8 h-8 flex items-center justify-center rounded-md text-text-muted hover:text-rose-500 hover:bg-rose-50 transition-colors">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+
+              <!-- Billed Quantity -->
+              <div class="col-span-1 flex flex-col items-center">
+                <input type="number" v-model.number="item.quantity" @change="posStore.updateQuantity(item.id, item.quantity)"
+                  class="w-12 bg-hover-bg rounded-md border border-border py-1.5 text-center text-[11px] font-black text-text-primary outline-none focus:border-emerald-500" />
+              </div>
+
+              <!-- Bonus Quantity (FREE) -->
+              <div class="col-span-1 flex flex-col items-center">
+                <input type="number" v-model.number="item.bonus_quantity" @change="posStore.updateBonus(item.id, item.bonus_quantity)"
+                  class="w-12 bg-rose-500/10 text-rose-600 rounded-md border border-rose-500/20 py-1.5 text-center text-[11px] font-black outline-none focus:border-rose-500" />
+              </div>
+
+              <!-- Sales Rate -->
+              <div class="col-span-2 text-right">
+                <p class="text-xs font-black text-text-primary">{{ formatCurrency(item.sales_rate) }}</p>
+                <p class="text-[9px] text-text-muted font-bold mt-0.5 uppercase tracking-tighter">Unit Price</p>
+              </div>
+
+              <!-- Total -->
+              <div class="col-span-2 text-right flex items-center justify-end gap-2">
+                <div class="text-right">
+                  <p class="text-xs font-black text-brand">{{ formatCurrency(item.quantity * item.sales_rate) }}</p>
+                  <p class="text-[9px] text-text-muted font-bold mt-0.5 uppercase tracking-tighter">Subtotal</p>
+                </div>
+                <button @click="posStore.cart.splice(index, 1)" class="p-1.5 text-text-muted hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
               </div>
             </div>
@@ -165,7 +200,7 @@
       </section>
 
       <!-- Column 3: Summary & Checkout -->
-      <section class="flex-1 flex flex-col bg-white dark:bg-card-bg/30">
+      <section class="w-[380px] flex flex-col bg-card-bg/30">
         <!-- Customer Section -->
         <div class="p-6 border-b border-border">
           <div class="flex justify-between items-center mb-6">
@@ -193,17 +228,21 @@
               <span class="text-xs font-bold text-text-secondary">Subtotal</span>
               <span class="text-xs font-black text-text-primary">{{ formatCurrency(posStore.subtotal) }}</span>
             </div>
+            <div class="flex justify-between items-center text-emerald-500">
+              <span class="text-xs font-bold">Billed Items</span>
+              <span class="text-xs font-black">{{ posStore.totalBilledQuantity }}</span>
+            </div>
+            <div v-if="posStore.totalBonusQuantity > 0" class="flex justify-between items-center text-rose-500">
+              <span class="text-xs font-bold">Free Items</span>
+              <span class="text-xs font-black">{{ posStore.totalBonusQuantity }}</span>
+            </div>
             <div v-if="posStore.discount > 0" class="flex justify-between items-center text-rose-500">
               <span class="text-xs font-bold">Discount</span>
               <span class="text-xs font-black">-{{ formatCurrency(posStore.discount) }}</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-xs font-bold text-text-secondary">Service Fee (0%)</span>
-              <span class="text-xs font-black text-text-primary">{{ formatCurrency(0) }}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-bold text-text-secondary">Tax (0%)</span>
-              <span class="text-xs font-black text-text-primary">{{ formatCurrency(0) }}</span>
+              <span class="text-xs font-bold text-text-secondary">Total Packets</span>
+              <span class="text-xs font-black text-text-primary">{{ posStore.totalQuantity }}</span>
             </div>
           </div>
           
@@ -459,9 +498,6 @@
             <div v-if="selectedTemplate === 'Thermal'" class="thermal-layout">
               <!-- Receipt Branding -->
             <div class="text-center mb-8">
-              <div class="w-12 h-12 bg-brand rounded-xl mx-auto flex items-center justify-center mb-4 print:hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M15 9v12"/></svg>
-              </div>
               <h2 class="text-xl font-black uppercase tracking-widest text-text-primary print:text-black">{{ companyStore.company?.name || 'Nexus POS' }}</h2>
               <p class="text-[10px] text-text-muted print:text-gray-500 font-bold mt-1 uppercase tracking-wider">{{ companyStore.company?.address || 'Main POS Terminal' }}</p>
               <div class="mt-6 border-y border-border border-dashed py-3 print:border-gray-300">
@@ -483,15 +519,18 @@
             <table class="w-full text-[10px] text-left mb-8">
               <thead class="border-b border-border border-dashed text-text-muted print:border-gray-200 uppercase tracking-widest font-black">
                 <tr>
-                  <th class="py-2">Item</th>
-                  <th class="py-2 text-center">Qty</th>
-                  <th class="py-2 text-right">Price</th>
+                  <th class="py-2">Item (Batch)</th>
+                  <th class="py-2 text-center">B+F</th>
+                  <th class="py-2 text-right">Total</th>
                 </tr>
               </thead>
               <tbody class="border-b border-border border-dashed print:border-gray-200">
                 <tr v-for="item in latestInvoice.items" :key="item.item_id" class="font-bold">
-                  <td class="py-3 pr-2">{{ item.name }}</td>
-                  <td class="py-3 text-center">{{ item.quantity }}</td>
+                  <td class="py-3 pr-2">
+                    {{ item.name }}<br/>
+                    <small class="text-text-muted opacity-60">Batch: {{ item.batch_number }} | Exp: {{ item.expiry_date }}</small>
+                  </td>
+                  <td class="py-3 text-center">{{ item.quantity }}+{{ item.bonus_quantity }}</td>
                   <td class="py-3 text-right">{{ formatRawCurrency(item.total) }}</td>
                 </tr>
               </tbody>
@@ -499,11 +538,11 @@
 
             <div class="space-y-2 mb-8">
               <div class="flex justify-between items-center text-[10px] font-bold text-text-muted uppercase tracking-widest">
-                <span>Subtotal</span>
-                <span>{{ formatRawCurrency(latestInvoice.total_amount) }}</span>
+                <span>Total Items</span>
+                <span>{{ latestInvoice.items.length }}</span>
               </div>
               <div class="flex justify-between items-center text-base font-black text-text-primary print:text-black">
-                <span class="uppercase tracking-widest">Total</span>
+                <span class="uppercase tracking-widest">Grand Total</span>
                 <span class="text-brand text-xl">{{ formatCurrency(latestInvoice.total_amount) }}</span>
               </div>
             </div>
@@ -533,26 +572,33 @@
                  <p class="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">Billed To</p>
                  <h4 class="text-sm font-black text-text-primary">{{ latestInvoice.customerName }}</h4>
                  <p class="text-xs text-text-secondary mt-1">Walk-in Customer</p>
-               </div>
-
-               <table class="w-full text-sm">
-                  <thead class="bg-hover-bg border-y border-border">
-                    <tr>
-                      <th class="py-3 px-4 font-black uppercase tracking-widest text-[10px]">Description</th>
-                      <th class="py-3 px-4 text-center font-black uppercase tracking-widest text-[10px]">Qty</th>
-                      <th class="py-3 px-4 text-right font-black uppercase tracking-widest text-[10px]">Unit Price</th>
-                      <th class="py-3 px-4 text-right font-black uppercase tracking-widest text-[10px]">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-border/50">
-                    <tr v-for="item in latestInvoice.items" :key="item.item_id">
-                      <td class="py-4 px-4 font-bold text-text-primary">{{ item.name }}</td>
-                      <td class="py-4 px-4 text-center font-mono">{{ item.quantity }}</td>
-                      <td class="py-4 px-4 text-right font-mono">{{ formatRawCurrency(item.rate) }}</td>
-                      <td class="py-4 px-4 text-right font-black">{{ formatRawCurrency(item.total) }}</td>
-                    </tr>
-                  </tbody>
-               </table>
+               </div>                <table class="w-full text-sm">
+                   <thead class="bg-hover-bg border-y border-border">
+                     <tr>
+                       <th class="py-3 px-4 font-black uppercase tracking-widest text-[10px]">Description</th>
+                       <th class="py-3 px-4 text-center font-black uppercase tracking-widest text-[10px]">Batch/Exp</th>
+                       <th class="py-3 px-4 text-center font-black uppercase tracking-widest text-[10px]">Billed+Free</th>
+                       <th class="py-3 px-4 text-right font-black uppercase tracking-widest text-[10px]">Unit Price</th>
+                       <th class="py-3 px-4 text-right font-black uppercase tracking-widest text-[10px]">Total</th>
+                     </tr>
+                   </thead>
+                   <tbody class="divide-y divide-border/50">
+                     <tr v-for="item in latestInvoice.items" :key="item.item_id">
+                       <td class="py-4 px-4">
+                         <p class="font-bold text-text-primary">{{ item.name }}</p>
+                         <p class="text-[9px] text-text-muted uppercase tracking-tighter">{{ item.brand }}</p>
+                       </td>
+                       <td class="py-4 px-4 text-center text-[10px] font-mono">
+                         {{ item.batch_number }}<br/>
+                         <span class="text-[8px] opacity-60">{{ item.expiry_date }}</span>
+                       </td>
+                       <td class="py-4 px-4 text-center font-mono">
+                         {{ item.quantity }} + <span class="text-rose-500 font-black">{{ item.bonus_quantity }}</span>
+                       </td>
+                       <td class="py-4 px-4 text-right font-mono">{{ formatRawCurrency(item.rate) }}</td>
+                     </tr>
+                   </tbody>
+                </table>
 
                <div class="flex justify-end pt-6">
                  <div class="w-64 space-y-3">
@@ -881,6 +927,9 @@ async function handlePay() {
       item_id: i.id,
       name: i.name,
       quantity: i.quantity,
+      bonus_quantity: i.bonus_quantity,
+      batch_number: i.batch_number,
+      expiry_date: i.expiry_date,
       rate: i.sales_rate,
       total: i.quantity * i.sales_rate
     }))

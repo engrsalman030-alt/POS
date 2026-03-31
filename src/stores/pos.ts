@@ -3,6 +3,9 @@ import type { Item } from '../types/inventory';
 
 export interface CartItem extends Item {
     quantity: number;
+    bonus_quantity: number;
+    batch_number: string;
+    expiry_date: string;
 }
 
 export interface HeldOrder {
@@ -46,7 +49,10 @@ export const usePosStore = defineStore('pos', {
             } else {
                 this.cart.push({
                     ...item,
-                    quantity: qtyToAdd
+                    quantity: qtyToAdd,
+                    bonus_quantity: 0,
+                    batch_number: item.batch_number || '',
+                    expiry_date: item.expiry_date || ''
                 });
             }
             this.cleanupCart();
@@ -57,6 +63,24 @@ export const usePosStore = defineStore('pos', {
                 item.quantity = quantity;
             }
             this.cleanupCart();
+        },
+        updateBonus(itemId: string, bonus: number) {
+            const item = this.cart.find(c => c.id === itemId);
+            if (item) {
+                item.bonus_quantity = bonus;
+            }
+        },
+        updateBatch(itemId: string, batch: string) {
+            const item = this.cart.find(c => c.id === itemId);
+            if (item) {
+                item.batch_number = batch;
+            }
+        },
+        updateExpiry(itemId: string, date: string) {
+            const item = this.cart.find(c => c.id === itemId);
+            if (item) {
+                item.expiry_date = date;
+            }
         },
         cleanupCart() {
             this.cart = this.cart.filter(i => i.quantity !== 0);
@@ -93,7 +117,9 @@ export const usePosStore = defineStore('pos', {
         }
     },
     getters: {
-        totalQuantity: (state) => state.cart.reduce((sum, item) => sum + item.quantity, 0),
+        totalQuantity: (state) => state.cart.reduce((sum, item) => sum + item.quantity + (item.bonus_quantity || 0), 0),
+        totalBilledQuantity: (state) => state.cart.reduce((sum, item) => sum + item.quantity, 0),
+        totalBonusQuantity: (state) => state.cart.reduce((sum, item) => sum + (item.bonus_quantity || 0), 0),
         subtotal: (state) => state.cart.reduce((sum, item) => sum + (item.quantity * item.sales_rate), 0),
         grandTotal: (state) => {
             const sub = state.cart.reduce((sum, item) => sum + (item.quantity * item.sales_rate), 0);
