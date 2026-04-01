@@ -5,6 +5,7 @@ export interface CartItem extends Item {
     quantity: number;
     bonus_quantity: number;
     batch_number: string;
+    batch_id?: string;
     expiry_date: string;
 }
 
@@ -52,6 +53,7 @@ export const usePosStore = defineStore('pos', {
                     quantity: qtyToAdd,
                     bonus_quantity: 0,
                     batch_number: item.batch_number || '',
+                    batch_id: undefined,
                     expiry_date: item.expiry_date || ''
                 });
             }
@@ -74,6 +76,14 @@ export const usePosStore = defineStore('pos', {
             const item = this.cart.find(c => c.id === itemId);
             if (item) {
                 item.batch_number = batch;
+            }
+        },
+        updateBatchId(itemId: string, batchId: string, batchNumber: string, expiryDate: string) {
+            const item = this.cart.find(c => c.id === itemId);
+            if (item) {
+                item.batch_id = batchId;
+                item.batch_number = batchNumber;
+                item.expiry_date = expiryDate;
             }
         },
         updateExpiry(itemId: string, date: string) {

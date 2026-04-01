@@ -31,20 +31,46 @@ export const useTransactionStore = defineStore('transactions', {
             
             // 1. Insert Header
             execute(
-                `INSERT INTO sales_invoices (id, date, customer_id, total_amount, discount_amount, tax_amount, status, outstanding_amount, shift_id, sales_manager, frappe_reference) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [id, invoice.date, invoice.customer_id, invoice.total_amount, invoice.discount_amount || 0, invoice.tax_amount || 0, 'Submitted', invoice.total_amount, invoice.shift_id, invoice.sales_manager || null, invoice.frappe_reference || null]
+                `INSERT INTO sales_invoices (id, date, customer_id, total_amount, discount_amount, discount_pct, tax_amount, status, outstanding_amount, shift_id, sales_manager, frappe_reference, ssr_id, dsr_id) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    id, 
+                    invoice.date, 
+                    invoice.customer_id, 
+                    invoice.total_amount, 
+                    invoice.discount_amount || 0, 
+                    (invoice as any).discount_pct || 0, 
+                    invoice.tax_amount || 0, 
+                    'Submitted', 
+                    invoice.total_amount, 
+                    invoice.shift_id, 
+                    invoice.sales_manager || null, 
+                    invoice.frappe_reference || null,
+                    (invoice as any).ssr_id || null,
+                    (invoice as any).dsr_id || null
+                ]
             );
 
             // 2. Insert Line Items & Handle Stock
             let totalCogs = 0;
             for (const item of invoice.items) {
                 const itemId = crypto.randomUUID();
+                
+                // For sales, if batch_id is missing but batch_number is present (manual entry), find or create it
+                let finalBatchId = (item as any).batch_id;
+                if (!finalBatchId && item.batch_number) {
+                    finalBatchId = await InventoryService.findOrCreateBatch(item.item_id, item.batch_number, item.expiry_date || undefined, item.rate);
+                }
+
                 execute(
-                    `INSERT INTO sales_invoice_items (id, invoice_id, item_id, quantity, bonus_quantity, batch_number, expiry_date, rate, tax_amount, total) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [itemId, id, item.item_id, item.quantity, item.bonus_quantity || 0, item.batch_number || null, item.expiry_date || null, item.rate, item.tax_amount || 0, item.total]
+                    `INSERT INTO sales_invoice_items (id, invoice_id, item_id, quantity, bonus_quantity, batch_number, expiry_date, rate, tax_amount, total, batch_id) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [itemId, id, item.item_id, item.quantity, item.bonus_quantity || 0, item.batch_number || null, item.expiry_date || null, item.rate, item.tax_amount || 0, item.total, finalBatchId || null]
                 );
+
+                if (finalBatchId) {
+                    await InventoryService.recordBatchQuantity(finalBatchId, -(item.quantity + (item.bonus_quantity || 0)));
+                }
 
                 const cogs = await InventoryService.calculateCogs(item.item_id, item.quantity + (item.bonus_quantity || 0));
                 totalCogs += cogs;
@@ -76,19 +102,36 @@ export const useTransactionStore = defineStore('transactions', {
 
             // 1. Insert Header
             execute(
-                `INSERT INTO purchase_bills (id, date, supplier_id, total_amount, tax_amount, status, outstanding_amount, sales_manager, frappe_reference) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [id, bill.date, bill.supplier_id, bill.total_amount, bill.tax_amount || 0, 'Submitted', bill.total_amount, bill.sales_manager || null, bill.frappe_reference || null]
+                `INSERT INTO purchase_bills (id, date, supplier_id, total_amount, discount_amount, discount_pct, tax_amount, status, outstanding_amount, sales_manager, frappe_reference) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    id, 
+                    bill.date, 
+                    bill.supplier_id, 
+                    bill.total_amount, 
+                    (bill as any).discount_amount || 0, 
+                    (bill as any).discount_pct || 0, 
+                    bill.tax_amount || 0, 
+                    'Submitted', 
+                    bill.total_amount, 
+                    bill.sales_manager || null, 
+                    bill.frappe_reference || null
+                ]
             );
 
             // 2. Insert Line Items & Handle Stock
             for (const item of bill.items) {
                 const itemId = crypto.randomUUID();
+                // Find or create batch for the purchase
+                const batchId = await InventoryService.findOrCreateBatch(item.item_id, item.batch_number || 'GENERIC', item.expiry_date || undefined, item.rate);
+                
                 execute(
-                    `INSERT INTO purchase_bill_items (id, bill_id, item_id, quantity, bonus_quantity, batch_number, expiry_date, rate, tax_amount, total) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [itemId, id, item.item_id, item.quantity, item.bonus_quantity || 0, item.batch_number || null, item.expiry_date || null, item.rate, item.tax_amount || 0, item.total]
+                    `INSERT INTO purchase_bill_items (id, bill_id, item_id, quantity, bonus_quantity, batch_number, expiry_date, rate, tax_amount, total, batch_id) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [itemId, id, item.item_id, item.quantity, item.bonus_quantity || 0, item.batch_number || null, item.expiry_date || null, item.rate, item.tax_amount || 0, item.total, batchId]
                 );
+
+                await InventoryService.recordBatchQuantity(batchId, item.quantity + (item.bonus_quantity || 0));
 
                 await InventoryService.recordStockTransaction({
                     item_id: item.item_id,

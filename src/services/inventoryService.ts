@@ -72,6 +72,36 @@ export const InventoryService = {
         saveDb();
     },
 
+    async recordBatchQuantity(batchId: string, quantityChange: number) {
+        execute(
+            `UPDATE item_batches SET quantity = quantity + ? WHERE id = ?`,
+            [quantityChange, batchId]
+        );
+        saveDb();
+    },
+
+    async findOrCreateBatch(itemId: string, batchNumber: string, expiryDate?: string, rate?: number) {
+        if (!batchNumber) return null;
+        const existing = query('SELECT id FROM item_batches WHERE item_id = ? AND UPPER(batch_number) = ? AND is_active = 1', [itemId, batchNumber.toUpperCase()]);
+        if (existing.length > 0) {
+            const batchId = (existing[0] as any).id;
+            // Optionally update expiry if provided and missing
+            if (expiryDate) {
+                execute('UPDATE item_batches SET expiry_date = COALESCE(expiry_date, ?) WHERE id = ?', [expiryDate, batchId]);
+            }
+            return batchId;
+        }
+
+        const id = crypto.randomUUID();
+        execute(
+            `INSERT INTO item_batches (id, item_id, batch_number, expiry_date, purchase_rate, quantity, is_active, created_at) 
+             VALUES (?, ?, ?, ?, ?, 0, 1, ?)`,
+            [id, itemId, batchNumber.toUpperCase(), expiryDate || null, rate || 0, new Date().toISOString()]
+        );
+        saveDb();
+        return id;
+    },
+
     async getStockOnHand(itemId: string) {
         const result = query('SELECT stock_quantity, stock_value FROM items WHERE id = ?', [itemId]);
         return result[0] || { stock_quantity: 0, stock_value: 0 };
@@ -87,7 +117,12 @@ export const InventoryService = {
 
         if (stockQty <= 0) return 0;
 
-        const averageRate = stockVal / stockQty;
+    const averageRate = stockVal / stockQty;
         return quantityToSell * averageRate;
+    },
+
+    async deleteItem(id: string) {
+        execute('UPDATE items SET is_active = 0 WHERE id = ?', [id]);
+        saveDb();
     }
 };

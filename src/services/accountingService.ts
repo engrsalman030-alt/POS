@@ -244,5 +244,36 @@ export const AccountingService = {
             status: 'Submitted',
             items
         });
+    },
+
+    async postExpense(expense: { id: string, date: string, amount: number, category_name: string, notes: string }) {
+        const items: JournalEntryItem[] = [];
+
+        // Debit Operating Expenses
+        items.push({
+            id: crypto.randomUUID(),
+            journal_entry_id: '',
+            account_id: 'operating_expenses',
+            debit: expense.amount,
+            credit: 0
+        });
+
+        // Credit Cash (Simple default for now, can be bank)
+        items.push({
+            id: crypto.randomUUID(),
+            journal_entry_id: '',
+            account_id: 'cash',
+            debit: 0,
+            credit: expense.amount
+        });
+
+        await this.postJournalEntry({
+            date: expense.date,
+            reference_type: 'Expense',
+            reference_id: expense.id,
+            memo: `${expense.category_name}: ${expense.notes || 'No description'}`,
+            status: 'Submitted',
+            items
+        });
     }
 };

@@ -12,6 +12,7 @@ export interface Company {
     ntn?: string;
     address?: string;
     phone?: string;
+    business_type: 'Pharmacy' | 'Mobile' | 'Grocery' | 'General';
 }
 
 export const useCompanyStore = defineStore('company', {
@@ -26,7 +27,11 @@ export const useCompanyStore = defineStore('company', {
             const rows = query('SELECT * FROM company LIMIT 1') as any[];
             if (rows.length > 0) {
                 const is_setup = Boolean(rows[0].is_setup);
-                this.company = { ...rows[0], is_setup };
+                this.company = { 
+                    ...rows[0], 
+                    is_setup,
+                    business_type: rows[0].business_type || 'Pharmacy'
+                };
                 this.isInitialized = is_setup;
             } else {
                 this.company = null;
@@ -46,8 +51,8 @@ export const useCompanyStore = defineStore('company', {
             if (!this.company) return;
             const updated = { ...this.company, ...data };
             execute(
-                `UPDATE company SET name = ?, country = ?, currency = ?, ntn = ?, address = ?, phone = ? WHERE id = ?`,
-                [updated.name, updated.country, updated.currency, updated.ntn || '', updated.address || '', updated.phone || '', updated.id]
+                `UPDATE company SET name = ?, country = ?, currency = ?, ntn = ?, address = ?, phone = ?, business_type = ? WHERE id = ?`,
+                [updated.name, updated.country, updated.currency, updated.ntn || '', updated.address || '', updated.phone || '', updated.business_type, updated.id]
             );
             saveDb();
             this.company = updated;
@@ -88,6 +93,12 @@ export const useCompanyStore = defineStore('company', {
             this.company = null;
             this.isInitialized = false;
             window.location.href = '/setup';
+        },
+        getMonogram(name: string) {
+            if (!name) return 'B&H';
+            const upper = name.toUpperCase();
+            if (upper.includes('B & H') || upper.includes('B&H')) return 'B&H';
+            return name.split(' ').map(n => n[0]).slice(0, 3).join('').toUpperCase();
         }
     }
 });

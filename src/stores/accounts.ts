@@ -45,6 +45,34 @@ export const useAccountStore = defineStore('accounts', {
             );
             saveDb();
             await this.fetchAccounts();
+        },
+        async fetchLedger(accountId: string, startDate?: string, endDate?: string) {
+            let sql = `
+                SELECT 
+                    j.date, 
+                    j.memo, 
+                    ji.debit, 
+                    ji.credit, 
+                    j.reference_type, 
+                    j.reference_id 
+                FROM journal_items ji
+                JOIN journals j ON ji.journal_id = j.id
+                WHERE ji.account_id = ?
+            `;
+            const params: any[] = [accountId];
+
+            if (startDate) {
+                sql += " AND j.date >= ?";
+                params.push(startDate);
+            }
+            if (endDate) {
+                sql += " AND j.date <= ?";
+                params.push(endDate);
+            }
+
+            sql += " ORDER BY j.date ASC, j.id ASC";
+            
+            return query(sql, params);
         }
     },
     getters: {

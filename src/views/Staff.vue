@@ -1,0 +1,138 @@
+<template>
+  <div class="p-4 md:p-8 max-w-6xl mx-auto font-inter min-h-screen pb-20">
+    
+    <!-- HEADER -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h1 class="text-2xl font-black text-text-primary tracking-tight">Sales Team</h1>
+        <p class="text-sm text-text-muted font-medium mt-1 uppercase tracking-widest" style="font-size: 10px;">Manage SSR, DSR, and Managers</p>
+      </div>
+      <button @click="openModal()" class="w-full md:w-auto px-6 py-2.5 rounded-xl bg-brand text-white font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-brand/20 flex items-center justify-center gap-2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+        Add Staff
+      </button>
+    </header>
+
+    <!-- LIST -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div v-for="s in staffStore.staff" :key="s.id" 
+        class="bg-card-bg border border-border rounded-2xl p-5 hover:border-brand/40 transition-all hover:shadow-xl hover:shadow-brand/5 group relative overflow-hidden"
+      >
+        <div class="absolute top-0 right-0 w-24 h-24 bg-brand/5 rounded-full -mr-12 -mt-12 group-hover:bg-brand/10 transition-colors"></div>
+        
+        <div class="flex items-start justify-between relative z-10">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold" 
+              :class="s.role === 'SSR' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-blue-500/10 text-blue-500'">
+              {{ s.role === 'SSR' ? '🩺' : '🚚' }}
+            </div>
+            <div>
+              <h3 class="font-bold text-text-primary text-sm uppercase tracking-tight">{{ s.name }}</h3>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest" 
+                  :class="s.role === 'SSR' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-blue-500/10 text-blue-500'">
+                  {{ s.role }}
+                </span>
+                <span class="text-[9px] font-bold text-text-muted">{{ s.phone || 'No Phone' }}</span>
+              </div>
+            </div>
+          </div>
+          <button @click="openModal(s)" class="p-2 text-text-muted hover:text-brand transition-colors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div v-if="staffStore.staff.length === 0" class="py-20 text-center space-y-4">
+      <div class="w-20 h-20 bg-hover-bg rounded-3xl mx-auto flex items-center justify-center text-3xl opacity-20">👥</div>
+      <div class="max-w-xs mx-auto">
+        <p class="font-bold text-text-primary uppercase tracking-widest text-[10px]">No sales team found</p>
+        <p class="text-xs text-text-muted mt-1 leading-relaxed">Add your Secondary Sales Reps and Delivery Sales Reps to get started.</p>
+      </div>
+    </div>
+
+    <!-- MODAL -->
+    <div v-if="showModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div class="bg-card-bg w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 border-b border-border flex justify-between items-center bg-hover-bg/30">
+          <h2 class="text-xs font-black uppercase tracking-widest">{{ isEditing ? 'Edit Team Member' : 'New Team Member' }}</h2>
+          <button @click="showModal = false" class="text-text-muted hover:text-text-primary transition-colors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+        
+        <form @submit.prevent="save" class="p-6 space-y-5">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Full Name</label>
+            <input v-model="form.name" type="text" required placeholder="e.g. Ali Ahmed" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-brand/20 transition-all"/>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Role</label>
+              <select v-model="form.role" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-bold outline-none">
+                <option value="SSR">SSR (Order Taker)</option>
+                <option value="DSR (Delivery)">DSR (Delivery)</option>
+                <option value="DSR">DSR</option>
+                <option value="Manager">Manager</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+              <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Phone</label>
+              <input v-model="form.phone" type="text" placeholder="03xx-xxxxxxx" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-mono font-bold outline-none"/>
+            </div>
+          </div>
+
+          <div class="pt-4 flex gap-4">
+             <button type="button" @click="showModal = false" class="flex-1 px-6 py-3 rounded-xl border border-border text-text-muted font-bold text-[10px] uppercase tracking-widest hover:bg-hover-bg transition-all">Cancel</button>
+             <button type="submit" class="flex-1 px-6 py-3 rounded-xl bg-brand text-white font-bold text-[10px] uppercase tracking-widest hover:opacity-90 shadow-lg shadow-brand/20 transition-all active:scale-95">Save Member</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useStaffStore, type Staff } from '../stores/staff';
+
+const staffStore = useStaffStore();
+const showModal = ref(false);
+const isEditing = ref(false);
+
+const form = ref<any>({
+  name: '',
+  role: 'SSR',
+  phone: '',
+  is_active: 1
+});
+
+onMounted(() => {
+  staffStore.fetchStaff();
+});
+
+function openModal(member?: Staff) {
+  if (member) {
+    form.value = { ...member };
+    isEditing.value = true;
+  } else {
+    form.value = { name: '', role: 'SSR', phone: '', is_active: 1 };
+    isEditing.value = false;
+  }
+  showModal.value = true;
+}
+
+async function save() {
+  if (isEditing.value) {
+    await staffStore.updateStaff(form.value);
+  } else {
+    await staffStore.addStaff(form.value);
+  }
+  showModal.value = false;
+}
+</script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+.font-inter { font-family: 'Inter', sans-serif; }
+</style>

@@ -1,6 +1,6 @@
 <template>
   <div class="pos-screen h-screen flex flex-col bg-app-bg text-text-primary font-inter overflow-hidden">
-    <!-- Nexus POS Header -->
+    <!-- B & H Pharmaceutical (PVT) LTD Header -->
     <header class="h-16 bg-card-bg border-b border-border flex items-center justify-between px-6 shrink-0 z-40">
       <div class="flex items-center gap-2">
         <div class="w-10 h-10 bg-brand rounded-xl flex items-center justify-center shadow-lg shadow-brand/20">
@@ -141,12 +141,34 @@
                 <p class="text-[9px] text-text-muted font-bold mt-0.5 truncate uppercase">{{ item.brand }}</p>
               </div>
 
-              <!-- Batch & Expiry -->
+              <!-- Batch & Expiry Selection -->
               <div class="col-span-2 space-y-1">
-                <input v-model="item.batch_number" @change="posStore.updateBatch(item.id, item.batch_number)" placeholder="Batch"
-                  class="w-full bg-hover-bg/50 border border-border rounded px-2 py-1 text-[10px] font-black outline-none focus:border-brand transition-all" />
-                <input v-model="item.expiry_date" @change="posStore.updateExpiry(item.id, item.expiry_date)" placeholder="Exp"
-                  class="w-full bg-hover-bg/50 border border-border rounded px-2 py-1 text-[10px] font-black outline-none focus:border-brand transition-all" />
+                <div class="relative group">
+                  <input 
+                    :value="item.batch_number" 
+                    @input="e => handleBatchInput(item.id, (e.target as HTMLInputElement).value)"
+                    @focus="activeBatchItemId = item.id"
+                    placeholder="Batch"
+                    class="w-full bg-hover-bg/50 border border-border rounded px-2 py-1 text-[10px] font-black outline-none focus:border-brand transition-all placeholder:text-[8px]"
+                  />
+                  <!-- Batch Dropdown -->
+                  <div v-if="activeBatchItemId === item.id" data-batch-dropdown class="absolute left-0 right-0 top-full mt-1 bg-card-bg border border-border rounded shadow-2xl p-1 z-[70] space-y-0.5">
+                    <div v-if="getItemBatches(item.id).length === 0" class="p-2 text-[8px] text-text-muted italic">No batches</div>
+                    <div v-for="b in getItemBatches(item.id)" :key="b.id" @click="handleBatchSelect(item.id, b)" class="p-1.5 rounded hover:bg-hover-bg cursor-pointer border border-transparent hover:border-brand/20 transition-all">
+                      <div class="flex justify-between items-center">
+                        <span class="text-[9px] font-bold text-text-primary">{{ b.batch_number }}</span>
+                        <span class="text-[8px] font-bold text-emerald-600">{{ b.quantity }}</span>
+                      </div>
+                      <p class="text-[7px] text-text-muted mt-0.5">Exp: {{ b.expiry_date }}</p>
+                    </div>
+                  </div>
+                </div>
+                <input 
+                  v-model="item.expiry_date" 
+                  @input="posStore.updateExpiry(item.id, item.expiry_date)"
+                  placeholder="Exp"
+                  class="w-full bg-rose-500/5 border border-rose-500/10 rounded px-2 py-1 text-[9px] font-bold text-rose-500 text-center uppercase tracking-tighter outline-none focus:border-rose-500/30"
+                />
               </div>
 
               <!-- Billed Quantity -->
@@ -498,7 +520,7 @@
             <div v-if="selectedTemplate === 'Thermal'" class="thermal-layout">
               <!-- Receipt Branding -->
             <div class="text-center mb-8">
-              <h2 class="text-xl font-black uppercase tracking-widest text-text-primary print:text-black">{{ companyStore.company?.name || 'Nexus POS' }}</h2>
+              <h2 class="text-xl font-black uppercase tracking-widest text-text-primary print:text-black">{{ companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD' }}</h2>
               <p class="text-[10px] text-text-muted print:text-gray-500 font-bold mt-1 uppercase tracking-wider">{{ companyStore.company?.address || 'Main POS Terminal' }}</p>
               <div class="mt-6 border-y border-border border-dashed py-3 print:border-gray-300">
                 <h3 class="font-black text-sm tracking-[0.3em] uppercase">Sale Receipt</h3>
@@ -557,7 +579,7 @@
             <div v-if="selectedTemplate === 'Professional'" class="professional-layout text-left space-y-8">
                <div class="flex justify-between items-start border-b-2 border-text-primary pb-6">
                   <div>
-                    <h2 class="text-2xl font-black uppercase tracking-tighter">{{ companyStore.company?.name || 'Nexus POS' }}</h2>
+                    <h2 class="text-2xl font-black uppercase tracking-tighter">{{ companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD' }}</h2>
                     <p class="text-xs text-text-muted mt-1 leading-relaxed">{{ companyStore.company?.address || 'Main POS Terminal' }}</p>
                     <p class="text-[10px] font-bold text-brand mt-2">Ph: {{ companyStore.company?.phone || '+92 000 0000000' }}</p>
                   </div>
@@ -677,6 +699,7 @@ import { useTransactionStore } from '../stores/transactions';
 import { useCompanyStore } from '../stores/company';
 import { usePosStore } from '../stores/pos';
 import { useShiftStore } from '../stores/shift';
+import { useBatchStore } from '../stores/batches';
 import ShiftModal from '../components/ShiftModal.vue';
 import { storeToRefs } from 'pinia';
 
@@ -686,7 +709,9 @@ const transactionStore = useTransactionStore();
 const companyStore = useCompanyStore();
 const posStore = usePosStore();
 const shiftStore = useShiftStore();
+const batchStore = useBatchStore();
 const router = useRouter();
+const activeBatchItemId = ref<string | null>(null);
 const { isReturnMode } = storeToRefs(posStore);
 
 // Shift timer
@@ -772,14 +797,41 @@ const paymentMethods = [
   }
 ];
 
+// Close dropdown on outside click
+function handleClickOutside(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  if (!target.closest('[data-batch-dropdown]')) {
+    activeBatchItemId.value = null;
+  }
+}
+
 onMounted(async () => {
+  document.addEventListener('click', handleClickOutside);
   await shiftStore.initializeActiveShift();
   if (shiftStore.activeShift) {
     startShiftTimer();
   }
   await inventoryStore.fetchItems();
   await partyStore.fetchParties();
+  await batchStore.fetchBatches();
 });
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
+function getItemBatches(itemId: string) {
+  return batchStore.getBatchesForItem(itemId);
+}
+
+function handleBatchInput(itemId: string, val: string) {
+  posStore.updateBatch(itemId, val);
+}
+
+function handleBatchSelect(itemId: string, batch: any) {
+  posStore.updateBatchId(itemId, batch.id, batch.batch_number, batch.expiry_date || '');
+  activeBatchItemId.value = null;
+}
 
 function printReceipt() {
     const el = document.getElementById("receipt-content");
@@ -859,7 +911,7 @@ function printReceipt() {
 
 function shareToWhatsApp() {
     if (!latestInvoice.value) return;
-    const message = `*Invoice Receipt*\nFrom: ${companyStore.company?.name || 'Nexus POS'}\nInvoice: #${latestInvoice.value.id.slice(0, 8)}\nDate: ${latestInvoice.value.date}\nTotal: ${formatCurrency(latestInvoice.value.total_amount)}\n\nThank you for your business!`;
+    const message = `*Invoice Receipt*\nFrom: ${companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD'}\nInvoice: #${latestInvoice.value.id.slice(0, 8)}\nDate: ${latestInvoice.value.date}\nTotal: ${formatCurrency(latestInvoice.value.total_amount)}\n\nThank you for your business!`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
 }

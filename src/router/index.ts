@@ -25,6 +25,11 @@ const routes = [
         component: () => import('../views/Inventory.vue')
     },
     {
+        path: '/batches',
+        name: 'Batches',
+        component: () => import('../views/Batches.vue')
+    },
+    {
         path: '/sales',
         name: 'Sales',
         component: () => import('../views/Sales.vue')
@@ -69,6 +74,22 @@ const routes = [
         path: '/guide',
         name: 'Guide',
         component: () => import('../views/Guide.vue')
+    },
+    {
+        path: '/staff',
+        name: 'Staff',
+        component: () => import('../views/Staff.vue')
+    },
+    {
+        path: '/expenses',
+        name: 'Expenses',
+        component: () => import('../views/Expenses.vue')
+    },
+    {
+        path: '/ledger/:id',
+        name: 'GeneralLedger',
+        component: () => import('../views/GeneralLedger.vue'),
+        props: true
     }
 
 ];

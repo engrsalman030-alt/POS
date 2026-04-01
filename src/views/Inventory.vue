@@ -20,12 +20,19 @@
           class="card-animate group relative bg-card-bg rounded-2xl border border-border p-4 transition-all hover:border-brand hover:shadow-xl hover:shadow-brand/5 flex flex-col"
           :style="{ animationDelay: `${index * 50}ms` }">
           
-          <!-- Edit button floating -->
-          <button @click.stop="openEditModal(item)" 
-            class="absolute top-2 left-2 w-7 h-7 rounded-full bg-card-bg/90 backdrop-blur border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-brand hover:text-white z-20 shadow-sm"
-            title="Edit Item">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-          </button>
+          <!-- Action buttons floating -->
+          <div class="absolute top-2 left-2 flex gap-1 z-20">
+            <button @click.stop="openEditModal(item)" 
+              class="w-7 h-7 rounded-full bg-card-bg/90 backdrop-blur border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-brand hover:text-white shadow-sm"
+              title="Edit Item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </button>
+            <button @click.stop="handleDeleteItem(item)" 
+              class="w-7 h-7 rounded-full bg-card-bg/90 backdrop-blur border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white shadow-sm"
+              title="Delete Item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </button>
+          </div>
           
           <!-- Stock Badge -->
           <div v-if="item.stock_quantity > 0" class="absolute -top-1 -right-1 min-w-[20px] h-5 flex items-center justify-center px-1 rounded-full bg-emerald-600 text-white text-[10px] font-black z-30 shadow-md border-2 border-card-bg">
@@ -169,6 +176,17 @@ const closeModal = () => {
     errorMessage.value = '';
 };
 
+const handleDeleteItem = async (item: any) => {
+    if (confirm(`Are you sure you want to delete "${item.name}"? This action cannot be undone.`)) {
+        try {
+            await inventoryStore.deleteItem(item.id);
+        } catch (err) {
+            console.error('Failed to delete item', err);
+            errorMessage.value = 'Failed to delete item. It may be referenced in transactions.';
+        }
+    }
+};
+
 // handleFileUpload removed as it is now in ItemForm.vue
 
 onMounted(() => {
@@ -181,7 +199,7 @@ async function handleFormSubmit(itemData: any) {
     if (isEditMode.value) {
         await inventoryStore.updateItem(itemData);
     } else {
-        await inventoryStore.addItem(itemData, itemData.opening_quantity || 0);
+        await inventoryStore.addItem(itemData, itemData.opening_quantity || 0, itemData.opening_bonus || 0);
     }
     closeModal();
   } catch (err: any) {

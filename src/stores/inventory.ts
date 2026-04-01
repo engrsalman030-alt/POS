@@ -10,17 +10,18 @@ export const useInventoryStore = defineStore('inventory', {
     actions: {
         // Actions
         async fetchItems() {
-            this.items = query('SELECT * FROM items ORDER BY name ASC') as unknown as Item[];
+            this.items = query('SELECT * FROM items WHERE is_active = 1 ORDER BY name ASC') as unknown as Item[];
         },
-        async addItem(item: Omit<Item, 'id' | 'stock_quantity' | 'stock_value' | 'is_active'>, openingQuantity: number = 0) {
+        async addItem(item: Omit<Item, 'id' | 'stock_quantity' | 'stock_value' | 'is_active'>, openingQuantity: number = 0, openingBonus: number = 0) {
             const newItemId = await InventoryService.addItem(item as any);
 
-            if (openingQuantity > 0) {
+            if (openingQuantity > 0 || openingBonus > 0) {
                 await InventoryService.recordStockTransaction({
                     item_id: newItemId,
                     date: new Date().toISOString(),
                     type: 'In',
                     quantity: openingQuantity,
+                    bonus_quantity: openingBonus,
                     rate: item.purchase_rate || 0,
                     value: openingQuantity * (item.purchase_rate || 0),
                     reference_type: 'Opening Stock',
@@ -45,6 +46,10 @@ export const useInventoryStore = defineStore('inventory', {
                 reference_type: 'Manual Adjustment',
                 reference_id: crypto.randomUUID()
             });
+            await this.fetchItems();
+        },
+        async deleteItem(id: string) {
+            await InventoryService.deleteItem(id);
             await this.fetchItems();
         }
     }

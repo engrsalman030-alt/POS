@@ -14,7 +14,7 @@
     </header>
 
     <!-- Metrics Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-8">
       <StatCard 
         title="Today's Shift Sales"
         :value="metrics.todaysShiftSales"
@@ -129,6 +129,20 @@
       </router-link>
     </div>
 
+    <!-- Expiry Alert (Conditional) -->
+    <div v-if="expiringSoonBatches.length > 0" class="mt-4 p-6 rounded-lg border flex items-center justify-between bg-amber-500/10 border-amber-500/20">
+      <div class="flex items-center gap-4">
+        <span class="text-2xl">⏳</span>
+        <div>
+          <h3 class="font-bold text-sm text-amber-600">Expiry Alert</h3>
+          <p class="text-xs mt-1 text-amber-600/80">{{ expiringSoonBatches.length }} batches are expiring in the next 30 days.</p>
+        </div>
+      </div>
+      <router-link to="/batches" class="px-4 py-2 rounded text-xs font-bold transition-all bg-amber-500 text-white hover:bg-amber-600">
+        View Batches
+      </router-link>
+    </div>
+
   </div>
 </template>
 
@@ -137,6 +151,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useCompanyStore } from '../stores/company';
 import { useInventoryStore } from '../stores/inventory';
 import { useShiftStore } from '../stores/shift';
+import { useBatchStore } from '../stores/batches';
 import { ReportService } from '../services/reportService';
 import { shiftService } from '../services/shiftService';
 import StatCard from '../components/StatCard.vue';
@@ -144,6 +159,7 @@ import StatCard from '../components/StatCard.vue';
 const companyStore = useCompanyStore();
 const inventoryStore = useInventoryStore();
 const shiftStore = useShiftStore();
+const batchStore = useBatchStore();
 const userName = computed(() => companyStore.company?.name || 'User');
 
 const metrics = ref({
@@ -190,9 +206,24 @@ const lowStockItems = computed(() => {
     return inventoryStore.items.filter(i => i.stock_quantity <= 5);
 });
 
+const expiringSoonBatches = computed(() => {
+    const today = new Date();
+    const thirtyDaysOut = new Date();
+    thirtyDaysOut.setDate(today.getDate() + 30);
+    const todayStr = (new Date().toISOString().split('T')[0]) || '';
+    const thirtyDaysOutStr = (thirtyDaysOut.toISOString().split('T')[0]) || '';
+
+    return batchStore.batches.filter(b => {
+        if (!b.expiry_date) return false;
+        return b.expiry_date >= todayStr && b.expiry_date <= thirtyDaysOutStr;
+    });
+});
+
 onMounted(async () => {
   await shiftStore.initializeActiveShift();
   await Promise.all([
+    inventoryStore.fetchItems(),
+    batchStore.fetchBatches(),
     loadMetrics(),
     loadTrends()
   ]);

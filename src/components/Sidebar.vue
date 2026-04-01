@@ -119,6 +119,11 @@ const navItems = [
     icon: '<path d="M16.5 9.4 7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/>' 
   },
   { 
+    name: 'Batches',           
+    path: '/batches', 
+    icon: '<path d="M21 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8z"/><path d="M16 12V8a4 4 0 0 0-8 0v4"/><path d="M14 2L10 2"/><path d="M14 6L10 6"/>' 
+  },
+  { 
     name: 'Sales Invoices',    
     path: '/sales', 
     icon: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/>' 
@@ -131,12 +136,22 @@ const navItems = [
   { 
     name: 'Parties',           
     path: '/parties', 
-    icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' 
+    icon: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></g>' 
+  },
+  { 
+    name: 'Sales Team',           
+    path: '/staff', 
+    icon: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="m15 11 3 3 6-6"/></g>' 
   },
   { 
     name: 'Chart of Accounts', 
     path: '/accounts', 
-    icon: '<path d="m3 5 8 8-8 8"/><path d="m13 5 8 8-8 8"/>' 
+    icon: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 5 8 8-8 8"/><path d="m13 5 8 8-8 8"/></g>' 
+  },
+  { 
+    name: 'Expenses', 
+    path: '/expenses', 
+    icon: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></g>' 
   },
   { 
     name: 'Reports',           

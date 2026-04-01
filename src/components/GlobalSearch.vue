@@ -64,7 +64,7 @@
 
       <!-- Footer -->
       <div v-else class="p-8 text-center bg-hover-bg/50">
-        <p class="text-xs text-text-muted">Search for anything in <span class="font-bold text-text-secondary">Nexus POS</span></p>
+        <p class="text-xs text-text-muted">Search for anything in <span class="font-bold text-text-secondary">B & H Pharmaceutical (PVT) LTD</span></p>
         <div class="mt-4 flex justify-center gap-4">
             <div class="flex items-center gap-1.5 text-[10px] text-text-muted">
                 <kbd class="px-1 py-0.5 rounded border border-border bg-card-bg">↑↓</kbd> <span>Navigate</span>

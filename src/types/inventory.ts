@@ -43,6 +43,14 @@ export interface Item {
     unit_type?: string;
 
     notes?: string;
+    
+    // Pharmacy Distribution Fields
+    generic_name?: string;
+    strength?: string;
+    dosage_form?: string;
+    mrp?: number;
+    trade_price?: number;
+    discount_on_tp?: number;
 }
 
 export interface StockTransaction {

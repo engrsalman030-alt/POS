@@ -1,20 +1,23 @@
 <template>
   <div>
-    <div class="grid grid-cols-12 px-6 py-3 transition-colors text-sm items-center border-b border-hover-bg/50 hover:bg-hover-bg">
-        <div class="col-span-1 font-mono text-xs text-text-muted">{{ account.code }}</div>
-        <div class="col-span-7 font-semibold flex items-center gap-2" :style="{ paddingLeft: (depth * 1.5) + 'rem' }"
+    <div class="grid grid-cols-12 px-6 py-2.5 transition-colors text-sm items-center border-b border-hover-bg/50 hover:bg-hover-bg group">
+        <div class="col-span-1 font-mono text-[10px] text-text-muted">{{ account.code }}</div>
+        <div class="col-span-6 font-semibold flex items-center gap-2" :style="{ paddingLeft: (depth * 1) + 'rem' }"
            :class="account.is_group ? 'text-text-primary' : 'text-text-secondary'">
-            <span v-if="account.is_group" class="text-[10px] text-text-muted">▼</span>
-            <span v-else class="text-[10px] text-border">●</span>
+            <span v-if="account.is_group" class="text-[10px] text-text-muted opacity-40">▼</span>
+            <span v-else class="text-[8px] text-border">●</span>
             {{ account.name }}
+            <router-link v-if="!account.is_group" :to="'/ledger/' + account.id" class="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-0.5 rounded bg-brand/10 text-brand text-[9px] font-black uppercase tracking-widest ml-2">
+               Ledger
+            </router-link>
         </div>
         <div class="col-span-2">
-            <span class="text-[10px] px-2 py-0.5 rounded text-center block w-max"
+            <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded text-center block w-max"
                :class="typeClass">
                 {{ account.type }}
             </span>
         </div>
-        <div class="col-span-2 text-right font-bold text-text-primary">
+        <div class="col-span-3 text-right font-black tabular-nums text-text-primary">
             {{ formatCurrency(balance) }}
         </div>
     </div>

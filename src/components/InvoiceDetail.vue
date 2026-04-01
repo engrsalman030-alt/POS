@@ -8,8 +8,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M15 9v12"/></svg>
         </div>
         <div>
-          <h2 class="text-2xl font-black uppercase tracking-tight">{{ companyStore.company?.name || 'VTS SOLUTIONS' }}</h2>
-          <p class="text-[10px] text-text-muted font-black uppercase tracking-[0.2em] mt-1">{{ companyStore.company?.address || 'Main POS Terminal' }}</p>
+          <h2 class="text-2xl font-black uppercase tracking-tight">{{ companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD' }}</h2>
+          <p class="text-[10px] text-text-muted font-black uppercase tracking-[0.2em] mt-1">{{ companyStore.company?.address || 'Main Pharmaceutical Distribution' }}</p>
         </div>
       </div>
       <div class="text-left md:text-right">
@@ -40,6 +40,8 @@
             </div>
             <p v-if="invoice.reference" class="text-[10px] font-black uppercase tracking-widest text-text-secondary">Ref: {{ invoice.reference }}</p>
             <p v-if="invoice.sales_manager" class="text-[10px] font-black uppercase tracking-widest text-text-secondary">Manager: {{ invoice.sales_manager }}</p>
+            <p v-if="invoice.ssr_id" class="text-[10px] font-black uppercase tracking-widest text-emerald-600">SSR: {{ getStaffName(invoice.ssr_id) }}</p>
+            <p v-if="invoice.dsr_id" class="text-[10px] font-black uppercase tracking-widest text-blue-600">DSR: {{ getStaffName(invoice.dsr_id) }}</p>
             <p v-if="invoice.frappe_reference" class="text-[10px] font-black uppercase tracking-widest text-emerald-600">FR: {{ invoice.frappe_reference }}</p>
           </div>
         </div>
@@ -133,6 +135,7 @@
 import { onMounted, computed } from 'vue';
 import { useCompanyStore } from '../stores/company';
 import { useInventoryStore } from '../stores/inventory';
+import { useStaffStore } from '../stores/staff';
 
 const props = defineProps<{
   invoice: any;
@@ -143,6 +146,7 @@ const emit = defineEmits(['close']);
 
 const companyStore = useCompanyStore();
 const inventoryStore = useInventoryStore();
+const staffStore = useStaffStore();
 
 const totalBonusUnits = computed(() => {
   return props.invoice.items.reduce((sum: number, item: any) => sum + (item.bonus_quantity || 0), 0);
@@ -150,6 +154,27 @@ const totalBonusUnits = computed(() => {
 
 onMounted(() => {
   inventoryStore.fetchItems();
+  staffStore.fetchStaff();
+});
+
+const groupedItems = computed(() => {
+  const groups: Record<string, any[]> = {};
+  props.invoice.items.forEach((item: any) => {
+    const info = getItemInfo(item.item_id);
+    const brand = item.brand || info?.brand || 'General';
+    if (!groups[brand]) groups[brand] = [];
+    groups[brand].push({
+      ...item,
+      brand,
+      generic: info?.generic_name || '',
+      sku: info?.sku || ''
+    });
+  });
+  return groups;
+});
+
+const companyInitials = computed(() => {
+  return companyStore.getMonogram(companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD');
 });
 
 function getItemInfo(itemId: string) {
@@ -158,6 +183,10 @@ function getItemInfo(itemId: string) {
 
 function getItemName(item: any) {
   return item.name || getItemInfo(item.item_id)?.name || 'Unknown Item';
+}
+
+function getStaffName(id: string) {
+  return staffStore.staff.find(s => s.id === id)?.name || 'Unknown';
 }
 
 function formatCurrency(val: number) {
@@ -175,108 +204,137 @@ function handlePrint() {
     const doc = frame.contentWindow?.document;
     if (!doc) return;
 
+    const brandGroups = groupedItems.value;
+    const company = companyStore.company;
+
     doc.open();
     doc.write(`
       <html>
         <head>
-          <title>Invoice #${props.invoice.id.slice(0, 8)}</title>
+          <title>Sale Invoice - ${props.invoice.id.slice(0, 8)}</title>
           <script src="https://cdn.tailwindcss.com"><\/script>
           <style>
-             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-            @media print {
-              @page { margin: 15mm; }
-              body { -webkit-print-color-adjust: exact; font-family: 'Inter', sans-serif; }
-            }
+             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+             @media print {
+               @page { margin: 10mm; size: auto; }
+               body { -webkit-print-color-adjust: exact; font-family: 'Inter', sans-serif; color: #000; }
+               .no-print { display: none; }
+             }
+             body { font-family: 'Inter', sans-serif; }
+             .border-tight { border: 1px solid #000; }
+             .table-tight th, .table-tight td { border: 1px solid #000; padding: 2px 4px; font-size: 10px; }
+             .monogram { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.2em; }
           </style>
         </head>
-        <body class="bg-white p-6">
-          <div class="max-w-4xl mx-auto border-2 border-slate-900 p-8 rounded-3xl">
-             <div class="flex justify-between items-start border-b-4 border-slate-900 pb-6 mb-8">
-                <div>
-                  <h1 class="text-3xl font-black uppercase tracking-tighter">${companyStore.company?.name || 'VTS SOLUTIONS'}</h1>
-                  <p class="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">${companyStore.company?.address || 'Main POS Terminal'}</p>
+        <body class="bg-white p-4">
+          <!-- MAIN HEADER -->
+          <div class="flex justify-between items-start mb-6">
+             <div class="border-2 border-black px-8 py-2">
+                <h1 class="text-xl font-black uppercase tracking-widest">Sale Invoice</h1>
+             </div>
+             <div class="text-right">
+                <div class="flex items-center justify-end gap-3 mb-1">
+                   <div class="monogram text-2xl font-black border-b-2 border-black pb-1">${companyInitials.value}</div>
                 </div>
-                <div class="text-right">
-                  <h2 class="text-5xl font-black text-slate-100 uppercase tracking-widest leading-none mb-2">INVOICE</h2>
-                  <p class="text-lg font-black uppercase">#${props.invoice.id.slice(0, 8).toUpperCase()}</p>
-                  <p class="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">${props.invoice.date}</p>
+                <p class="text-[10px] font-bold uppercase tracking-tight">${company?.name || 'B & H Pharmaceutical (PVT) LTD'}</p>
+                <p class="text-[9px] font-medium text-slate-600">${company?.address || 'Main Pharmaceutical Distribution'}</p>
+                <p class="text-[9px] font-medium text-slate-600">${company?.phone || ''}</p>
+             </div>
+          </div>
+
+          <!-- INFO BAR -->
+          <div class="flex justify-between items-start mb-4 text-[11px]">
+             <div class="space-y-0.5">
+                <p><span class="font-bold">Sold To:</span> ${props.invoice.customer_id}</p>
+                <p class="font-black text-xs uppercase">${props.customerName}</p>
+                <p class="text-slate-600 max-w-xs">${props.invoice.billing_address || ''}</p>
+             </div>
+             <div class="text-right space-y-0.5">
+                <p><span class="font-bold">Invoice No :</span> ${props.invoice.id.slice(0, 8).toUpperCase()}</p>
+                <p><span class="font-bold">Invoice Date :</span> ${props.invoice.date}</p>
+                <p><span class="font-bold">Salesman :</span> ${getStaffName(props.invoice.dsr_id || '')}</p>
+             </div>
+          </div>
+
+          <!-- ITEMS TABLE -->
+          <table class="w-full table-tight border-collapse mb-4">
+             <thead>
+                <tr class="bg-slate-50">
+                   <th class="w-8">SNO</th>
+                   <th class="w-16">Code</th>
+                   <th>Description</th>
+                   <th class="w-20">Batch</th>
+                   <th class="w-12">Qty</th>
+                   <th class="w-12">Bon</th>
+                   <th class="w-16">T. Price</th>
+                   <th class="w-20">Gross</th>
+                   <th class="w-12">S. Tax</th>
+                   <th class="w-12">Disc</th>
+                   <th class="w-16">D. Val</th>
+                   <th class="w-20">Total</th>
+                </tr>
+             </thead>
+             <tbody>
+                ${Object.entries(brandGroups).map(([brand, groupItems], gIdx) => `
+                   <tr class="bg-slate-100 font-bold italic">
+                      <td colspan="12" class="py-1 px-2">Company: ${gIdx + 1} &nbsp;&nbsp; ${brand}</td>
+                   </tr>
+                   ${groupItems.map((item, iIdx) => {
+                     const gross = item.quantity * item.rate;
+                     const discVal = gross * ((item.discount_pct || 0) / 100);
+                     const rowTotal = gross - discVal + (item.tax_amount || 0);
+                     return `
+                        <tr>
+                           <td class="text-center">${iIdx + 1}</td>
+                           <td class="text-center">${item.sku || item.item_id.slice(0,6)}</td>
+                           <td>
+                               <div class="font-bold uppercase">${getItemName(item)}</div>
+                               ${item.generic ? `<div class="text-[8px] italic opacity-70">${item.generic}</div>` : ''}
+                           </td>
+                           <td class="text-center font-mono">${item.batch_number || '-'}</td>
+                           <td class="text-center font-bold">${item.quantity}</td>
+                           <td class="text-center text-emerald-700">${item.bonus_quantity || '0'}</td>
+                           <td class="text-right">${item.rate.toFixed(2)}</td>
+                           <td class="text-right font-bold">${gross.toFixed(2)}</td>
+                           <td class="text-right">${(item.tax_pct || 0).toFixed(2)}</td>
+                           <td class="text-right">${(item.discount_pct || 0).toFixed(2)}</td>
+                           <td class="text-right">${discVal.toFixed(2)}</td>
+                           <td class="text-right font-black">${rowTotal.toFixed(2)}</td>
+                        </tr>
+                     `;
+                   }).join('')}
+                   <tr class="bg-slate-50 font-bold border-t border-black">
+                      <td colspan="11" class="text-right py-1">Total for: ${brand}</td>
+                      <td class="text-right py-1">${groupItems.reduce((sum, i) => sum + i.total, 0).toFixed(2)}</td>
+                   </tr>
+                `).join('')}
+             </tbody>
+          </table>
+
+          <!-- SUMMARY FOOTER -->
+          <div class="flex justify-end mt-8">
+             <div class="w-64 space-y-1">
+                <div class="flex justify-between items-center text-xs">
+                   <span class="font-bold">Grand Total :</span>
+                   <span class="font-black text-base border-b-2 border-black pb-0.5">${props.invoice.total_amount.toFixed(2)}</span>
+                </div>
+                <div class="pt-4 mt-8 flex flex-col items-end">
+                   <div class="w-48 border-t border-black mb-1"></div>
+                   <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Authorized Signature</p>
                 </div>
              </div>
+          </div>
 
-             <div class="grid grid-cols-2 gap-10 mb-10">
-                <div>
-                   <h4 class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 italic">Billed To:</h4>
-                   <h3 class="text-xl font-black text-emerald-700">${props.customerName}</h3>
-                   <div class="mt-4 space-y-1">
-                      ${props.invoice.sales_manager ? `<p class="text-[10px] font-bold text-slate-600">Sales Manager: ${props.invoice.sales_manager}</p>` : ''}
-                      ${props.invoice.frappe_reference ? `<p class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Ref: ${props.invoice.frappe_reference}</p>` : ''}
-                   </div>
-                </div>
-                <div class="text-right">
-                   <h4 class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 italic">Reference:</h4>
-                   <p class="text-base font-black text-slate-900">${props.invoice.reference || 'SYSTEM-POS'}</p>
-                </div>
-             </div>
-
-             <table class="w-full text-xs mb-10">
-                <thead class="bg-slate-900 text-white">
-                    <tr>
-                       <th class="py-3 px-4 text-left font-black uppercase tracking-widest">Description</th>
-                       <th class="py-3 px-4 text-center font-black uppercase tracking-widest">Billed + Bonus</th>
-                       <th class="py-3 px-4 text-right font-black uppercase tracking-widest">Price</th>
-                       <th class="py-3 px-4 text-right font-black uppercase tracking-widest">Total</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y-2 divide-slate-100">
-                   ${props.invoice.items.map((i: any) => `
-                      <tr>
-                         <td class="py-4 px-4 font-bold">
-                            <div class="text-sm font-black">${getItemName(i)}</div>
-                            ${i.batch_number ? `<div class="text-[9px] text-emerald-600 font-bold mt-1 uppercase">Batch: ${i.batch_number} ${i.expiry_date ? `<span class="text-slate-400 ml-2">Exp: ${i.expiry_date}</span>` : ''}</div>` : ''}
-                         </td>
-                         <td class="py-4 px-4 text-center">
-                            <div class="font-mono font-bold text-sm">${i.quantity}</div>
-                            ${i.bonus_quantity ? `<div class="text-[9px] text-emerald-600 font-black">+${i.bonus_quantity} BONUS</div>` : ''}
-                         </td>
-                         <td class="py-4 px-4 text-right font-mono font-bold">${formatCurrency(i.rate)}</td>
-                         <td class="py-4 px-4 text-right font-black text-slate-900">${formatCurrency(i.total)}</td>
-                      </tr>
-                   `).join('')}
-                </tbody>
-             </table>
-
-             <div class="flex justify-end pt-6 border-t-2 border-slate-100">
-                <div class="w-72 space-y-3">
-                   <div class="flex justify-between font-bold text-slate-500 text-[11px] uppercase tracking-widest">
-                      <span>Subtotal</span>
-                      <span class="text-slate-900">${formatCurrency(props.invoice.total_amount + (props.invoice.discount_amount || 0))}</span>
-                   </div>
-                   ${totalBonusUnits.value > 0 ? `
-                   <div class="flex justify-between font-bold text-emerald-600 text-[11px] uppercase tracking-widest">
-                      <span>Total Bonus</span>
-                      <span>${totalBonusUnits.value} Units</span>
-                   </div>
-                   ` : ''}
-                   <div class="flex justify-between font-bold text-rose-500 text-[11px] uppercase tracking-widest">
-                      <span>Discount</span>
-                      <span>-${formatCurrency(props.invoice.discount_amount || 0)}</span>
-                   </div>
-                   <div class="pt-4 border-t-4 border-slate-900 flex justify-between items-center">
-                      <span class="text-lg font-black uppercase tracking-tighter">Grand Total</span>
-                      <span class="text-2xl font-black text-emerald-700 tabular-nums">${formatCurrency(props.invoice.total_amount)}</span>
-                   </div>
-                </div>
-             </div>
-
-             <div class="mt-16 pt-6 border-t border-slate-100 text-center">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Professional Pharmacy Distribution Receipt</p>
-             </div>
+          <div class="mt-12 text-[8px] text-center text-slate-400 font-bold uppercase tracking-[0.5em]">
+             B & H Pharmaceutical (PVT) LTD - Distribution Management System
           </div>
 
           <script>
             window.onload = function() {
-              window.print();
-              setTimeout(() => { window.close(); }, 500);
+              setTimeout(() => {
+                window.print();
+                // window.close(); // Don't close if it's an iframe
+              }, 500);
             };
           <\/script>
         </body>

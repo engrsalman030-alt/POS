@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS company (
   currency TEXT,
   fiscal_year_start TEXT,
   is_setup INTEGER DEFAULT 0,
-  ntn TEXT
+  ntn TEXT,
+  address TEXT,
+  phone TEXT,
+  business_type TEXT DEFAULT 'Pharmacy'
 );
 
 CREATE TABLE IF NOT EXISTS accounts (
@@ -63,6 +66,13 @@ CREATE TABLE IF NOT EXISTS items (
   weight REAL,
   pack_size TEXT,
   unit_type TEXT,
+  -- Pharmacy Distribution Fields
+  generic_name TEXT,
+  strength TEXT,
+  dosage_form TEXT,
+  mrp REAL DEFAULT 0,
+  trade_price REAL DEFAULT 0,
+  discount_on_tp REAL DEFAULT 0,
   notes TEXT,
   FOREIGN KEY (default_income_account_id) REFERENCES accounts(id),
   FOREIGN KEY (default_expense_account_id) REFERENCES accounts(id),
@@ -138,6 +148,23 @@ CREATE TABLE IF NOT EXISTS stock_ledger (
   reference_id TEXT,
   FOREIGN KEY (item_id) REFERENCES items(id)
 );
+
+CREATE TABLE IF NOT EXISTS item_batches (
+  id TEXT PRIMARY KEY,
+  item_id TEXT NOT NULL,
+  batch_number TEXT NOT NULL,
+  mfg_date TEXT,
+  expiry_date TEXT,
+  quantity REAL DEFAULT 0,
+  purchase_rate REAL DEFAULT 0,
+  sales_rate REAL DEFAULT 0,
+  supplier_id TEXT,
+  notes TEXT,
+  is_active INTEGER DEFAULT 1,
+  created_at TEXT,
+  FOREIGN KEY (item_id) REFERENCES items(id)
+);
+
 CREATE TABLE IF NOT EXISTS taxes (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -152,14 +179,28 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   status TEXT DEFAULT 'Draft',
   tax_id TEXT,
   tax_amount REAL DEFAULT 0,
+  discount_amount REAL DEFAULT 0,
+  discount_pct REAL DEFAULT 0,
   total_amount REAL DEFAULT 0,
   paid_amount REAL DEFAULT 0,
   outstanding_amount REAL DEFAULT 0,
   sales_manager TEXT,
   frappe_reference TEXT,
   shift_id TEXT,
+  ssr_id TEXT,
+  dsr_id TEXT,
   FOREIGN KEY (customer_id) REFERENCES parties(id),
-  FOREIGN KEY (shift_id) REFERENCES shifts(id)
+  FOREIGN KEY (shift_id) REFERENCES shifts(id),
+  FOREIGN KEY (ssr_id) REFERENCES staff(id),
+  FOREIGN KEY (dsr_id) REFERENCES staff(id)
+);
+
+CREATE TABLE IF NOT EXISTS staff (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL, -- SSR, DSR, Admin, etc.
+  phone TEXT,
+  is_active INTEGER DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS sales_invoice_items (
@@ -174,6 +215,7 @@ CREATE TABLE IF NOT EXISTS sales_invoice_items (
   tax_id TEXT,
   tax_amount REAL DEFAULT 0,
   total REAL DEFAULT 0,
+  batch_id TEXT,
   FOREIGN KEY (invoice_id) REFERENCES sales_invoices(id),
   FOREIGN KEY (item_id) REFERENCES items(id)
 );
@@ -185,6 +227,8 @@ CREATE TABLE IF NOT EXISTS purchase_bills (
   status TEXT DEFAULT 'Draft',
   tax_id TEXT,
   tax_amount REAL DEFAULT 0,
+  discount_amount REAL DEFAULT 0,
+  discount_pct REAL DEFAULT 0,
   total_amount REAL DEFAULT 0,
   paid_amount REAL DEFAULT 0,
   outstanding_amount REAL DEFAULT 0,
@@ -205,6 +249,7 @@ CREATE TABLE IF NOT EXISTS purchase_bill_items (
   tax_id TEXT,
   tax_amount REAL DEFAULT 0,
   total REAL DEFAULT 0,
+  batch_id TEXT,
   FOREIGN KEY (bill_id) REFERENCES purchase_bills(id),
   FOREIGN KEY (item_id) REFERENCES items(id)
 );
@@ -220,6 +265,7 @@ CREATE TABLE IF NOT EXISTS payments (
   reference_type TEXT,
   reference_id TEXT,
   shift_id TEXT,
+  memo TEXT,
   FOREIGN KEY (party_id) REFERENCES parties(id),
   FOREIGN KEY (account_id) REFERENCES accounts(id),
   FOREIGN KEY (shift_id) REFERENCES shifts(id)
@@ -234,6 +280,32 @@ CREATE TABLE IF NOT EXISTS shifts (
   status TEXT DEFAULT 'Open',
   notes TEXT
 );
+
+CREATE TABLE IF NOT EXISTS expense_categories (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS expenses (
+  id TEXT PRIMARY KEY,
+  date TEXT NOT NULL,
+  category_id TEXT NOT NULL,
+  amount REAL NOT NULL,
+  notes TEXT,
+  paid_by TEXT,
+  FOREIGN KEY (category_id) REFERENCES expense_categories(id)
+);
+
+CREATE TABLE IF NOT EXISTS erp_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
+
+-- Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_stock_ledger_item_date ON stock_ledger(item_id, date);
+CREATE INDEX IF NOT EXISTS idx_sales_invoices_date ON sales_invoices(date);
+CREATE INDEX IF NOT EXISTS idx_journal_items_account ON journal_items(account_id);
+CREATE INDEX IF NOT EXISTS idx_item_batches_item ON item_batches(item_id);
 `;
 
 export async function getDb(): Promise<Database> {
@@ -309,6 +381,11 @@ export async function getDb(): Promise<Database> {
     { table: 'purchase_bill_items', column: 'batch_number', type: 'TEXT' },
     { table: 'purchase_bill_items', column: 'expiry_date', type: 'TEXT' },
     { table: 'stock_ledger', column: 'bonus_quantity', type: 'REAL DEFAULT 0' },
+    { table: 'stock_ledger', column: 'batch_id', type: 'TEXT' },
+    
+    // Batch tracking on invoice/bill items
+    { table: 'sales_invoice_items', column: 'batch_id', type: 'TEXT' },
+    { table: 'purchase_bill_items', column: 'batch_id', type: 'TEXT' },
     
     // Shift migrations
     { table: 'sales_invoices', column: 'shift_id', type: 'TEXT' },
@@ -316,9 +393,35 @@ export async function getDb(): Promise<Database> {
     
     // Distribution Metadata migrations
     { table: 'sales_invoices', column: 'sales_manager', type: 'TEXT' },
-    { table: 'sales_invoices', column: 'frappe_reference', type: 'TEXT' },
-    { table: 'purchase_bills', column: 'sales_manager', type: 'TEXT' },
     { table: 'purchase_bills', column: 'frappe_reference', type: 'TEXT' },
+    
+    // New Pharmacy Distribution Fields
+    { table: 'items', column: 'generic_name', type: 'TEXT' },
+    { table: 'items', column: 'strength', type: 'TEXT' },
+    { table: 'items', column: 'dosage_form', type: 'TEXT' },
+    { table: 'items', column: 'mrp', type: 'REAL DEFAULT 0' },
+    { table: 'items', column: 'trade_price', type: 'REAL DEFAULT 0' },
+    { table: 'items', column: 'discount_on_tp', type: 'REAL DEFAULT 0' },
+    
+    // Company migrations
+    { table: 'company', column: 'business_type', type: "TEXT DEFAULT 'Pharmacy'" },
+    { table: 'company', column: 'address', type: 'TEXT' },
+    { table: 'company', column: 'phone', type: 'TEXT' },
+    
+    // SSR/DSR migrations
+    { table: 'sales_invoices', column: 'ssr_id', type: 'TEXT' },
+    { table: 'sales_invoices', column: 'dsr_id', type: 'TEXT' },
+    
+    // Settings & Expenses migrations
+    { table: 'erp_settings', column: 'key', type: 'TEXT' },
+    { table: 'expenses', column: 'category_id', type: 'TEXT' },
+    { table: 'expenses', column: 'paid_by', type: 'TEXT' },
+
+    // Invoices / Bills missing columns
+    { table: 'sales_invoices', column: 'discount_amount', type: 'REAL DEFAULT 0' },
+    { table: 'sales_invoices', column: 'discount_pct', type: 'REAL DEFAULT 0' },
+    { table: 'purchase_bills', column: 'discount_amount', type: 'REAL DEFAULT 0' },
+    { table: 'purchase_bills', column: 'discount_pct', type: 'REAL DEFAULT 0' },
   ];
 
   for (const m of migrations) {
@@ -335,6 +438,11 @@ export async function getDb(): Promise<Database> {
   try { 
     db.run("ALTER TABLE items ADD COLUMN category TEXT;");
     db.run("UPDATE items SET category = 'General' WHERE category IS NULL;");
+  } catch (e) {}
+
+  // Rebranding Migration: Set default name to B & H Pharmaceutical (PVT) LTD
+  try {
+    db.run("UPDATE company SET name = 'B & H Pharmaceutical (PVT) LTD' WHERE name = 'Nexus POS' OR name = 'Pharmacy Dashboard' OR name = 'VTS SOLUTIONS';");
   } catch (e) {}
 
   saveDb();
