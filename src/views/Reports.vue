@@ -1,15 +1,15 @@
 <template>
-  <div class="p-8 max-w-5xl mx-auto font-sans">
+  <div class="page-container">
 
     <!-- Minimalist Header & Controls -->
-    <header class="mb-6 flex justify-between items-end pb-4 border-b border-border">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-bold text-text-primary">Financial Reports</h1>
-        <p class="text-sm mt-1 text-text-secondary">Overview of your financial performance.</p>
+        <h1 class="text-heading">Financial Reports</h1>
+        <p class="text-subheading">Overview of your financial performance.</p>
       </div>
 
       <div class="flex items-center gap-4">
-        <select v-model="activeTab" class="px-3 py-1.5 text-sm font-medium rounded outline-none transition-all cursor-pointer bg-hover-bg border border-border text-text-primary">
+        <select v-model="activeTab" class="input-std min-w-[200px]">
           <option value="pl">Profit & Loss Statement</option>
           <option value="bs">Balance Sheet</option>
           <option value="ssr">Stock Sales Report (SSR)</option>
@@ -18,53 +18,52 @@
           <option value="shifts">Shift Performance</option>
         </select>
 
-        <select v-if="activeTab === 'vendor_sales'" v-model="selectedBrand" @change="refreshData" class="px-3 py-1.5 text-sm font-medium rounded outline-none transition-all cursor-pointer bg-hover-bg border border-border text-text-primary">
+        <select v-if="activeTab === 'vendor_sales'" v-model="selectedBrand" @change="refreshData" class="input-std">
           <option value="">Select Vendor</option>
           <option v-for="b in brands" :key="b.brand" :value="b.brand">{{ b.brand }}</option>
         </select>
 
         <div v-if="['ssr', 'dsr', 'vendor_sales'].includes(activeTab)" class="flex items-center gap-2">
-            <input type="date" v-model="startDate" @change="refreshData" class="px-2 py-1.5 text-xs rounded border border-border bg-card-bg text-text-primary outline-none" />
-            <span class="text-text-muted text-[10px] uppercase font-bold">to</span>
-            <input type="date" v-model="endDate" @change="refreshData" class="px-2 py-1.5 text-xs rounded border border-border bg-card-bg text-text-primary outline-none" />
+            <input type="date" v-model="startDate" @change="refreshData" class="input-std py-1.5 px-2" />
+            <span class="text-label-small">to</span>
+            <input type="date" v-model="endDate" @change="refreshData" class="input-std py-1.5 px-2" />
         </div>
 
-        <select v-if="activeTab === 'shifts'" v-model="shiftTimeframe" @change="refreshData" class="px-3 py-1.5 text-sm font-medium rounded outline-none transition-all cursor-pointer bg-hover-bg border border-border text-text-primary">
+        <select v-if="activeTab === 'shifts'" v-model="shiftTimeframe" @change="refreshData" class="input-std">
           <option value="daily">Daily</option>
           <option value="monthly">Monthly</option>
           <option value="yearly">Annually</option>
         </select>
 
-        <button v-if="activeTab === 'vendor_sales' && vendorSalesData.length > 0" @click="handlePrintReport" class="px-3 py-1.5 rounded text-sm font-black transition-all bg-text-primary text-card-bg hover:opacity-90 flex items-center gap-2">
+        <button @click="handlePrintReport" class="flex-none px-4 py-2 rounded-xl bg-black text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
           Print Report
         </button>
 
-        <button @click="refreshData" class="px-3 py-1.5 rounded text-sm font-medium transition-all bg-card-bg border border-border text-text-primary hover:bg-hover-bg">
+        <button @click="refreshData" class="btn-ghost border border-border">
           Refresh
         </button>
       </div>
-    </header>
+    </div>
 
     <!-- Tabular Report View (Frappe Books Style) -->
-    <div class="bg-card-bg rounded-lg border border-border overflow-hidden">
+    <div id="printable-report-body" class="bg-card-bg rounded-lg border border-border overflow-hidden">
       
-      <!-- Table Header -->
-      <div v-if="['pl', 'bs'].includes(activeTab)" class="flex px-6 py-3 font-semibold text-xs tracking-widest uppercase bg-hover-bg border-b border-border text-text-secondary">
-        <div class="flex-1">Account</div>
-        <div class="w-48 text-right text-xs">Total</div>
+      <!-- Table Header (P&L, BS) -->
+      <div v-if="['pl', 'bs'].includes(activeTab)" class="flex px-6 py-3 bg-hover-bg border-b border-border">
+        <div class="flex-1 text-label-small">Account</div>
+        <div class="w-48 text-right text-label-small">Total</div>
       </div>
 
       <!-- P&L Report Body -->
       <div v-if="activeTab === 'pl'" class="text-sm text-text-primary">
         
-        <!-- Income Group -->
         <div class="flex px-6 py-3 font-bold bg-card-bg">
-          <div class="flex-1 uppercase text-xs tracking-wider text-text-secondary">Income</div>
+          <div class="flex-1 text-label-small">Income</div>
         </div>
-        <div v-for="row in plData.income" :key="row.name" class="flex px-6 py-2 transition-colors border-b border-hover-bg/50 hover:bg-hover-bg">
-          <div class="flex-1 pl-4">{{ row.name }}</div>
-          <div class="w-48 text-right font-mono">{{ formatCurrency(row.balance) }}</div>
+        <div v-for="row in plData.income" :key="row.name" class="flex px-6 py-2 border-b border-hover-bg/50 hover:bg-hover-bg transition-colors">
+          <div class="flex-1 pl-4 text-xs font-medium">{{ row.name }}</div>
+          <div class="w-48 text-right font-mono text-xs">{{ formatCurrency(row.balance) }}</div>
         </div>
         <div class="flex px-6 py-3 font-bold mt-1 border-t border-border bg-card-bg">
           <div class="flex-1">Total Income</div>
@@ -73,40 +72,37 @@
 
         <div class="h-4 bg-hover-bg border-b border-border border-t border-border"></div>
 
-        <!-- Expense Group -->
         <div class="flex px-6 py-3 font-bold bg-card-bg">
-          <div class="flex-1 uppercase text-xs tracking-wider text-text-secondary">Operating Expenses</div>
+          <div class="flex-1 text-label-small">Operating Expenses</div>
         </div>
-        <div v-for="row in plData.expenses" :key="row.name" class="flex px-6 py-2 transition-colors border-b border-hover-bg/50 hover:bg-hover-bg">
-          <div class="flex-1 pl-4">{{ row.name }}</div>
-          <div class="w-48 text-right font-mono">{{ formatCurrency(row.balance) }}</div>
+        <div v-for="row in plData.expenses" :key="row.name" class="flex px-6 py-2 border-b border-hover-bg/50 hover:bg-hover-bg transition-colors">
+          <div class="flex-1 pl-4 text-xs font-medium">{{ row.name }}</div>
+          <div class="w-48 text-right font-mono text-xs">{{ formatCurrency(row.balance) }}</div>
         </div>
         <div class="flex px-6 py-3 font-bold mt-1 border-t border-border bg-card-bg">
-          <div class="flex-1">Total Expenses</div>
-          <div class="w-48 text-right font-mono">{{ formatCurrency(plData.totalExpenses) }}</div>
+          <div class="flex-1 text-xs">Total Expenses</div>
+          <div class="w-48 text-right font-mono text-xs">{{ formatCurrency(plData.totalExpenses) }}</div>
         </div>
 
-        <!-- Net Profit Final Total -->
-        <div class="flex px-6 py-4 font-extrabold text-base border-t-2 border-text-primary bg-hover-bg">
+        <div class="flex px-6 py-4 font-black text-sm border-t-2 border-text-primary bg-hover-bg uppercase tracking-widest">
           <div class="flex-1">Net Profit / Loss</div>
-          <div class="w-48 text-right font-mono">{{ formatCurrency(plData.netProfit) }}</div>
+          <div class="w-48 text-right font-mono text-brand">{{ formatCurrency(plData.netProfit) }}</div>
         </div>
       </div>
 
       <!-- Balance Sheet Report Body -->
       <div v-if="activeTab === 'bs'" class="text-sm text-text-primary">
         
-        <!-- Assets Group -->
         <div class="flex px-6 py-3 font-bold bg-card-bg">
-          <div class="flex-1 uppercase text-xs tracking-wider text-text-secondary">Assets</div>
+          <div class="flex-1 text-label-small">Assets</div>
         </div>
-        <div v-for="row in bsData.assets" :key="row.name" class="flex px-6 py-2 transition-colors border-b border-hover-bg/50 hover:bg-hover-bg">
-          <div class="flex-1 pl-4">{{ row.name }}</div>
-          <div class="w-48 text-right font-mono">{{ formatCurrency(row.balance) }}</div>
+        <div v-for="row in bsData.assets" :key="row.name" class="flex px-6 py-2 border-b border-hover-bg/50 hover:bg-hover-bg transition-colors">
+          <div class="flex-1 pl-4 text-xs font-medium">{{ row.name }}</div>
+          <div class="w-48 text-right font-mono text-xs">{{ formatCurrency(row.balance) }}</div>
         </div>
         <div class="flex px-6 py-3 font-bold mt-1 border-t border-border bg-card-bg">
-          <div class="flex-1">Total Assets</div>
-          <div class="w-48 text-right font-mono">{{ formatCurrency(bsData.totalAssets) }}</div>
+          <div class="flex-1 text-xs">Total Assets</div>
+          <div class="w-48 text-right font-mono text-xs">{{ formatCurrency(bsData.totalAssets) }}</div>
         </div>
 
         <div class="h-4 bg-hover-bg border-b border-border border-t border-border"></div>
@@ -151,16 +147,16 @@
 
       </div>
 
-      <!-- SSR: Stock Sales Report Body -->
-      <div v-if="activeTab === 'ssr'" class="text-[11px] text-text-primary overflow-x-auto">
+      <!-- SSR Report Body -->
+      <div v-if="activeTab === 'ssr'" class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
-          <thead class="bg-hover-bg border-b border-border">
+          <thead>
             <tr>
-              <th class="py-3 px-4 font-black uppercase tracking-widest text-text-muted">Item / Description</th>
-              <th class="py-3 px-4 font-black uppercase tracking-widest text-text-muted text-right">Opening</th>
-              <th class="py-3 px-4 font-black uppercase tracking-widest text-text-muted text-right">Purchased</th>
-              <th class="py-3 px-4 font-black uppercase tracking-widest text-text-muted text-right">Sold</th>
-              <th class="py-3 px-4 font-black uppercase tracking-widest text-text-muted text-right">Closing</th>
+              <th class="table-th">Item / Description</th>
+              <th class="table-th text-right">Opening</th>
+              <th class="table-th text-right">Purchased</th>
+              <th class="table-th text-right">Sold</th>
+              <th class="table-th text-right">Closing</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-border/50">
@@ -189,19 +185,28 @@
       <div v-if="activeTab === 'vendor_sales'" class="text-[9px] text-text-primary overflow-x-auto">
         
         <!-- Professional Report Header (Visible on screen and optimized for print) -->
-        <div class="p-6 bg-hover-bg/20 border-b border-border flex justify-between items-start">
-           <div class="flex items-center gap-4">
-              <div class="w-12 h-12 bg-text-primary text-card-bg flex items-center justify-center font-black text-xl monogram rounded-lg shadow-lg">
-                {{ companyStore.getMonogram(companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD') }}
-              </div>
-              <div>
-                 <h2 class="text-lg font-black uppercase tracking-tight text-text-primary">{{ companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD' }}</h2>
-                 <p class="text-[9px] font-bold text-text-muted uppercase tracking-widest">{{ companyStore.company?.address || 'Main Pharmaceutical Distribution' }}</p>
-                 <p class="text-[9px] font-bold text-text-muted uppercase tracking-widest">Phone: {{ companyStore.company?.phone || 'N/A' }}</p>
+        <div class="p-6 bg-hover-bg/20 border-b border-border flex items-center justify-between">
+           <!-- MONOGRAM (B&H PHARMA) -->
+           <div class="flex-shrink-0 mr-6">
+              <img :src="'/logo.png'" style="max-width: 60px; max-height: 60px; object-fit: contain;" onerror="this.onerror=null; this.style.display='none'; document.getElementById('svg-fallback-ui').style.display='flex';" />
+              <div id="svg-fallback-ui" style="display: none; width: 50px; height: 50px;" class="rounded-full border-2 border-emerald-500 bg-white flex-col items-center justify-center shadow-sm">
+                 <div class="text-emerald-500 flex items-center justify-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19.5,8H15V3.5A1.5,1.5 0 0,0 13.5,2H10.5A1.5,1.5 0 0,0 9,3.5V8H4.5A1.5,1.5 0 0,0 3,9.5V12.5A1.5,1.5 0 0,0 4.5,14H9V18.5A1.5,1.5 0 0,0 10.5,20H13.5A1.5,1.5 0 0,0 15,18.5V14H19.5A1.5,1.5 0 0,0 21,12.5V9.5A1.5,1.5 0 0,0 19.5,8Z"/></svg>
+                 </div>
+                 <span class="text-[5px] font-black text-emerald-600 tracking-tighter mt-1">B&H PHARMA</span>
               </div>
            </div>
-           <div class="text-right">
-              <h1 class="text-xl font-black text-text-primary uppercase tracking-tighter">Vendorwise Sales Report</h1>
+
+           <!-- COMPANY HEADER (RAAZEE Therapeutics) -->
+           <div class="flex-grow text-left">
+              <h1 class="text-xl font-black uppercase text-text-primary tracking-tighter leading-none mb-1">RAAZEE Therapeutics <span class="text-[10px]">(PRIVATE) LIMITED</span></h1>
+              <p class="text-[10px] font-black text-text-primary">Head office & Plant: 48 km, Lahore-Kasur road, Kasur</p>
+              <p class="text-[10px] font-black text-text-primary mt-0.5 tracking-tight">NTN : 1526202-2 &nbsp;&nbsp;&nbsp; STRN : 03-04-3000-021-37</p>
+           </div>
+             
+           <!-- REPORT BADGE -->
+           <div class="flex-shrink-0 text-right ml-4">
+              <h1 class="text-lg font-black text-text-primary uppercase tracking-tighter leading-none">Vendor Sales Report</h1>
               <p v-if="selectedBrand" class="text-[10px] font-black text-brand uppercase tracking-widest mt-1">Vendor: {{ selectedBrand }}</p>
               <p class="text-[9px] font-bold text-text-secondary mt-1 italic tracking-widest">Period: {{ startDate }} to {{ endDate }}</p>
            </div>
@@ -273,7 +278,7 @@
     </div>
 
     <!-- Shift Performance Report Body -->
-    <div v-if="activeTab === 'shifts'" class="bg-card-bg mt-6 rounded-lg border border-border overflow-hidden text-sm text-text-primary">
+    <div id="printable-shift-body" v-if="activeTab === 'shifts'" class="bg-card-bg mt-6 rounded-lg border border-border overflow-hidden text-sm text-text-primary">
       <div class="flex px-6 py-3 font-semibold text-xs tracking-widest uppercase bg-hover-bg border-b border-border text-text-secondary">
         <div class="flex-1">Period</div>
         <div class="w-32 text-center text-xs">Shifts</div>
@@ -283,11 +288,11 @@
       </div>
 
       <div v-for="row in shiftData" :key="row.period" class="flex px-6 py-2 transition-colors border-b border-hover-bg/50 hover:bg-hover-bg items-center">
-        <div class="flex-1 font-bold">{{ row.period }}</div>
-        <div class="w-32 text-center font-mono">{{ row.total_shifts }}</div>
-        <div class="w-48 text-right font-mono text-brand">{{ formatCurrency(row.total_sales) }}</div>
-        <div class="w-48 text-right font-mono">{{ formatCurrency(row.total_opening) }}</div>
-        <div class="w-48 text-right font-mono">{{ formatCurrency(row.total_closing) }}</div>
+        <div class="flex-1 font-bold text-xs">{{ row.period }}</div>
+        <div class="w-32 text-center font-mono text-xs">{{ row.total_shifts }}</div>
+        <div class="w-48 text-right font-mono text-brand text-xs font-black">{{ formatCurrency(row.total_sales) }}</div>
+        <div class="w-48 text-right font-mono text-xs">{{ formatCurrency(row.total_opening) }}</div>
+        <div class="w-48 text-right font-mono text-xs">{{ formatCurrency(row.total_closing) }}</div>
       </div>
 
       <div v-if="shiftData.length === 0" class="p-8 text-center text-text-muted italic">
@@ -304,16 +309,14 @@
         </span>
     </div>
 
+    <!-- Hidden Iframe for Printing -->
+    <iframe id="report-print-frame" style="display: none;"></iframe>
   </div>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
-div { font-family: 'Inter', sans-serif; }
 .monogram { font-family: 'JetBrains Mono', monospace; }
 </style>
-
-<iframe id="report-print-frame" style="display: none;"></iframe>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
@@ -368,15 +371,17 @@ function handlePrintReport() {
     const doc = frame.contentWindow?.document;
     if (!doc) return;
 
-    const tableHtml = document.getElementById('vendor-sales-table')?.outerHTML;
-    const company = companyStore.company;
-    const initials = companyStore.getMonogram(company?.name || 'B & H Pharmaceutical (PVT) LTD');
+    const tableHtml = activeTab.value === 'shifts' 
+        ? document.getElementById('printable-shift-body')?.outerHTML 
+        : document.getElementById('printable-report-body')?.outerHTML;
+        
+    // const company = companyStore.company;
 
     doc.open();
     doc.write(`
       <html>
         <head>
-          <title>Vendorwise Sales Report - ${selectedBrand.value}</title>
+          <title>Finance Report - ${activeTab.value.toUpperCase()}</title>
           <script src="https://cdn.tailwindcss.com"><\/script>
           <style>
              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
@@ -396,30 +401,40 @@ function handlePrintReport() {
           </style>
         </head>
         <body>
-          <div class="flex justify-between items-start mb-8 border-b-2 border-black pb-4">
-             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-black text-white flex items-center justify-center font-black text-xl monogram">${initials}</div>
-                <div>
-                   <h1 class="text-xl font-black uppercase">${company?.name || 'B & H Pharmaceutical (PVT) LTD'}</h1>
-                   <p class="text-[9px] font-bold text-slate-600">${company?.address || 'Main Pharmaceutical Distribution'}</p>
-                   <p class="text-[9px] font-bold text-slate-600">Phone: ${company?.phone || ''}</p>
+          <div class="flex items-center justify-between border-b-2 border-black pb-4 mb-4">
+             <!-- MONOGRAM (B&H PHARMA) -->
+             <div class="flex-shrink-0 mr-6">
+                <img src="/logo.png" style="max-width: 100px; max-height: 100px; object-fit: contain;" onerror="this.onerror=null; this.style.display='none'; document.getElementById('svg-fallback-report').style.display='flex';" />
+                <div id="svg-fallback-report" style="display: none; width: 90px; height: 90px;" class="rounded-full border-2 border-emerald-500 bg-white flex-col items-center justify-center shadow-sm">
+                   <div class="text-emerald-500 flex items-center justify-center">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M19.5,8H15V3.5A1.5,1.5 0 0,0 13.5,2H10.5A1.5,1.5 0 0,0 9,3.5V8H4.5A1.5,1.5 0 0,0 3,9.5V12.5A1.5,1.5 0 0,0 4.5,14H9V18.5A1.5,1.5 0 0,0 10.5,20H13.5A1.5,1.5 0 0,0 15,18.5V14H19.5A1.5,1.5 0 0,0 21,12.5V9.5A1.5,1.5 0 0,0 19.5,8Z"/></svg>
+                   </div>
+                   <span class="text-[8px] font-black text-emerald-600 tracking-tighter mt-1">B&H PHARMA</span>
                 </div>
              </div>
-             <div class="text-right">
-                <h2 class="text-2xl font-black uppercase tracking-tighter">Vendorwise Sales Report</h2>
-                <p class="text-xs font-black text-slate-900 uppercase mt-1">${selectedBrand.value}</p>
-                <p class="text-[9px] font-bold text-slate-500 italic mt-1 uppercase">Period: ${startDate.value} to ${endDate.value}</p>
+
+             <!-- COMPANY HEADER (RAAZEE Therapeutics) -->
+             <div class="flex-grow text-left">
+                <h1 class="text-2xl font-black uppercase text-black tracking-tighter leading-none mb-1">RAAZEE Therapeutics <span class="text-lg">(PRIVATE) LIMITED</span></h1>
+                <p class="text-[11px] font-black text-black">Head office & Plant: 48 km, Lahore-Kasur road, Kasur</p>
+                <p class="text-[11px] font-black text-black mt-0.5 tracking-tight">NTN : 1526202-2 &nbsp;&nbsp;&nbsp; STRN : 03-04-3000-021-37</p>
+             </div>
+             
+             <!-- REPORT BADGE -->
+             <div class="flex-shrink-0 text-right ml-4">
+                <div class="border-black border-2 px-4 py-2 bg-black text-white inline-block">
+                   <h2 class="text-sm font-black uppercase tracking-[0.2em] leading-none mb-0.5">${activeTab.value.replace('_', ' ')}</h2>
+                   <h2 class="text-sm font-black uppercase tracking-[0.2em] leading-none">Report</h2>
+                </div>
+                <div class="mt-2 text-right">
+                   ${activeTab.value === 'vendor_sales' && selectedBrand.value ? '<p class="text-[10px] font-black text-black uppercase tracking-widest">' + selectedBrand.value + '</p>' : ''}
+                   <p class="text-[8px] font-bold text-slate-500 italic mt-0.5 uppercase tracking-widest">${startDate.value} to ${endDate.value}</p>
+                </div>
              </div>
           </div>
           
           <div class="report-content">
-            ${tableHtml?.replace(/class="[^"]*"/g, (match) => {
-               // Simplify classes for print
-               if (match.includes('bg-rose-500/10')) return 'class="bg-highlight border-highlight"';
-               if (match.includes('text-right')) return 'class="text-right"';
-               if (match.includes('text-left')) return 'class="text-left"';
-               return 'class=""';
-            })}
+            ${tableHtml}
           </div>
 
           <div class="mt-8 flex justify-end">

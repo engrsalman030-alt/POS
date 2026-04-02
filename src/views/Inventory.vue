@@ -1,34 +1,34 @@
 <template>
-  <div class="p-8 max-w-6xl mx-auto font-sans">
+  <div class="page-container">
     
     <!-- Header -->
-    <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-4 border-b border-border">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-bold text-text-primary">Items & Inventory</h1>
-        <p class="text-sm mt-1 text-text-secondary">Track products, stock levels, and COGS automatically.</p>
+        <h1 class="text-heading">Items & Inventory</h1>
+        <p class="text-subheading">Track products, stock levels, and COGS automatically.</p>
       </div>
-      <button @click="openAddModal"
-        class="w-full sm:w-auto px-4 py-2 rounded text-sm font-bold transition-all bg-text-primary text-card-bg hover:opacity-90">
-        + Add New Item
+      <button @click="openAddModal" class="btn-success">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Add New Item
       </button>
-    </header>
+    </div>
 
     <!-- Cards Grid -->
     <div class="space-y-6">
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         <div v-for="(item, index) in paginatedItems" :key="item.id"
-          class="card-animate group relative bg-card-bg rounded-2xl border border-border p-4 transition-all hover:border-brand hover:shadow-xl hover:shadow-brand/5 flex flex-col"
+          class="card-animate group relative bg-card-bg rounded-xl border border-border p-4 transition-all hover:border-brand hover:shadow-xl hover:shadow-brand/5 flex flex-col"
           :style="{ animationDelay: `${index * 50}ms` }">
           
           <!-- Action buttons floating -->
           <div class="absolute top-2 left-2 flex gap-1 z-20">
             <button @click.stop="openEditModal(item)" 
-              class="w-7 h-7 rounded-full bg-card-bg/90 backdrop-blur border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-brand hover:text-white shadow-sm"
+              class="w-7 h-7 rounded-lg bg-card-bg/90 backdrop-blur border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-brand hover:text-white shadow-sm"
               title="Edit Item">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             </button>
             <button @click.stop="handleDeleteItem(item)" 
-              class="w-7 h-7 rounded-full bg-card-bg/90 backdrop-blur border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white shadow-sm"
+              class="w-7 h-7 rounded-lg bg-card-bg/90 backdrop-blur border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white shadow-sm"
               title="Delete Item">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
             </button>
@@ -40,7 +40,7 @@
           </div>
 
           <!-- Image Area -->
-          <div class="w-full aspect-square bg-hover-bg rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-border group-hover:bg-hover-bg/80 relative">
+          <div class="w-full aspect-square bg-hover-bg rounded-lg mb-4 flex items-center justify-center overflow-hidden border border-border group-hover:bg-hover-bg/80 relative">
             <img v-if="item.image" :src="item.image" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
             <div v-else class="w-full h-full flex items-center justify-center opacity-20">
                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
@@ -48,11 +48,11 @@
           </div>
 
           <!-- Text Details -->
-          <h3 class="text-xs font-black text-text-primary line-clamp-1 mb-1">{{ item.name }}</h3>
-          <p class="text-[9px] text-text-muted font-bold uppercase tracking-widest">{{ item.category || 'General' }}</p>
+          <h3 class="text-xs font-bold text-text-primary line-clamp-1 mb-1 uppercase">{{ item.name }}</h3>
+          <p class="text-label-small">{{ item.category || 'General' }}</p>
           <p class="mt-3 text-[11px] font-black text-brand">{{ formatCurrency(item.sales_rate) }}</p>
 
-          <!-- Add Stock Action (Updated for cleaner fit) -->
+          <!-- Add Stock Action -->
           <div class="mt-4 pt-3 border-t border-border border-dashed">
             <template v-if="!showInlineAdd[item.id]">
               <button @click="showInlineAdd[item.id] = true" 
@@ -69,47 +69,48 @@
         </div>
       </div>
 
-        <!-- Empty State -->
-        <div v-if="paginatedItems.length === 0" class="col-span-full py-20 text-center text-sm text-text-muted">
-          No items found. Click "+ Add New Item" to create one.
-        </div>
+      <!-- Empty State -->
+      <div v-if="paginatedItems.length === 0" class="col-span-full py-20 text-center">
+        <p class="text-sm text-text-muted font-medium">No items found</p>
+        <p class="text-label-small mt-1">Click "+ Add New Item" to create one.</p>
       </div>
+    </div>
 
-      <!-- Pagination Component -->
-      <Pagination 
-        :currentPage="currentPage" 
-        :totalPages="totalPages" 
-        @next="nextPage" 
-        @prev="prevPage"
-        @setPage="setPage"
-      />
+    <!-- Pagination Component -->
+    <Pagination 
+      :currentPage="currentPage" 
+      :totalPages="totalPages" 
+      @next="nextPage" 
+      @prev="prevPage"
+      @setPage="setPage"
+    />
 
     <!-- Modal -->
-    <div v-if="showModal" class="fixed inset-0 flex items-center justify-center p-6 z-[100] bg-black/40 backdrop-blur-[4px] overflow-y-auto">
-      <div class="w-full max-w-4xl my-auto rounded-3xl overflow-hidden border border-border shadow-2xl animate-in fade-in zoom-in duration-300 bg-app-bg">
+    <div v-if="showModal" class="fixed inset-0 flex items-center justify-center p-4 z-[100] bg-black/40 backdrop-blur-sm overflow-y-auto">
+      <div class="w-full max-w-4xl my-auto rounded-xl overflow-hidden border border-border shadow-2xl animate-in fade-in zoom-in duration-300 bg-app-bg">
 
-        <div class="px-8 py-6 flex justify-between items-center bg-card-bg border-b border-border">
-          <div class="flex items-center gap-4">
-             <div class="w-12 h-12 bg-text-primary text-card-bg rounded-2xl flex items-center justify-center shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+        <div class="px-6 py-4 flex justify-between items-center bg-card-bg border-b border-border">
+          <div class="flex items-center gap-3">
+             <div class="w-10 h-10 bg-text-primary text-card-bg rounded-lg flex items-center justify-center shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
              </div>
              <div>
-               <h3 class="font-black text-xl text-text-primary">{{ isEditMode ? 'Edit Inventory Item' : 'New Product Registration' }}</h3>
-               <p class="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mt-0.5">ERP-Grade Inventory Control</p>
+               <h3 class="font-bold text-lg text-text-primary">{{ isEditMode ? 'Edit Inventory Item' : 'New Product Registration' }}</h3>
+               <p class="text-label-small mt-0.5">Inventory Control</p>
              </div>
           </div>
-          <button @click="closeModal" class="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-hover-bg text-text-muted hover:text-rose-500 transition-all active:scale-95">
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          <button @click="closeModal" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-hover-bg text-text-muted hover:text-rose-500 transition-all active:scale-95">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </div>
 
         <!-- Error Message Bar -->
-        <div v-if="errorMessage" class="px-8 py-3 bg-rose-50 border-b border-rose-100 flex items-center gap-3">
+        <div v-if="errorMessage" class="px-6 py-3 bg-rose-50 border-b border-rose-100 flex items-center gap-3">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span class="text-xs font-bold text-rose-600">{{ errorMessage }}</span>
         </div>
 
-        <div class="p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <div class="p-6 max-h-[80vh] overflow-y-auto">
            <ItemForm 
              :initialData="isEditMode ? editingItem : null" 
              @submit="handleFormSubmit" 
@@ -156,8 +157,6 @@ async function quickAddStock(item: any) {
   showInlineAdd.value[item.id] = false;
 }
 
-
-
 const openAddModal = () => {
     closeModal();
     showModal.value = true;
@@ -187,8 +186,6 @@ const handleDeleteItem = async (item: any) => {
     }
 };
 
-// handleFileUpload removed as it is now in ItemForm.vue
-
 onMounted(() => {
   inventoryStore.fetchItems();
 });
@@ -210,7 +207,7 @@ async function handleFormSubmit(itemData: any) {
       console.error(err);
     }
   }
-} // handleAdd removed as we use handleFormSubmit now
+}
 
 function formatCurrency(val: number) {
   return new Intl.NumberFormat('en-PK', {
@@ -221,9 +218,6 @@ function formatCurrency(val: number) {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-div { font-family: 'Inter', sans-serif; }
-
 .card-animate {
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

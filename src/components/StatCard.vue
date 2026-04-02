@@ -3,7 +3,7 @@
     <div class="flex flex-wrap justify-between items-start gap-2 mb-4">
       <div class="min-w-0 flex-1">
         <p class="text-[9px] font-bold text-text-muted uppercase tracking-widest mb-1 truncate">{{ title }}</p>
-        <h3 class="text-xl md:text-2xl font-black text-text-primary tracking-tight truncate" :title="formattedValue">{{ formattedValue }}</h3>
+        <h3 class="text-lg md:text-xl xl:text-2xl font-black text-text-primary tracking-tight truncate" :title="formattedValue">{{ formattedValue }}</h3>
       </div>
       <div class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center border border-border bg-hover-bg transition-colors group-hover:border-text-primary">
         <span class="text-sm">{{ icon }}</span>

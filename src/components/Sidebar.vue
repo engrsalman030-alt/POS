@@ -4,9 +4,8 @@
     <div v-if="isOpen" class="fixed inset-0 bg-black/5 backdrop-blur-[2px] z-[55] lg:hidden" @click="$emit('close')"></div>
     
     <aside 
-      :class="['flex flex-col h-full bg-sidebar-bg transition-all duration-300 z-[60]', 
-                isOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0 w-64',
-                'fixed lg:relative border-r border-border']"
+      :class="['fixed lg:sticky top-0 left-0 h-screen bg-sidebar-bg transition-all duration-300 z-[60] border-r border-border flex flex-col', 
+                isOpen ? 'translate-x-0 w-64 shadow-2xl shadow-black/20' : '-translate-x-full lg:translate-x-0 lg:w-64 w-0']"
     >
       
       <!-- Logo + Close button for mobile -->

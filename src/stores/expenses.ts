@@ -21,10 +21,11 @@ export const useExpenseStore = defineStore('expenses', {
             }
         },
         async addCategory(name: string) {
-            await ERPService.addExpenseCategory(name);
+            const id = await ERPService.addExpenseCategory(name);
             await this.fetchCategories();
+            return id;
         },
-        async addExpense(expense: { date: string, category_id: string, amount: number, notes: string }) {
+        async addExpense(expense: { date: string, category_id: string, amount: number, notes: string, merchant?: string, payment_method?: string }) {
             const id = await ERPService.addExpense(expense);
             const category = this.categories.find(c => c.id === expense.category_id);
             

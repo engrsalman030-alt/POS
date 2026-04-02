@@ -1,20 +1,20 @@
 <template>
-  <div class="p-4 md:p-8 bg-app-bg min-height-screen font-sans">
+  <div class="page-container">
 
     <!-- Header -->
-    <header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pb-4 border-b border-border">
-      <div>
-        <h1 class="text-2xl font-bold text-text-primary">Welcome, {{ userName }}</h1>
-        <p class="text-sm mt-1 text-text-secondary">Here is what's happening with your business today.</p>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 flex-wrap">
+      <div class="min-w-0 flex-1">
+        <h1 class="text-heading truncate">Welcome, {{ userName }}</h1>
+        <p class="text-subheading truncate">Here is what's happening with your business today.</p>
       </div>
-      <div class="text-left md:text-right">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-text-muted">Last Updated</p>
-        <p class="text-sm font-semibold text-text-primary">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</p>
+      <div class="text-left sm:text-right shrink-0 bg-hover-bg/50 px-3 py-1.5 rounded-lg border border-border/50">
+        <p class="text-label-small">Last Updated</p>
+        <p class="text-[10px] md:text-xs font-semibold text-text-primary uppercase tracking-wider">{{ new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</p>
       </div>
-    </header>
+    </div>
 
     <!-- Metrics Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5 mb-8">
       <StatCard 
         title="Today's Shift Sales"
         :value="metrics.todaysShiftSales"
@@ -48,12 +48,12 @@
     </div>
 
     <!-- Reports & Actions Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
       
       <!-- Profit & Loss Summary -->
-      <div class="lg:col-span-2 rounded border bg-card-bg border-border overflow-hidden">
+      <div class="lg:col-span-2 card-std overflow-hidden">
         <div class="px-6 py-4 flex justify-between items-center bg-hover-bg border-b border-border">
-          <h2 class="text-xs font-bold uppercase tracking-widest text-text-secondary">Profit & Loss Summary</h2>
+          <h2 class="text-label-small">Profit & Loss Summary</h2>
           <router-link to="/reports" class="text-[10px] font-bold uppercase tracking-widest text-text-primary underline">View Full Report →</router-link>
         </div>
         <div class="p-6 md:p-8 overflow-x-auto">
@@ -95,19 +95,19 @@
       </div>
 
       <!-- Quick Actions / Tasks -->
-      <div class="lg:col-span-1 border rounded bg-card-bg border-border overflow-hidden">
+      <div class="lg:col-span-1 card-std overflow-hidden">
         <div class="px-6 py-4 bg-hover-bg border-b border-border">
-          <h2 class="text-xs font-bold uppercase tracking-widest text-text-secondary">Quick Actions</h2>
+          <h2 class="text-label-small">Quick Actions</h2>
         </div>
-        <div class="p-2">
+        <div class="p-4 grid grid-cols-2 gap-3">
           <router-link v-for="action in quickActions" :key="action.label" :to="action.link"
-            class="flex items-center gap-4 p-4 rounded transition-colors group hover:bg-hover-bg">
-            <div class="w-10 h-10 rounded flex items-center justify-center border border-border bg-hover-bg transition-all group-hover:border-text-primary">
+            class="flex flex-col items-start gap-3 p-4 rounded-xl border border-border bg-card-bg transition-all hover:-translate-y-1 hover:shadow-lg group">
+            <div :class="['w-10 h-10 rounded-lg flex items-center justify-center border transition-all group-hover:scale-110', action.color || 'bg-hover-bg border-border text-text-primary']">
               <span class="text-lg">{{ action.icon }}</span>
             </div>
             <div>
-              <p class="text-sm font-bold text-text-primary">{{ action.label }}</p>
-              <p class="text-[10px] text-text-muted">{{ action.desc }}</p>
+              <p class="text-[11px] font-black uppercase tracking-tight text-text-primary group-hover:text-brand transition-colors">{{ action.label }}</p>
+              <p class="text-[9px] font-medium text-text-muted mt-0.5 line-clamp-1">{{ action.desc }}</p>
             </div>
           </router-link>
         </div>
@@ -195,11 +195,23 @@ const expensePercent = computed(() => {
     return (metrics.value.expenses / total) * 100;
 });
 
-const quickActions = [
-  { label: 'New Invoice', desc: 'Sell items to customer', link: '/sales', icon: '📝' },
-  { label: 'Add Purchase', desc: 'Record a new vendor bill', link: '/purchases', icon: '📥' },
-  { label: 'Shift History', desc: 'View end-of-day reports', link: '/reports', icon: '⏱️' },
-  { label: 'Bank Entry', desc: 'Reconcile cash/bank', link: '/bank', icon: '🏦' }
+interface QuickAction {
+  label: string;
+  desc: string;
+  link: string;
+  icon: string;
+  color?: string;
+}
+
+const quickActions: QuickAction[] = [
+  { label: 'POS Terminal', desc: 'Retail counter sale', link: '/pos', icon: '💻', color: 'text-brand bg-brand/10 border-brand/20' },
+  { label: 'Dist. Invoice', desc: 'B2B Wholesale sale', link: '/sales?new=1', icon: '🧾', color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
+  { label: 'Purchase Bill', desc: 'Record vendor stock', link: '/purchases?new=1', icon: '📥', color: 'text-blue-500 bg-blue-500/10 border-blue-500/20' },
+  { label: 'Add Product', desc: 'New inventory item', link: '/inventory?new=1', icon: '📦', color: 'text-orange-500 bg-orange-500/10 border-orange-500/20' },
+  { label: 'New Party', desc: 'Add Customer/Vendor', link: '/parties?new=1', icon: '👤', color: 'text-purple-500 bg-purple-500/10 border-purple-500/20' },
+  { label: 'Bank Entry', desc: 'Receive or Pay funds', link: '/bank', icon: '🏦', color: 'text-teal-500 bg-teal-500/10 border-teal-500/20' },
+  { label: 'Financials', desc: 'P&L & Balance Sheet', link: '/reports', icon: '📊', color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' },
+  { label: 'Shift History', desc: 'End-of-day summary', link: '/reports', icon: '⏱️', color: 'text-slate-500 bg-slate-500/10 border-slate-500/20' }
 ];
 
 const lowStockItems = computed(() => {

@@ -2,6 +2,19 @@
   <div class="erp-form text-text-primary">
     <form @submit.prevent="handleSubmit" class="space-y-8 pb-10">
       
+      <!-- ROLE SELECTOR -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <label v-for="r in roles" :key="r.id" class="cursor-pointer relative">
+          <input type="radio" v-model="form.role" :value="r.id" class="peer sr-only">
+          <div class="p-4 rounded-xl border-2 border-border bg-card-bg transition-all hover:bg-hover-bg/30 peer-checked:border-brand peer-checked:bg-brand/5 flex flex-col items-center justify-center gap-1 group">
+             <div class="text-2xl group-hover:scale-110 transition-transform">{{ r.icon }}</div>
+             <div class="text-xs font-bold text-text-primary uppercase tracking-wider">{{ r.label }}</div>
+             <div class="text-[9px] text-text-muted font-medium">{{ r.desc }}</div>
+             <div class="absolute top-2 right-2 w-3 h-3 rounded-full border-2 border-border peer-checked:border-brand peer-checked:bg-brand"></div>
+          </div>
+        </label>
+      </div>
+
       <!-- CORE INFO -->
       <section class="form-section bg-card-bg border border-border rounded-xl overflow-hidden shadow-none">
         <div class="px-5 py-3 bg-hover-bg/30 border-b border-border flex items-center justify-between">
@@ -53,7 +66,14 @@
                 </div>
                 <div class="space-y-1">
                   <label class="section-label">Category / Tag</label>
-                   <input v-model="form.category" type="text" placeholder="VIP, Regular, Bulk..." class="erp-input"/>
+                  <AutoCompleteWithCreate
+                     v-model="form.category"
+                     :options="uniqueCategories"
+                     placeholder="VIP, Regular, Bulk..."
+                     allow-free-text
+                     allow-create
+                     @create="val => handleCreateOption('category', val)"
+                  />
                 </div>
               </div>
             </div>
@@ -111,27 +131,33 @@
               </div>
               <div class="space-y-1">
                 <label class="section-label">Payment Terms</label>
-                <select v-model="form.payment_terms" class="erp-input">
-                   <option value="Immediate">Immediate Payment</option>
-                   <option value="Net 15">Net 15 Days</option>
-                   <option value="Net 30">Net 30 Days</option>
-                   <option value="Net 60">Net 60 Days</option>
-                </select>
+                <AutoCompleteWithCreate
+                   v-model="form.payment_terms"
+                   :options="uniquePaymentTerms"
+                   placeholder="Net 30 Days..."
+                   allow-free-text
+                   allow-create
+                   @create="val => handleCreateOption('payment_terms', val)"
+                />
               </div>
            </div>
 
            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-1">
                 <label class="section-label">Receivable Account</label>
-                 <select v-model="form.default_receivable_account" class="erp-input">
-                    <option value="debtors">Accounts Receivable (Debtors)</option>
-                 </select>
+                <AutoCompleteWithCreate
+                   v-model="form.default_receivable_account"
+                   :options="accountStore.accounts.filter(a => a.type === 'Asset').map(a => ({ id: a.id, name: a.name, sub: a.code }))"
+                   placeholder="Search..."
+                />
               </div>
               <div class="space-y-1">
                 <label class="section-label">Payable Account</label>
-                 <select v-model="form.default_payable_account" class="erp-input">
-                    <option value="creditors">Accounts Payable (Creditors)</option>
-                 </select>
+                <AutoCompleteWithCreate
+                   v-model="form.default_payable_account"
+                   :options="accountStore.accounts.filter(a => a.type === 'Liability').map(a => ({ id: a.id, name: a.name, sub: a.code }))"
+                   placeholder="Search..."
+                />
               </div>
            </div>
         </div>
@@ -142,12 +168,14 @@
          <div class="form-section bg-card-bg border border-border rounded-xl p-5 shadow-none space-y-4">
             <div class="space-y-1">
               <label class="section-label">Party Group</label>
-              <select v-model="form.party_group" class="erp-input">
-                <option value="General">General</option>
-                <option value="Retailer">Retailer</option>
-                <option value="Wholesaler">Wholesaler</option>
-                <option value="Distributor">Distributor</option>
-              </select>
+              <AutoCompleteWithCreate
+                 v-model="form.party_group"
+                 :options="uniqueGroups"
+                 placeholder="General, Retailer..."
+                 allow-free-text
+                 allow-create
+                 @create="val => handleCreateOption('party_group', val)"
+              />
             </div>
          </div>
 
@@ -223,8 +251,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import type { Party } from '../types/party';
+import AutoCompleteWithCreate from './AutoCompleteWithCreate.vue';
+import { usePartyStore } from '../stores/parties';
+import { useAccountStore } from '../stores/accounts';
+
+const partyStore = usePartyStore();
+const accountStore = useAccountStore();
 
 const props = defineProps<{
   initialData?: Party | null;
@@ -269,7 +303,26 @@ const form = ref<any>({
   notes: ''
 });
 
+const localOptions = ref({
+  category: [] as string[],
+  payment_terms: [] as string[],
+  party_group: [] as string[]
+});
+
+function handleCreateOption(type: keyof typeof localOptions.value, val: string) {
+  if (val && !localOptions.value[type].includes(val)) {
+    localOptions.value[type].push(val);
+  }
+}
+
+const uniquePaymentTerms = computed(() => Array.from(new Set([...[{id:'Immediate',name:'Immediate Payment'},{id:'Net 15',name:'Net 15 Days'},{id:'Net 30',name:'Net 30 Days'},{id:'Net 60',name:'Net 60 Days'}].map(o => o.id), ...localOptions.value.payment_terms])).map(v => ({ id: String(v), name: String(v) })));
+const uniqueCategories = computed(() => Array.from(new Set([...partyStore.customers, ...partyStore.suppliers].map(p => (p as any).category).filter(Boolean).concat(localOptions.value.category))).map(v => ({ id: v, name: v })));
+const uniqueGroups = computed(() => Array.from(new Set([...[...partyStore.customers, ...partyStore.suppliers].map(p => (p as any).customer_group || (p as any).supplier_category || (p as any).party_group).filter(Boolean), 'General', 'Retailer', 'Wholesaler', 'Distributor', ...localOptions.value.party_group])).map(v => ({ id: v as string, name: v as string })));
+
 onMounted(() => {
+  accountStore.fetchAccounts();
+  if (partyStore.customers.length === 0) partyStore.fetchParties();
+
   if (props.initialData) {
     const d = props.initialData as any;
     form.value = {
@@ -281,7 +334,8 @@ onMounted(() => {
       address: d.billing_address || '',
       default_receivable_account: d.receivable_account_id || 'debtors',
       default_payable_account: d.payable_account_id || 'creditors',
-      image: d.image || null
+      image: d.image || null,
+      party_group: d.customer_group || d.supplier_category || 'General'
     };
   }
 });
@@ -305,7 +359,9 @@ function handleSubmit() {
     billing_address: form.value.address,
     receivable_account_id: form.value.default_receivable_account,
     payable_account_id: form.value.default_payable_account,
-    phone: form.value.mobile || form.value.phone
+    phone: form.value.mobile || form.value.phone,
+    customer_group: form.value.role === 'Customer' || form.value.role === 'Both' ? form.value.party_group : '',
+    supplier_category: form.value.role === 'Supplier' || form.value.role === 'Both' ? form.value.party_group : ''
   };
   emit('submit', payload);
 }

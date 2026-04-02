@@ -43,7 +43,7 @@ export const useTransactionStore = defineStore('transactions', {
                     invoice.tax_amount || 0, 
                     'Submitted', 
                     invoice.total_amount, 
-                    invoice.shift_id, 
+                    invoice.shift_id || null, 
                     invoice.sales_manager || null, 
                     invoice.frappe_reference || null,
                     (invoice as any).ssr_id || null,
@@ -62,10 +62,12 @@ export const useTransactionStore = defineStore('transactions', {
                     finalBatchId = await InventoryService.findOrCreateBatch(item.item_id, item.batch_number, item.expiry_date || undefined, item.rate);
                 }
 
+                const lineTotal = item.total ?? (item.quantity * item.rate);
+
                 execute(
                     `INSERT INTO sales_invoice_items (id, invoice_id, item_id, quantity, bonus_quantity, batch_number, expiry_date, rate, tax_amount, total, batch_id) 
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [itemId, id, item.item_id, item.quantity, item.bonus_quantity || 0, item.batch_number || null, item.expiry_date || null, item.rate, item.tax_amount || 0, item.total, finalBatchId || null]
+                    [itemId, id, item.item_id, item.quantity, item.bonus_quantity || 0, item.batch_number || null, item.expiry_date || null, item.rate, item.tax_amount || 0, lineTotal, finalBatchId || null]
                 );
 
                 if (finalBatchId) {
@@ -125,13 +127,17 @@ export const useTransactionStore = defineStore('transactions', {
                 // Find or create batch for the purchase
                 const batchId = await InventoryService.findOrCreateBatch(item.item_id, item.batch_number || 'GENERIC', item.expiry_date || undefined, item.rate);
                 
+                const lineTotal = item.total ?? (item.quantity * item.rate);
+
                 execute(
                     `INSERT INTO purchase_bill_items (id, bill_id, item_id, quantity, bonus_quantity, batch_number, expiry_date, rate, tax_amount, total, batch_id) 
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [itemId, id, item.item_id, item.quantity, item.bonus_quantity || 0, item.batch_number || null, item.expiry_date || null, item.rate, item.tax_amount || 0, item.total, batchId]
+                    [itemId, id, item.item_id, item.quantity, item.bonus_quantity || 0, item.batch_number || null, item.expiry_date || null, item.rate, item.tax_amount || 0, lineTotal, batchId || null]
                 );
 
-                await InventoryService.recordBatchQuantity(batchId, item.quantity + (item.bonus_quantity || 0));
+                if (batchId) {
+                    await InventoryService.recordBatchQuantity(batchId, item.quantity + (item.bonus_quantity || 0));
+                }
 
                 await InventoryService.recordStockTransaction({
                     item_id: item.item_id,
@@ -140,7 +146,7 @@ export const useTransactionStore = defineStore('transactions', {
                     quantity: item.quantity,
                     bonus_quantity: item.bonus_quantity || 0,
                     rate: item.rate,
-                    value: item.total,
+                    value: lineTotal,
                     reference_type: 'Bill',
                     reference_id: id
                 });

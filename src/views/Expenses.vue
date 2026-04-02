@@ -1,24 +1,22 @@
 <template>
-  <div class="p-4 md:p-8 max-w-6xl mx-auto font-inter min-h-screen pb-20">
-    
+  <div class="page-container">
     <!-- HEADER -->
-    <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-border pb-6">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div>
-        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted opacity-60">Finance & Operations</span>
-        <h1 class="text-4xl font-black text-text-primary tracking-tighter mt-1">Expense Management</h1>
-        <p class="text-xs text-text-secondary font-medium mt-1">Track and categorize your business operational costs.</p>
+        <h1 class="text-heading">Expense Management</h1>
+        <p class="text-subheading">Track and categorize your business operational costs.</p>
       </div>
-
+ 
       <div class="flex items-center gap-3">
-        <button @click="showCategoryModal = true" class="px-5 py-2.5 rounded-xl border border-border bg-card-bg text-text-primary font-bold text-xs uppercase tracking-widest hover:bg-hover-bg transition-all active:scale-95">
+        <button @click="showCategoryModal = true" class="btn-ghost border border-border">
           Categories
         </button>
-        <button @click="showExpenseModal = true" class="px-5 py-2.5 rounded-xl bg-brand text-white font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-brand/20 flex items-center gap-2">
+        <button @click="showExpenseModal = true" class="btn-dark">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
           Record Expense
         </button>
       </div>
-    </header>
+    </div>
 
     <!-- DASHBOARD STATS -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -42,33 +40,41 @@
     </div>
 
     <!-- EXPENSE TABLE -->
-    <div class="bg-card-bg border border-border rounded-2xl overflow-hidden shadow-xl shadow-app-bg/50">
-      <div class="p-6 border-b border-border bg-hover-bg/30 flex justify-between items-center">
-         <h3 class="text-xs font-black uppercase tracking-widest text-text-primary">Transaction History</h3>
+    <div class="card-std overflow-hidden">
+      <div class="p-4 border-b border-border bg-hover-bg/30 flex justify-between items-center">
+         <h3 class="text-label-small">Transaction History</h3>
          <div class="flex gap-2">
-            <input v-model="filterDate" type="month" class="bg-card-bg border border-border rounded-lg px-3 py-1.5 text-xs font-bold outline-none uppercase"/>
+            <input v-model="filterDate" type="month" class="input-std py-1 text-[10px] w-32"/>
          </div>
       </div>
       <table class="w-full border-collapse">
         <thead>
-          <tr class="bg-hover-bg/50 border-b border-border">
-            <th class="px-6 py-4 text-left text-[9px] font-black uppercase tracking-widest text-text-muted">Date</th>
-            <th class="px-6 py-4 text-left text-[9px] font-black uppercase tracking-widest text-text-muted">Category</th>
-            <th class="px-6 py-4 text-left text-[9px] font-black uppercase tracking-widest text-text-muted">Description / Notes</th>
-            <th class="px-6 py-4 text-right text-[9px] font-black uppercase tracking-widest text-text-muted">Amount</th>
+          <tr class="bg-hover-bg/20 border-b border-border">
+            <th class="px-4 py-3 text-left text-[9px] font-black uppercase tracking-widest text-text-muted">Date</th>
+            <th class="px-4 py-3 text-left text-[9px] font-black uppercase tracking-widest text-text-muted">Category</th>
+            <th class="px-4 py-3 text-left text-[9px] font-black uppercase tracking-widest text-text-muted">Merchant / Payee</th>
+            <th class="px-4 py-3 text-left text-[9px] font-black uppercase tracking-widest text-text-muted">Description</th>
+            <th class="px-4 py-3 text-left text-[9px] font-black uppercase tracking-widest text-text-muted">Method</th>
+            <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-widest text-text-muted">Amount</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-border/50">
-          <tr v-for="expense in filteredExpenses" :key="expense.id" class="hover:bg-hover-bg/30 transition-colors">
-            <td class="px-6 py-4 text-xs font-mono font-bold text-text-muted">{{ expense.date }}</td>
-            <td class="px-6 py-4">
-               <span class="px-2.5 py-1 rounded-lg bg-brand/5 text-brand text-[10px] font-black uppercase tracking-widest border border-brand/10">
+          <tr v-for="expense in filteredExpenses" :key="expense.id" class="hover:bg-hover-bg/10 transition-colors border-b border-border/30 last:border-0 text-xs">
+            <td class="px-4 py-3 font-mono font-bold text-text-muted">{{ expense.date }}</td>
+            <td class="px-4 py-3">
+               <span class="px-2 py-0.5 rounded bg-brand/5 text-brand text-[9px] font-black uppercase tracking-widest border border-brand/10">
                  {{ expense.category_name }}
                </span>
             </td>
-            <td class="px-6 py-4 text-xs font-medium text-text-secondary">{{ expense.notes || '---' }}</td>
-            <td class="px-6 py-4 text-right">
-              <span class="text-sm font-black text-rose-500 tabular-nums">{{ formatCurrency(expense.amount) }}</span>
+            <td class="px-4 py-3 font-black text-text-primary">{{ expense.merchant || '---' }}</td>
+            <td class="px-4 py-3 text-text-secondary truncate max-w-[150px]">{{ expense.notes || '---' }}</td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-0.5 rounded bg-hover-bg text-text-muted text-[9px] font-black uppercase tracking-widest">
+                {{ expense.payment_method || 'Cash' }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-right">
+              <span class="font-black text-rose-500 tabular-nums">{{ formatCurrency(expense.amount) }}</span>
             </td>
           </tr>
           <tr v-if="filteredExpenses.length === 0">
@@ -97,33 +103,58 @@
             </header>
 
             <form @submit.prevent="saveExpense" class="space-y-6">
-               <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-4">
+                   <div class="space-y-2">
+                      <label class="text-label-small ml-1">Date</label>
+                      <input v-model="newExpense.date" type="date" required class="input-std"/>
+                   </div>
+                   <div class="space-y-2">
+                      <label class="text-label-small ml-1">Amount</label>
+                      <input v-model.number="newExpense.amount" type="number" step="0.01" required placeholder="0.00" class="input-std font-black"/>
+                   </div>
+                </div>
+ 
+                <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-2">
-                     <label class="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">Date</label>
-                     <input v-model="newExpense.date" type="date" required class="w-full bg-hover-bg/50 border border-border rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-brand/20 transition-all"/>
+                     <label class="text-label-small ml-1">Category</label>
+                     <AutoCompleteWithCreate
+                        v-model="newExpense.category_id"
+                        :options="expenseStore.categories.map(c => ({ id: c.id, name: c.name }))"
+                        placeholder="Select Category"
+                        allow-create
+                        create-label="Add New Category"
+                        @create="async (name) => { newExpense.category_id = await expenseStore.addCategory(name); }"
+                     />
                   </div>
                   <div class="space-y-2">
-                     <label class="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">Amount</label>
-                     <input v-model.number="newExpense.amount" type="number" step="0.01" required placeholder="0.00" class="w-full bg-hover-bg/50 border border-border rounded-2xl px-4 py-3 text-sm font-black outline-none focus:ring-2 focus:ring-brand/20 transition-all"/>
+                     <label class="text-label-small ml-1">Payment Method</label>
+                     <AutoCompleteWithCreate
+                        v-model="newExpense.payment_method"
+                        :options="[{id:'Cash',name:'Cash'},{id:'Bank Transfer',name:'Bank Transfer'},{id:'Check',name:'Check'},{id:'Card',name:'Card'}]"
+                        placeholder="Select Method"
+                        allow-free-text
+                     />
                   </div>
-               </div>
+                </div>
+ 
+                <div class="space-y-2">
+                   <label class="text-label-small ml-1">Merchant / Payee</label>
+                   <AutoCompleteWithCreate
+                      v-model="newExpense.merchant"
+                      :options="uniqueMerchants"
+                      placeholder="e.g. Shell Petrol, K-Electric"
+                      allow-free-text
+                   />
+                </div>
 
-               <div class="space-y-2">
-                  <label class="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">Category</label>
-                  <select v-model="newExpense.category_id" required class="w-full bg-hover-bg/50 border border-border rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-brand/20 transition-all appearance-none cursor-pointer">
-                     <option value="" disabled>Select Category</option>
-                     <option v-for="cat in expenseStore.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                  </select>
-               </div>
-
-               <div class="space-y-2">
-                  <label class="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">Description / Notes</label>
-                  <textarea v-model="newExpense.notes" rows="3" placeholder="e.g. Electricity bill for March 2024" class="w-full bg-hover-bg/50 border border-border rounded-2xl px-4 py-3 text-xs font-medium outline-none focus:ring-2 focus:ring-brand/20 transition-all resize-none"></textarea>
-               </div>
-
-               <button type="submit" class="w-full py-4 bg-brand text-white font-black text-sm uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-brand/20 hover:opacity-90 transition-all active:scale-95 mt-4">
-                  Confirm Transaction
-               </button>
+                <div class="space-y-2">
+                   <label class="text-label-small ml-1">Note / Narrative</label>
+                   <textarea v-model="newExpense.notes" rows="2" placeholder="Describe the expenditure..." class="input-std resize-none"></textarea>
+                </div>
+ 
+                <button type="submit" class="btn-dark w-full py-4 text-sm mt-4">
+                   Confirm Expenditure
+                </button>
             </form>
           </div>
         </div>
@@ -170,6 +201,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useExpenseStore } from '../stores/expenses';
 import { useCompanyStore } from '../stores/company';
+import AutoCompleteWithCreate from '../components/AutoCompleteWithCreate.vue';
 
 const expenseStore = useExpenseStore();
 const companyStore = useCompanyStore();
@@ -183,12 +215,18 @@ const newExpense = ref({
   date: new Date().toISOString().split('T')[0],
   category_id: '',
   amount: 0,
-  notes: ''
+  notes: '',
+  merchant: '',
+  payment_method: 'Cash'
 });
 
 onMounted(() => {
   expenseStore.fetchCategories();
   expenseStore.fetchExpenses();
+});
+
+const uniqueMerchants = computed(() => {
+    return Array.from(new Set(expenseStore.expenses.map(e => e.merchant).filter(Boolean))).map(m => ({ id: m as string, name: m as string }));
 });
 
 const filteredExpenses = computed(() => {
@@ -211,7 +249,7 @@ const topCategory = computed(() => {
   });
   const entries = Object.entries(categories);
   if (entries.length === 0) return null;
-  return entries.sort((a, b) => b[1] - a[1])[0][0];
+  return entries.sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unknown';
 });
 
 async function saveExpense() {
@@ -229,7 +267,9 @@ async function saveExpense() {
     date: new Date().toISOString().split('T')[0],
     category_id: '',
     amount: 0,
-    notes: ''
+    notes: '',
+    merchant: '',
+    payment_method: 'Cash'
   };
 }
 

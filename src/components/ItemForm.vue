@@ -66,11 +66,25 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div class="space-y-1">
                     <label class="section-label">Distribution Category</label>
-                    <input v-model="form.category" type="text" placeholder="Medicine, Medical, Surgical..." class="erp-input"/>
+                    <AutoCompleteWithCreate 
+                       v-model="form.category" 
+                       :options="uniqueCategories" 
+                       placeholder="Medicine, Medical..." 
+                       allow-free-text
+                       allow-create
+                       @create="val => handleCreateOption('category', val)"
+                    />
                   </div>
                   <div class="space-y-1">
                      <label class="section-label">Manufacturer / Company</label>
-                     <input v-model="form.brand" type="text" placeholder="GSK, Getz, Searle..." class="erp-input"/>
+                     <AutoCompleteWithCreate 
+                        v-model="form.brand" 
+                        :options="uniqueBrands" 
+                        placeholder="GSK, Getz, Searle..." 
+                        allow-free-text
+                        allow-create
+                        @create="val => handleCreateOption('brand', val)"
+                     />
                   </div>
                 </div>
               </div>
@@ -162,24 +176,26 @@
 
               <div class="space-y-1">
                 <label class="section-label">Unit of Measure</label>
-                <select v-model="form.uom" class="erp-input">
-                  <option value="Units">Units (Pcs)</option>
-                  <option value="Box">Box</option>
-                  <option value="Strip">Strip (Pharma)</option>
-                  <option value="Kg">Kilogram</option>
-                  <option value="Gram">Gram</option>
-                  <option value="Liter">Liter</option>
-                  <option value="Meter">Meter</option>
-                </select>
+                <AutoCompleteWithCreate 
+                   v-model="form.uom" 
+                   :options="uniqueUoms" 
+                   placeholder="Units, Box, Kg..." 
+                   allow-free-text
+                   allow-create
+                   @create="val => handleCreateOption('uom', val)"
+                />
               </div>
 
               <div class="space-y-1">
                 <label class="section-label">Warehouse</label>
-                <select v-model="form.warehouse" class="erp-input font-medium">
-                  <option value="Main Store">Main Store</option>
-                  <option value="Shop Shelf">Shop Shelf</option>
-                  <option value="Basement">Basement</option>
-                </select>
+                <AutoCompleteWithCreate 
+                   v-model="form.warehouse" 
+                   :options="uniqueWarehouses" 
+                   placeholder="Main Store, Shelf..." 
+                   allow-free-text
+                   allow-create
+                   @create="val => handleCreateOption('warehouse', val)"
+                />
               </div>
            </div>
         </div>
@@ -210,17 +226,14 @@
          <div class="p-5 grid grid-cols-1 md:grid-cols-4 gap-5">
             <div class="space-y-1">
                <label class="section-label">Dosage Form</label>
-               <select v-model="form.dosage_form" class="erp-input font-bold text-center">
-                 <option value="Tablet">Tablet</option>
-                 <option value="Capsule">Capsule</option>
-                 <option value="Syrup">Syrup</option>
-                 <option value="Injection">Injection</option>
-                 <option value="Cream">Cream / Ointment</option>
-                 <option value="Drops">Drops</option>
-                 <option value="Suspension">Suspension</option>
-                 <option value="Inhaler">Inhaler</option>
-                 <option value="Other">Other</option>
-               </select>
+               <AutoCompleteWithCreate 
+                  v-model="form.dosage_form" 
+                  :options="dosageForms" 
+                  placeholder="Tablet, Syrup..." 
+                  allow-free-text
+                  allow-create 
+                  @create="val => handleCreateOption('dosage_form', val)"
+               />
             </div>
             <div class="space-y-1">
                <label class="section-label">Pack Size (Distribution)</label>
@@ -228,12 +241,14 @@
             </div>
             <div class="space-y-1">
                <label class="section-label">Regulatory Class</label>
-               <select v-model="form.medicine_type" class="erp-input">
-                 <option value="Normal">Normal Listing</option>
-                 <option value="Narcotic">Narcotic (Red Bar)</option>
-                 <option value="Antibiotic">Antibiotic (Purple)</option>
-                 <option value="Schedule-G">Schedule G</option>
-               </select>
+               <AutoCompleteWithCreate 
+                  v-model="form.medicine_type" 
+                  :options="medicineTypes" 
+                  placeholder="Normal, Narcotic..." 
+                  allow-free-text
+                  allow-create 
+                  @create="val => handleCreateOption('medicine_type', val)"
+               />
             </div>
              <div class="flex items-center gap-4 p-3 bg-success-bg rounded-lg border border-success/5 h-[42px] mt-1.5">
               <div class="flex-1">
@@ -261,21 +276,27 @@
         <div v-show="sections.accounting" class="p-5 grid grid-cols-1 md:grid-cols-3 gap-5 animate-in slide-in-from-top-1 duration-300">
            <div class="space-y-1">
               <label class="section-label">Inventory Account</label>
-              <select v-model="form.default_inventory_account_id" class="erp-input">
-                 <option value="inventory">Default Inventory</option>
-              </select>
+              <AutoCompleteWithCreate 
+                 v-model="form.default_inventory_account_id" 
+                 :options="accountStore.accounts.filter(a => a.type === 'Asset').map(a => ({ id: a.id, name: a.name, sub: a.code }))" 
+                 placeholder="Search Asset Accounts..." 
+              />
            </div>
            <div class="space-y-1">
               <label class="section-label">COGS Account</label>
-              <select v-model="form.default_expense_account_id" class="erp-input">
-                 <option value="cogs">COGS Account</option>
-              </select>
+              <AutoCompleteWithCreate 
+                 v-model="form.default_expense_account_id" 
+                 :options="accountStore.accounts.filter(a => a.type === 'Expense').map(a => ({ id: a.id, name: a.name, sub: a.code }))" 
+                 placeholder="Search Expense Accounts..." 
+              />
            </div>
            <div class="space-y-1">
               <label class="section-label">Income Account</label>
-              <select v-model="form.default_income_account_id" class="erp-input">
-                 <option value="sales_income">Sales Income</option>
-              </select>
+              <AutoCompleteWithCreate 
+                 v-model="form.default_income_account_id" 
+                 :options="accountStore.accounts.filter(a => a.type === 'Income').map(a => ({ id: a.id, name: a.name, sub: a.code }))" 
+                 placeholder="Search Income Accounts..." 
+              />
            </div>
         </div>
       </section>
@@ -304,10 +325,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import type { Item } from '../types/inventory';
+import AutoCompleteWithCreate from './AutoCompleteWithCreate.vue';
+import { useInventoryStore } from '../stores/inventory';
+import { useAccountStore } from '../stores/accounts';
 
-// const companyStore = useCompanyStore();
+const inventoryStore = useInventoryStore();
+const accountStore = useAccountStore();
 
 const props = defineProps<{
   initialData?: Item | null;
@@ -323,6 +348,29 @@ const sections = ref({
 const industryToggles = ref([
     { id: 'pharma', label: 'Pharmacy Support', desc: 'Batches, Expiry, Prescription', icon: '🩺', active: true, color: 'bg-emerald-500/10 text-emerald-500' }
 ]);
+
+const localOptions = ref({
+  category: [] as string[],
+  brand: [] as string[],
+  uom: [] as string[],
+  warehouse: [] as string[],
+  dosage_form: [] as string[],
+  medicine_type: [] as string[]
+});
+
+function handleCreateOption(type: keyof typeof localOptions.value, val: string) {
+  if (val && !localOptions.value[type].includes(val)) {
+    localOptions.value[type].push(val);
+  }
+}
+
+// Computed options for unconstrained flexible inputs
+const uniqueCategories = computed(() => Array.from(new Set([...inventoryStore.items.map(i => i.category).filter(Boolean), ...localOptions.value.category])).map(v => ({ id: String(v), name: String(v) })));
+const uniqueBrands = computed(() => Array.from(new Set([...inventoryStore.items.map(i => i.brand).filter(Boolean), ...localOptions.value.brand])).map(v => ({ id: String(v), name: String(v) })));
+const uniqueUoms = computed(() => Array.from(new Set([...inventoryStore.items.map(i => i.uom).filter(Boolean), 'Units', 'Box', 'Strip', 'Kg', 'Gram', 'Liter', 'Meter', ...localOptions.value.uom])).map(v => ({ id: String(v), name: String(v) })));
+const uniqueWarehouses = computed(() => Array.from(new Set([...inventoryStore.items.map(i => i.warehouse).filter(Boolean), 'Main Store', 'Shop Shelf', 'Basement', ...localOptions.value.warehouse])).map(v => ({ id: String(v), name: String(v) })));
+const dosageForms = computed(() => Array.from(new Set([...inventoryStore.items.map(i => i.dosage_form).filter(Boolean), 'Tablet', 'Capsule', 'Syrup', 'Injection', 'Cream', 'Drops', 'Suspension', 'Inhaler', 'Other', ...localOptions.value.dosage_form])).map(v => ({ id: String(v), name: String(v) })));
+const medicineTypes = computed(() => Array.from(new Set([...inventoryStore.items.map(i => i.medicine_type).filter(Boolean), 'Normal', 'Narcotic', 'Antibiotic', 'Schedule-G', ...localOptions.value.medicine_type])).map(v => ({ id: String(v), name: String(v) })));
 
 const form = ref<any>({
   name: '',
@@ -362,6 +410,11 @@ const form = ref<any>({
 });
 
 onMounted(() => {
+  accountStore.fetchAccounts();
+  if (inventoryStore.items.length === 0) {
+     inventoryStore.fetchItems();
+  }
+
   if (props.initialData) {
     form.value = { ...props.initialData };
     

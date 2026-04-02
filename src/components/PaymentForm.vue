@@ -1,6 +1,17 @@
 <template>
   <form @submit.prevent="handleSubmit" class="space-y-6">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Party (If not passed from props) -->
+      <div v-if="!props.party" class="col-span-1 md:col-span-2">
+        <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 italic">Select Party</label>
+        <AutoCompleteWithCreate
+           v-model="form.party_id"
+           :options="[...partyStore.customers, ...partyStore.suppliers].map(p => ({ id: p.id, name: p.name, sub: p.type }))"
+           placeholder="Search Customer or Supplier..."
+           @select="(opt) => { form.party_type = (opt as any).sub; form.payment_type = (opt as any).sub === 'Supplier' ? 'Pay' : 'Receive'; }"
+        />
+      </div>
+
       <!-- Date -->
       <div>
         <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 italic">Payment Date</label>
@@ -11,11 +22,12 @@
       <!-- Payment Type (Read only based on context usually, but selectable here) -->
       <div>
         <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 italic">Transaction Type</label>
-        <select v-model="form.payment_type" required
-          class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-sm font-bold text-text-primary focus:ring-2 focus:ring-brand/20 outline-none transition-all appearance-none">
-          <option value="Receive">Receive (from Customer)</option>
-          <option value="Pay">Pay (to Supplier)</option>
-        </select>
+        <AutoCompleteWithCreate
+           v-model="form.payment_type"
+           :options="[{id:'Receive',name:'Receive (from Customer)'},{id:'Pay',name:'Pay (to Supplier)'}]"
+           placeholder="Type"
+           allow-free-text
+        />
       </div>
 
       <!-- Amount -->
@@ -31,11 +43,12 @@
       <!-- Account (Bank/Cash) -->
       <div>
         <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 italic">Payment Method</label>
-        <select v-model="form.account_id" required
-          class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-sm font-bold text-text-primary focus:ring-2 focus:ring-brand/20 outline-none transition-all appearance-none">
-          <option value="cash">Petty Cash</option>
-          <option value="bank">Main Bank Account</option>
-        </select>
+        <AutoCompleteWithCreate
+           v-model="form.account_id"
+           :options="accountStore.accounts.filter(a => a.type === 'Asset').map(a => ({ id: a.id, name: a.name, sub: a.code }))"
+           placeholder="Search Bank/Cash..."
+           allow-free-text
+        />
       </div>
     </div>
 
@@ -62,6 +75,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import type { Party } from '../types/party';
+import AutoCompleteWithCreate from './AutoCompleteWithCreate.vue';
+import { useAccountStore } from '../stores/accounts';
+import { usePartyStore } from '../stores/parties';
+
+const accountStore = useAccountStore();
+const partyStore = usePartyStore();
 
 const props = defineProps<{
   party?: Party | null;
@@ -77,6 +96,13 @@ const form = ref({
   account_id: 'cash',
   amount: 0,
   memo: ''
+});
+
+onMounted(() => {
+   accountStore.fetchAccounts();
+   if (partyStore.customers.length === 0 && partyStore.suppliers.length === 0) {
+      partyStore.fetchParties();
+   }
 });
 
 function handleSubmit() {

@@ -164,10 +164,10 @@ export const ERPService = {
   },
 
   // Expenses CRUD
-  async addExpense(expense: { date: string, category_id: string, amount: number, notes: string }) {
+  async addExpense(expense: { date: string, category_id: string, amount: number, notes: string, merchant?: string, payment_method?: string }) {
     const id = crypto.randomUUID();
-    execute('INSERT INTO expenses (id, date, category_id, amount, notes) VALUES (?, ?, ?, ?, ?)', 
-      [id, expense.date, expense.category_id, expense.amount, expense.notes]);
+    execute('INSERT INTO expenses (id, date, category_id, amount, notes, merchant, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?)', 
+      [id, expense.date, expense.category_id, expense.amount, expense.notes, expense.merchant || '', expense.payment_method || 'Cash']);
     saveDb();
     return id;
   },

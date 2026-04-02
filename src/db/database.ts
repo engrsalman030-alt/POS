@@ -416,6 +416,8 @@ export async function getDb(): Promise<Database> {
     { table: 'erp_settings', column: 'key', type: 'TEXT' },
     { table: 'expenses', column: 'category_id', type: 'TEXT' },
     { table: 'expenses', column: 'paid_by', type: 'TEXT' },
+    { table: 'expenses', column: 'merchant', type: 'TEXT' },
+    { table: 'expenses', column: 'payment_method', type: 'TEXT' },
 
     // Invoices / Bills missing columns
     { table: 'sales_invoices', column: 'discount_amount', type: 'REAL DEFAULT 0' },

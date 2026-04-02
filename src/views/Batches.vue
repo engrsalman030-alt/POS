@@ -143,17 +143,17 @@ const thirtyDaysOut = computed(() => {
 
 const activeBatches = computed(() => batchStore.batches.filter(b => {
   if (!b.expiry_date) return true;
-  return b.expiry_date >= today.value;
+  return b.expiry_date >= today.value!;
 }));
 
 const expiringSoon = computed(() => batchStore.batches.filter(b => {
   if (!b.expiry_date) return false;
-  return b.expiry_date >= today.value && b.expiry_date <= thirtyDaysOut.value;
+  return b.expiry_date >= today.value! && b.expiry_date <= thirtyDaysOut.value!;
 }));
 
 const expired = computed(() => batchStore.batches.filter(b => {
   if (!b.expiry_date) return false;
-  return b.expiry_date < today.value;
+  return b.expiry_date < today.value!;
 }));
 
 const filteredBatches = computed(() => {
@@ -184,15 +184,16 @@ function getItemBrand(id: string): string {
 
 function getStatus(batch: ItemBatch): string {
   if (!batch.expiry_date) return 'Active';
-  if (batch.expiry_date < today.value) return 'Expired';
-  if (batch.expiry_date <= thirtyDaysOut.value) return 'Expiring';
+  if (batch.expiry_date < today.value!) return 'Expired';
+  if (batch.expiry_date <= thirtyDaysOut.value!) return 'Expiring';
   return 'Active';
 }
 
+
 function expiryClass(date?: string): string {
   if (!date) return 'text-text-secondary';
-  if (date < today.value) return 'text-danger';
-  if (date <= thirtyDaysOut.value) return 'text-amber-600';
+  if (date < today.value!) return 'text-danger';
+  if (date <= thirtyDaysOut.value!) return 'text-amber-600';
   return 'text-text-secondary';
 }
 

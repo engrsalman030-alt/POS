@@ -171,8 +171,8 @@ function handlePrint() {
   const doc = frame.contentWindow?.document;
   if (!doc) return;
 
-  const company = companyStore.company;
-  const initials = companyInitials.value;
+  // const company = companyStore.company;
+  // const initials = companyInitials.value;
   const items = ledgerData.value;
 
   doc.open();
@@ -195,25 +195,37 @@ function handlePrint() {
         </style>
       </head>
       <body>
-        <div class="flex justify-between items-start mb-10 border-b-2 border-black pb-6">
-           <div class="flex items-center gap-5">
-              <div class="w-14 h-14 bg-black text-white flex items-center justify-center font-black text-2xl monogram rounded-lg">${initials}</div>
-              <div>
-                 <h1 class="text-2xl font-black uppercase tracking-tighter">${company?.name || 'B & H Pharmaceutical (PVT) LTD'}</h1>
-               <div>
-                  <h1 class="text-2xl font-black uppercase tracking-tighter">${company?.name || 'B & H Pharmaceutical (PVT) LTD'}</h1>
-                  <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${company?.address || 'Main Pharmaceutical Distribution'}</p>
-                  <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Phone: ${company?.phone || ''}</p>
-               </div>
-           </div>
-           <div class="text-right">
-              <div class="border-2 border-black inline-block px-4 py-1 mb-2">
-                 <h2 class="text-sm font-black uppercase tracking-widest">Account Ledger</h2>
-              </div>
-              <p class="text-lg font-black uppercase text-slate-900">${account.value?.name}</p>
-              <p class="text-[10px] font-bold text-slate-500 italic mt-1 uppercase">Period: ${startDate.value || 'Beginning'} to ${endDate.value}</p>
-           </div>
-        </div>
+        <div class="flex items-center justify-between border-b-2 border-black pb-4 mb-4">
+             <!-- MONOGRAM (B&H PHARMA) -->
+             <div class="flex-shrink-0 mr-6">
+                <img src="/logo.png" style="max-width: 100px; max-height: 100px; object-fit: contain;" onerror="this.onerror=null; this.style.display='none'; document.getElementById('svg-fallback-report').style.display='flex';" />
+                <div id="svg-fallback-report" style="display: none; width: 90px; height: 90px;" class="rounded-full border-2 border-emerald-500 bg-white flex-col items-center justify-center shadow-sm">
+                   <div class="text-emerald-500 flex items-center justify-center">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M19.5,8H15V3.5A1.5,1.5 0 0,0 13.5,2H10.5A1.5,1.5 0 0,0 9,3.5V8H4.5A1.5,1.5 0 0,0 3,9.5V12.5A1.5,1.5 0 0,0 4.5,14H9V18.5A1.5,1.5 0 0,0 10.5,20H13.5A1.5,1.5 0 0,0 15,18.5V14H19.5A1.5,1.5 0 0,0 21,12.5V9.5A1.5,1.5 0 0,0 19.5,8Z"/></svg>
+                   </div>
+                   <span class="text-[8px] font-black text-emerald-600 tracking-tighter mt-1">B&H PHARMA</span>
+                </div>
+             </div>
+
+             <!-- COMPANY HEADER (RAAZEE Therapeutics) -->
+             <div class="flex-grow text-left">
+                <h1 class="text-2xl font-black uppercase text-black tracking-tighter leading-none mb-1">RAAZEE Therapeutics <span class="text-lg">(PRIVATE) LIMITED</span></h1>
+                <p class="text-[11px] font-black text-black">Head office & Plant: 48 km, Lahore-Kasur road, Kasur</p>
+                <p class="text-[11px] font-black text-black mt-0.5 tracking-tight">NTN : 1526202-2 &nbsp;&nbsp;&nbsp; STRN : 03-04-3000-021-37</p>
+             </div>
+             
+             <!-- REPORT BADGE -->
+             <div class="flex-shrink-0 text-right ml-4">
+                <div class="border-black border-2 px-4 py-2 bg-black text-white inline-block">
+                   <h2 class="text-sm font-black uppercase tracking-[0.2em] leading-none mb-0.5">Account</h2>
+                   <h2 class="text-sm font-black uppercase tracking-[0.2em] leading-none">Ledger</h2>
+                </div>
+                <div class="mt-2 text-right">
+                   <p class="text-[10px] font-black text-black uppercase tracking-widest">${account.value?.name}</p>
+                   <p class="text-[8px] font-bold text-slate-500 italic mt-0.5 uppercase tracking-widest">${startDate.value || 'Beginning'} to ${endDate.value}</p>
+                </div>
+             </div>
+          </div>
 
         <div class="grid grid-cols-3 gap-6 mb-8">
            <div class="p-4 border border-black bg-slate-50">

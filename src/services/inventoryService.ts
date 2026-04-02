@@ -12,16 +12,18 @@ export const InventoryService = {
                 reorder_level, uom, warehouse, image, is_active,
                 batch_number, expiry_date, mfg_date, medicine_type, prescription_required,
                 imei_number, serial_number, warranty_period,
-                weight, pack_size, unit_type, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                weight, pack_size, unit_type, notes,
+                generic_name, strength, dosage_form, mrp, trade_price, discount_on_tp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                id, item.name, item.sku, item.barcode || null, item.type, item.category || 'General', item.brand || null, item.is_inventory ? 1 : 0,
-                item.default_income_account_id, item.default_expense_account_id, item.default_inventory_account_id,
-                item.purchase_rate, item.sales_rate, item.wholesale_rate || 0, item.min_sales_rate || 0, item.discount_allowed ? 1 : 0,
-                item.reorder_level || 0, item.uom || 'Units', item.warehouse || null, item.image || null, item.is_active ? 1 : 0,
+                id, item.name, item.sku, item.barcode || null, item.type, item.category || 'General', item.brand || null, item.is_inventory ?? 1,
+                item.default_income_account_id || 'sales_income', item.default_expense_account_id || 'cogs', item.default_inventory_account_id || 'inventory',
+                item.purchase_rate || 0, item.sales_rate || 0, item.wholesale_rate || 0, item.min_sales_rate || 0, item.discount_allowed ?? 1,
+                item.reorder_level || 0, item.uom || 'Units', item.warehouse || null, item.image || null, (item.is_active === false) ? 0 : 1,
                 item.batch_number || null, item.expiry_date || null, item.mfg_date || null, item.medicine_type || null, item.prescription_required ? 1 : 0,
                 item.imei_number || null, item.serial_number || null, item.warranty_period || null,
-                item.weight || null, item.pack_size || null, item.unit_type || null, item.notes || null
+                item.weight || null, item.pack_size || null, item.unit_type || null, item.notes || null,
+                item.generic_name || null, item.strength || null, item.dosage_form || null, item.mrp || 0, item.trade_price || 0, item.discount_on_tp || 0
             ]
         );
         saveDb();
@@ -36,15 +38,17 @@ export const InventoryService = {
                 reorder_level = ?, uom = ?, warehouse = ?, image = ?, is_active = ?,
                 batch_number = ?, expiry_date = ?, mfg_date = ?, medicine_type = ?, prescription_required = ?,
                 imei_number = ?, serial_number = ?, warranty_period = ?,
-                weight = ?, pack_size = ?, unit_type = ?, notes = ?
+                weight = ?, pack_size = ?, unit_type = ?, notes = ?,
+                generic_name = ?, strength = ?, dosage_form = ?, mrp = ?, trade_price = ?, discount_on_tp = ?
             WHERE id = ?`,
             [
-                item.name, item.sku, item.barcode || null, item.type, item.category || 'General', item.brand || null, item.is_inventory ? 1 : 0,
-                item.purchase_rate, item.sales_rate, item.wholesale_rate || 0, item.min_sales_rate || 0, item.discount_allowed ? 1 : 0,
-                item.reorder_level || 0, item.uom || 'Units', item.warehouse || null, item.image || null, item.is_active ? 1 : 0,
+                item.name, item.sku, item.barcode || null, item.type, item.category || 'General', item.brand || null, item.is_inventory ?? 1,
+                item.purchase_rate || 0, item.sales_rate || 0, item.wholesale_rate || 0, item.min_sales_rate || 0, item.discount_allowed ?? 1,
+                item.reorder_level || 0, item.uom || 'Units', item.warehouse || null, item.image || null, (item.is_active === false) ? 0 : 1,
                 item.batch_number || null, item.expiry_date || null, item.mfg_date || null, item.medicine_type || null, item.prescription_required ? 1 : 0,
                 item.imei_number || null, item.serial_number || null, item.warranty_period || null,
                 item.weight || null, item.pack_size || null, item.unit_type || null, item.notes || null,
+                item.generic_name || null, item.strength || null, item.dosage_form || null, item.mrp || 0, item.trade_price || 0, item.discount_on_tp || 0,
                 item.id
             ]
         );

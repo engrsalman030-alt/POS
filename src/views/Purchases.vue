@@ -1,67 +1,54 @@
 <template>
-  <div class="px-4 md:px-8 py-6 md:py-8 max-w-7xl mx-auto min-h-screen font-sans bg-app-bg">
-
-    <!-- Responsive Header Specialist for Medicine Distribution (Supplier Side) -->
-    <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 border-b border-border">
-      <div class="space-y-1">
-        <h1 class="text-2xl md:text-3xl font-black text-text-primary tracking-tight uppercase">Purchase Bills</h1>
-        <p class="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-[0.2em] flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-          Procurement & Inventory Inbound
-        </p>
+  <div class="page-container">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-heading">Purchase Bills</h1>
+        <p class="text-subheading">Procurement & Inventory Inbound</p>
       </div>
-      <button @click="showModal = true"
-        class="w-full md:w-auto px-6 py-3 rounded-xl bg-text-primary text-card-bg text-sm font-black uppercase tracking-widest transition-all hover:opacity-90 hover:shadow-2xl hover:shadow-text-primary/20 active:scale-95 flex items-center justify-center gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+      <button @click="showModal = true" class="btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         Record Bill
       </button>
-    </header>
+    </div>
 
-    <!-- Main List/Grid View -->
-    <div class="space-y-6">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+    <div class="space-y-4">
+      <div class="grid grid-cols-1 gap-3">
         <div v-for="bill in paginatedBills" :key="bill.id" 
           @click="openDetail(bill)"
-          class="group bg-card-bg border border-border rounded-2xl p-5 md:p-6 hover:shadow-2xl hover:border-rose-500/30 transition-all cursor-pointer relative overflow-hidden flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          class="group card-std p-4 hover:shadow-lg hover:border-brand/40 transition-all cursor-pointer relative overflow-hidden flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           
-          <!-- Status Indicator -->
-          <div class="absolute top-0 right-0 px-4 py-1 rounded-bl-xl text-[8px] font-black uppercase tracking-[0.2em] z-20 bg-rose-500/10 text-rose-500">
+          <!-- Modern Status Ribbon -->
+          <div class="absolute top-0 right-0 px-3 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-[0.2em] z-20 bg-rose-500/10 text-rose-500">
             {{ bill.status }}
           </div>
-
+ 
           <!-- Primary Info -->
-          <div class="flex items-center gap-4 md:gap-6">
-            <div class="w-14 h-14 rounded-2xl bg-hover-bg flex items-center justify-center border border-border/50 group-hover:scale-110 transition-transform duration-500 relative overflow-hidden">
-               <div class="absolute inset-0 bg-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-               <span class="text-xs font-black text-rose-500 relative z-10">BILL</span>
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-lg bg-hover-bg flex items-center justify-center border border-border/50 group-hover:scale-110 transition-transform duration-500 relative overflow-hidden">
+               <span class="text-[10px] font-black text-rose-500 relative z-10">BILL</span>
             </div>
             <div>
-              <h3 class="font-black text-sm md:text-base text-text-primary uppercase tracking-tight truncate max-w-[200px] md:max-w-md">
+              <h3 class="font-bold text-xs text-text-primary uppercase tracking-tight truncate max-w-[200px] md:max-w-md">
                 {{ getSupplierName(bill.supplier_id) }}
               </h3>
-              <div class="flex items-center gap-3 mt-1 text-[10px] font-bold text-text-muted font-mono uppercase tracking-widest">
+              <div class="flex items-center gap-2 mt-0.5 text-[9px] font-bold text-text-muted uppercase tracking-widest">
                 <span>{{ bill.date }}</span>
                 <span class="w-1 h-1 rounded-full bg-border"></span>
-                <span>ID: {{ bill.id.split('-')[0].toUpperCase() }}</span>
+                <span class="font-mono">#{{ (bill?.id || '').split('-')[0]?.toUpperCase() }}</span>
               </div>
             </div>
           </div>
-
+ 
           <!-- Financial Section -->
-          <div class="w-full lg:w-auto flex items-center justify-between lg:justify-end gap-6 md:gap-12 pt-4 lg:pt-0 border-t lg:border-t-0 border-border border-dashed">
-            
-            <div v-if="bill.frappe_reference" class="hidden sm:block">
-              <p class="text-[9px] font-black uppercase tracking-[0.15em] text-text-muted mb-1 italic">Ext Ref</p>
-              <p class="text-xs font-bold text-emerald-600">{{ bill.frappe_reference }}</p>
-            </div>
-
+          <div class="w-full lg:w-auto flex items-center justify-between lg:justify-end gap-6 pt-3 lg:pt-0 border-t lg:border-t-0 border-border border-dashed">
             <div class="text-right">
-              <p class="text-[9px] font-black uppercase tracking-[0.15em] text-text-muted mb-1">Total Payable</p>
-              <p class="text-xl md:text-2xl font-black text-rose-600 tracking-tighter tabular-nums">{{ formatCurrency(bill.total_amount) }}</p>
+              <p class="text-label-small mb-0.5">Total Payable</p>
+              <p class="text-lg font-black text-rose-600 tracking-tighter tabular-nums">{{ formatCurrency(bill.total_amount) }}</p>
             </div>
-
-            <div class="lg:flex items-center justify-center w-10 h-10 rounded-xl bg-hover-bg text-text-muted group-hover:bg-rose-500 group-hover:text-white transition-all active:scale-90 hidden">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+ 
+            <div class="lg:flex items-center justify-center w-8 h-8 rounded-lg bg-hover-bg text-text-muted group-hover:bg-rose-500 group-hover:text-white transition-all active:scale-90 hidden">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </div>
           </div>
         </div>

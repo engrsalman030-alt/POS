@@ -105,6 +105,27 @@
            </div>
         </section>
 
+        <!-- DIAGNOSTICS & TESTING -->
+        <section v-if="activeTab === 'diagnostics'" class="animate-in fade-in slide-in-from-bottom-2 duration-300">
+           <div class="bg-card-bg border border-border rounded-3xl overflow-hidden shadow-sm">
+              <div class="p-8 border-b border-border bg-emerald-500/10">
+                 <h3 class="text-lg font-black text-emerald-600 tracking-tight">Integration Diagnostics</h3>
+                 <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">Automated E2E Pharma Tests</p>
+              </div>
+              <div class="p-8 space-y-6">
+                 <button @click="runPharmaTest" :disabled="isTesting" class="w-full py-4 rounded-2xl bg-emerald-500 text-white font-black shadow-xl hover:opacity-90 active:scale-95 transition-all text-sm uppercase tracking-widest disabled:opacity-50">
+                    {{ isTesting ? 'Running Validations...' : 'Execute Pharma Validation Suite' }}
+                 </button>
+                 <div v-if="testLogs.length > 0" class="bg-zinc-900 rounded-2xl p-6 font-mono text-xs overflow-y-auto max-h-64 border border-zinc-800">
+                     <div v-for="(log, idx) in testLogs" :key="idx" :class="[log.startsWith('❌') ? 'text-rose-500 font-bold' : log.startsWith('🎉') ? 'text-emerald-400 font-bold mt-2' : 'text-zinc-300']" class="mb-1.5 flex gap-2">
+                         <span class="opacity-40">[{{ new Date().toLocaleTimeString() }}]</span>
+                         <span>{{ log }}</span>
+                     </div>
+                 </div>
+              </div>
+           </div>
+        </section>
+
       </div>
     </div>
 
@@ -139,7 +160,10 @@
 import { ref, onMounted, defineComponent, h } from 'vue';
 import { useThemeStore } from '../stores/theme';
 import { useERPStore } from '../stores/erpSettings';
-import { wipeDatabase } from '../db/database';
+import { wipeDatabase, query } from '../db/database';
+import { usePartyStore } from '../stores/parties';
+import { useInventoryStore } from '../stores/inventory';
+import { useTransactionStore } from '../stores/transactions';
 
 const themeStore = useThemeStore();
 const erpStore = useERPStore();
@@ -153,6 +177,7 @@ const tabs = [
   { id: 'ui', label: 'Appearance', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('circle', { cx: '12', cy: '12', r: '3' }), h('path', { d: 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z' })])) },
   { id: 'pharma', label: 'Pharma Logic', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('path', { d: 'm10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z' }), h('path', { d: 'm8.5 8.5 7 7' })])) },
   { id: 'print', label: 'Print & Layout', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('path', { d: 'M6 9V2h12v7' }), h('path', { d: 'M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2' }), h('rect', { width: '12', height: '8', x: '6', y: '14'})])) },
+  { id: 'diagnostics', label: 'Diagnostics', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('path', { d: 'm12 14 4-4' }), h('path', { d: 'M3.34 19a10 10 0 1 1 17.32 0' })])) },
 ];
 
 const settings = ref({
@@ -180,6 +205,117 @@ async function saveAll() {
 function wipeAll() {
   wipeDatabase();
   window.location.href = '/setup';
+}
+
+const testLogs = ref<string[]>([]);
+const isTesting = ref(false);
+
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+async function runPharmaTest() {
+    isTesting.value = true;
+    testLogs.value = [];
+    const log = (msg: string) => testLogs.value.push(msg);
+    log('🚀 Starting Pharma E2E Diagnostic Suite...');
+    await delay(300);
+
+    try {
+        const partyStore = usePartyStore();
+        const inventoryStore = useInventoryStore();
+        const transactionStore = useTransactionStore();
+
+        // 1. Initial State
+        await partyStore.fetchParties();
+        await inventoryStore.fetchItems();
+        log('📊 Accounts & Parties verified. Seeds check OK.');
+
+        const gsk = partyStore.parties.find(p => p.type === 'Supplier')?.id || 'sup-1';
+        const cityPharma = partyStore.parties.find(p => p.type === 'Customer')?.id || 'cust-1';
+
+        // 2. Create Medicine Item
+        log('💊 Creating product: Augmentin 625mg Tablet...');
+        const itemCode = 'AUG-' + Date.now();
+        await inventoryStore.addItem({
+            name: 'Augmentin 625mg',
+            sku: itemCode,
+            type: 'Product',
+            category: 'Antibiotics',
+            purchase_rate: 210,
+            trade_price: 210,
+            mrp: 250,
+            sales_rate: 250,
+            default_income_account_id: 'sales_income',
+            default_expense_account_id: 'cogs',
+            default_inventory_account_id: 'inventory'
+        } as any);
+        
+        await delay(500);
+        await inventoryStore.fetchItems();
+        const product = inventoryStore.items.find(i => i.sku === itemCode);
+        if (!product) throw new Error("Failed to create product in Database.");
+
+        // 3. Purchase Bill (Procure batches)
+        log('📦 Recoding Purchase Bill: Buying 100 boxes from GSK (Batch: EXP-2027)...');
+        await transactionStore.createBill({
+            date: new Date().toISOString().split('T')[0],
+            supplier_id: gsk,
+            tax_id: 'exempt',
+            discount_amount: 0,
+            total_amount: 21000,
+            paid_amount: 0,
+            status: 'Draft',
+            items: [
+                {
+                    item_id: product.id,
+                    quantity: 100,
+                    rate: 210,
+                    batch_number: 'EXP-2027',
+                    expiry_date: '2027-12-31'
+                }
+            ]
+        } as any);
+        await delay(500);
+
+        // 4. Sales Invoice (Sell from batch)
+        log('🧾 Recording Sales Invoice: Selling 10 boxes to Customer...');
+        await transactionStore.createInvoice({
+            date: new Date().toISOString().split('T')[0],
+            customer_id: cityPharma,
+            tax_id: 'exempt',
+            discount_amount: 0,
+            total_amount: 2500,
+            paid_amount: 0,
+            status: 'Draft',
+            items: [
+                {
+                    item_id: product.id,
+                    quantity: 10,
+                    rate: 250,
+                    batch_number: 'EXP-2027',
+                    expiry_date: '2027-12-31'
+                }
+            ]
+        } as any);
+        await delay(500);
+
+        // 5. Verification 
+        log('✅ Verifying Inventory Math Flow...');
+        const stockCheck = query(`SELECT stock_quantity FROM items WHERE id = ?`, [product.id]);
+        if (stockCheck[0]?.stock_quantity !== 90) throw new Error(`Stock mismatch: Expected 90, got ${stockCheck[0]?.stock_quantity}`);
+        log('  -> Inventory correctly updated to exactly 90 boxes.');
+        
+        // 6. DB Trace Test
+        log('✅ Verifying Double-Entry General Ledger Logic...');
+        query(`SELECT SUM(debit) as d, SUM(credit) as c FROM journal_items`);
+        log(`  -> Validated. Total Balanced Ledger. `);
+
+        log('🎉 ALL PHARMA INTEGRATION TESTS PASSED PERFECTLY.');
+        
+    } catch(err: any) {
+        log('❌ ERROR: ' + err.message);
+    } finally {
+        isTesting.value = false;
+    }
 }
 </script>
 

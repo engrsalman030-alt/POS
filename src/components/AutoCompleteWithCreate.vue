@@ -54,7 +54,7 @@
             v-if="allowCreate"
             class="px-3 py-3 mt-1.5 border-t border-border/50 cursor-pointer flex items-center gap-3 group border-b last:border-b-0"
             :class="highlightedIndex === filteredOptions.length ? 'bg-emerald-500 text-white' : 'hover:bg-emerald-50 text-emerald-600'"
-            @mousedown.prevent="$emit('create', searchQuery)"
+            @mousedown.prevent="handleCreateClick"
           >
             <div class="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-white/20 group-hover:text-white transition-colors">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
@@ -90,6 +90,7 @@ const props = defineProps<{
   allowCreate?: boolean;
   createLabel?: string;
   initialQuery?: string;
+  allowFreeText?: boolean;
 }>();
 
 const emit = defineEmits(['update:modelValue', 'select', 'create', 'search']);
@@ -113,13 +114,30 @@ const filteredOptions = computed(() => {
 // Sync searchQuery with modelValue or initial prop
 watch(() => props.modelValue, (newVal) => {
   if (!newVal) {
-    searchQuery.value = '';
+    if (!props.allowFreeText || searchQuery.value !== '') {
+      searchQuery.value = '';
+    }
   } else {
     // If we have an option matching this ID, show its name
     const opt = props.options.find(o => o.id === newVal);
-    if (opt) searchQuery.value = opt.name;
+    if (opt) {
+       searchQuery.value = opt.name;
+    } else if (props.allowFreeText && searchQuery.value !== newVal) {
+       searchQuery.value = newVal;
+    }
   }
 }, { immediate: true });
+
+watch(searchQuery, (newVal) => {
+   emit('search', newVal);
+   // If free text is allowed, we act as a normal input bound directly to modelValue
+   // But we don't emit if it matches an option named exactly to prevent infinite loops when strictly ID-mapped unless needed
+   if (props.allowFreeText) {
+      if (newVal !== props.modelValue) {
+          emit('update:modelValue', newVal);
+      }
+   }
+});
 
 function onFocus() {
   updateDropdownPosition();
@@ -161,10 +179,23 @@ function navigateOptions(dir: number) {
 
 function selectHighlighted() {
   if (highlightedIndex.value === filteredOptions.value.length && props.allowCreate) {
-    emit('create', searchQuery.value);
+    handleCreateClick();
   } else if (filteredOptions.value[highlightedIndex.value]) {
     selectOption(filteredOptions.value[highlightedIndex.value] as unknown as Option);
   }
+}
+
+function handleCreateClick() {
+  let val = searchQuery.value;
+  if (!val) {
+    const userInput = prompt(`Enter new ${props.createLabel || 'option'}:`);
+    if (!userInput) return; // User cancelled or entered blank
+    val = userInput.trim();
+  }
+  if (!val) return;
+  emit('create', val);
+  showOptions.value = false;
+  input.value?.blur();
 }
 
 function selectOption(option: Option) {
