@@ -19,6 +19,14 @@ export const usePartyStore = defineStore('parties', {
         },
         async addParty(party: any) {
             const id = crypto.randomUUID();
+            
+            if (!party.code) {
+               const countResult = query(`SELECT COUNT(*) as c FROM parties WHERE type = '${party.type}'`);
+               const count = countResult.length > 0 ? (countResult[0] as any).c : 0;
+               const prefix = party.type === 'Customer' ? 'CUST' : (party.type === 'Supplier' ? 'SUP' : 'PRTY');
+               party.code = `${prefix}-${String(count + 1).padStart(3, '0')}`;
+            }
+
             execute(
                 `INSERT INTO parties (
                     id, name, type, company_name, contact_person, email, phone, whatsapp, website, 
@@ -26,15 +34,15 @@ export const usePartyStore = defineStore('parties', {
                     tax_id, cnic, reg_number, credit_limit, payment_terms, 
                     receivable_account_id, payable_account_id, opening_balance, balance_type, 
                     loyalty_program, customer_group, supplier_category, price_list, default_currency, 
-                    is_active, notes, tags
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    is_active, notes, tags, company_type, default_percentage, code
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     id, party.name, party.type, party.company_name || null, party.contact_person || null, party.email || null, party.phone || null, party.whatsapp || null, party.website || null,
                     party.address || null, party.billing_address || null, party.shipping_address || null, party.city || null, party.country || null, party.postal_code || null,
                     party.tax_id || null, party.cnic || null, party.reg_number || null, party.credit_limit || 0, party.payment_terms || null,
                     party.receivable_account_id || 'ar', party.payable_account_id || 'ap', party.opening_balance || 0, party.balance_type || 'Debit',
                     party.loyalty_program ? 1 : 0, party.customer_group || null, party.supplier_category || null, party.price_list || null, party.default_currency || null,
-                    1, party.notes || null, party.tags || null
+                    1, party.notes || null, party.tags || null, party.company_type || null, party.default_percentage || 0, party.code || null
                 ]
             );
             await this.fetchParties();
@@ -47,7 +55,7 @@ export const usePartyStore = defineStore('parties', {
                     tax_id = ?, cnic = ?, reg_number = ?, credit_limit = ?, payment_terms = ?, 
                     receivable_account_id = ?, payable_account_id = ?, opening_balance = ?, balance_type = ?, 
                     loyalty_program = ?, customer_group = ?, supplier_category = ?, price_list = ?, default_currency = ?, 
-                    is_active = ?, notes = ?, tags = ?
+                    is_active = ?, notes = ?, tags = ?, company_type = ?, default_percentage = ?, code = ?
                 WHERE id = ?`,
                 [
                     party.name, party.type, party.company_name || null, party.contact_person || null, party.email || null, party.phone || null, party.whatsapp || null, party.website || null,
@@ -55,7 +63,7 @@ export const usePartyStore = defineStore('parties', {
                     party.tax_id || null, party.cnic || null, party.reg_number || null, party.credit_limit || 0, party.payment_terms || null,
                     party.receivable_account_id || 'ar', party.payable_account_id || 'ap', party.opening_balance || 0, party.balance_type || 'Debit',
                     party.loyalty_program ? 1 : 0, party.customer_group || null, party.supplier_category || null, party.price_list || null, party.default_currency || null,
-                    party.is_active ? 1 : 0, party.notes || null, party.tags || null,
+                    party.is_active ? 1 : 0, party.notes || null, party.tags || null, (party as any).company_type || null, (party as any).default_percentage || 0, (party as any).code || null,
                     party.id
                 ]
             );

@@ -116,7 +116,7 @@ const startDate = ref('');
 const endDate = ref(new Date().toISOString().split('T')[0]);
 
 const companyInitials = computed(() => {
-  return companyStore.getMonogram(companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD');
+  return companyStore.getMonogram(companyStore.company?.name || 'B & H Pharmaceuticals (PVT ) LTd');
 });
 
 const currentBalance = computed(() => accountStore.getAccountBalance(props.id));

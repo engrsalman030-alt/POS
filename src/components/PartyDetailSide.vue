@@ -143,13 +143,16 @@
                            {{ item.type[0] }}
                          </div>
                          <div>
-                            <p class="text-sm font-black text-text-primary group-hover:text-brand transition-colors">{{ item.type }} #{{ item.id.slice(0,6).toUpperCase() }}</p>
+                            <p class="text-sm font-black text-text-primary group-hover:text-brand transition-colors">
+                              <span v-if="item.document_type === 'Return'" class="text-rose-500 mr-1">[RETURN]</span>
+                              {{ item.type }} #{{ item.id.slice(0,6).toUpperCase() }}
+                            </p>
                             <p class="text-[10px] text-text-muted font-bold mt-0.5 tracking-tight uppercase">{{ item.date }} • {{ item.status }}</p>
                          </div>
                       </div>
                       <div class="text-right">
-                         <p class="text-xs font-black text-text-primary" :class="item.type === 'Payment' ? 'text-emerald-600' : ''">
-                           {{ item.type === 'Payment' ? '-' : '' }}{{ formatCurrency(item.amount) }}
+                         <p class="text-xs font-black" :class="item.type === 'Payment' || item.document_type === 'Return' ? 'text-emerald-500' : 'text-text-primary'">
+                           {{ item.type === 'Payment' || item.document_type === 'Return' ? '-' : '' }}{{ formatCurrency(item.amount) }}
                          </p>
                          <p v-if="item.payment_type" class="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1 italic">{{ item.payment_type }}</p>
                       </div>

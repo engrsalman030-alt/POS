@@ -1,6 +1,6 @@
 <template>
   <div class="pos-screen h-screen flex flex-col bg-app-bg text-text-primary font-inter overflow-hidden">
-    <!-- B & H Pharmaceutical (PVT) LTD Header -->
+    <!-- B & H Pharmaceuticals (PVT ) LTd Header -->
     <header class="h-14 md:h-16 bg-card-bg border-b border-border flex items-center justify-between px-4 md:px-6 shrink-0 z-40">
       <div class="flex items-center gap-2">
         <div class="w-10 h-10 bg-brand rounded-xl flex items-center justify-center shadow-lg shadow-brand/20">
@@ -602,7 +602,7 @@
             <!-- THERMAL LAYOUT -->
             <div v-if="selectedTemplate === 'Thermal'" class="thermal-layout">
               <div class="text-center mb-8">
-                <h2 class="text-xl font-black uppercase tracking-widest text-text-primary print:text-black">{{ companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD' }}</h2>
+                <h2 class="text-xl font-black uppercase tracking-widest text-text-primary print:text-black">{{ companyStore.company?.name || 'B & H Pharmaceuticals (PVT ) LTd' }}</h2>
                 <p class="text-[10px] text-text-muted print:text-gray-500 font-bold mt-1 uppercase tracking-wider">{{ companyStore.company?.address || 'Main POS Terminal' }}</p>
                 <div class="mt-6 border-y border-border border-dashed py-3 print:border-gray-300">
                   <h3 class="font-black text-sm tracking-[0.3em] uppercase">Sale Receipt</h3>
@@ -1036,7 +1036,7 @@ function printReceipt() {
 
 function shareToWhatsApp() {
     if (!latestInvoice.value) return;
-    const message = `*Invoice Receipt*\nFrom: ${companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD'}\nInvoice: #${latestInvoice.value.id.slice(0, 8)}\nDate: ${latestInvoice.value.date}\nTotal: ${formatCurrency(latestInvoice.value.total_amount)}\n\nThank you for your business!`;
+    const message = `*Invoice Receipt*\nFrom: ${companyStore.company?.name || 'B & H Pharmaceuticals (PVT ) LTd'}\nInvoice: #${latestInvoice.value.id.slice(0, 8)}\nDate: ${latestInvoice.value.date}\nTotal: ${formatCurrency(latestInvoice.value.total_amount)}\n\nThank you for your business!`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
 }

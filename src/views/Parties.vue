@@ -9,14 +9,14 @@
       </div>
       <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
         <!-- Filter Tabs -->
-        <div class="flex bg-hover-bg p-1 rounded-lg border border-border">
+        <div class="flex flex-wrap bg-hover-bg p-1 rounded-lg border border-border gap-1">
           <button 
-            v-for="f in ['All', 'Customer', 'Supplier']" 
+            v-for="f in ['All', 'Customer', 'Supplier', 'Salesman', 'Transporter', 'Agent', 'Walk-in', 'Both']" 
             :key="f"
             @click="filter = f as any"
-            :class="['px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all', filter === f ? 'bg-card-bg shadow-sm text-text-primary' : 'text-text-muted hover:text-text-secondary']"
+            :class="['px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest transition-all', filter === f ? 'bg-card-bg shadow-sm text-text-primary' : 'text-text-muted hover:text-text-secondary']"
           >
-            {{ f }}s
+            {{ f === 'Both' ? 'Associate' : f }}
           </button>
         </div>
         <button @click="showModal = true"
@@ -144,7 +144,7 @@ const transactionStore = useTransactionStore();
 const showModal = ref(false);
 const showPaymentModal = ref(false);
 const isEditMode = ref(false);
-const filter = ref<'All' | 'Customer' | 'Supplier'>('All');
+const filter = ref<'All' | 'Customer' | 'Supplier' | 'Salesman' | 'Transporter' | 'Agent' | 'Walk-in' | 'Both'>('All');
 const selectedParty = ref<Party | null>(null);
 
 const filteredParties = computed(() => {

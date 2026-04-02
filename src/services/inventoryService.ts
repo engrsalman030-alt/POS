@@ -4,6 +4,13 @@ import type { Item, StockTransaction } from '../types/inventory';
 export const InventoryService = {
     async addItem(item: Omit<Item, 'id' | 'stock_quantity' | 'stock_value'>) {
         const id = crypto.randomUUID();
+        
+        if (!(item as any).code) {
+           const countResult = query(`SELECT COUNT(*) as c FROM items`);
+           const count = countResult.length > 0 ? (countResult[0] as any).c : 0;
+           (item as any).code = `PROD-${String(count + 1).padStart(3, '0')}`;
+        }
+        
         execute(
             `INSERT INTO items (
                 id, name, sku, barcode, type, category, brand, is_inventory, 
@@ -13,8 +20,8 @@ export const InventoryService = {
                 batch_number, expiry_date, mfg_date, medicine_type, prescription_required,
                 imei_number, serial_number, warranty_period,
                 weight, pack_size, unit_type, notes,
-                generic_name, strength, dosage_form, mrp, trade_price, discount_on_tp
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                generic_name, strength, dosage_form, mrp, trade_price, discount_on_tp, code
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 id, item.name, item.sku, item.barcode || null, item.type, item.category || 'General', item.brand || null, item.is_inventory ?? 1,
                 item.default_income_account_id || 'sales_income', item.default_expense_account_id || 'cogs', item.default_inventory_account_id || 'inventory',
@@ -23,7 +30,8 @@ export const InventoryService = {
                 item.batch_number || null, item.expiry_date || null, item.mfg_date || null, item.medicine_type || null, item.prescription_required ? 1 : 0,
                 item.imei_number || null, item.serial_number || null, item.warranty_period || null,
                 item.weight || null, item.pack_size || null, item.unit_type || null, item.notes || null,
-                item.generic_name || null, item.strength || null, item.dosage_form || null, item.mrp || 0, item.trade_price || 0, item.discount_on_tp || 0
+                item.generic_name || null, item.strength || null, item.dosage_form || null, item.mrp || 0, item.trade_price || 0, item.discount_on_tp || 0,
+                (item as any).code || null
             ]
         );
         saveDb();
@@ -39,7 +47,7 @@ export const InventoryService = {
                 batch_number = ?, expiry_date = ?, mfg_date = ?, medicine_type = ?, prescription_required = ?,
                 imei_number = ?, serial_number = ?, warranty_period = ?,
                 weight = ?, pack_size = ?, unit_type = ?, notes = ?,
-                generic_name = ?, strength = ?, dosage_form = ?, mrp = ?, trade_price = ?, discount_on_tp = ?
+                generic_name = ?, strength = ?, dosage_form = ?, mrp = ?, trade_price = ?, discount_on_tp = ?, code = ?
             WHERE id = ?`,
             [
                 item.name, item.sku, item.barcode || null, item.type, item.category || 'General', item.brand || null, item.is_inventory ?? 1,
@@ -49,6 +57,7 @@ export const InventoryService = {
                 item.imei_number || null, item.serial_number || null, item.warranty_period || null,
                 item.weight || null, item.pack_size || null, item.unit_type || null, item.notes || null,
                 item.generic_name || null, item.strength || null, item.dosage_form || null, item.mrp || 0, item.trade_price || 0, item.discount_on_tp || 0,
+                (item as any).code || null,
                 item.id
             ]
         );

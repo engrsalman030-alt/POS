@@ -5,6 +5,7 @@ export interface SSRFilter {
   endDate: string;
   itemId?: string;
   categoryId?: string;
+  groupBy?: 'product' | 'brand' | 'category';
 }
 
 export interface DSRFilter {
@@ -17,8 +18,81 @@ export interface DSRFilter {
 export const ERPService = {
   // SSR: Stock Sales Report (Opening, Purchased, Sold, Closing)
   async getSSRReport(filters: SSRFilter) {
-    const { startDate, endDate, itemId, categoryId } = filters;
-    
+    const { startDate, endDate, itemId, categoryId, groupBy = 'product' } = filters;
+
+    // ── Brand-level groupBy ──────────────────────────────────────────────────
+    if (groupBy === 'brand') {
+      const sql = `
+        WITH AllBrands AS (
+          SELECT DISTINCT i.brand FROM stock_ledger sl
+          JOIN items i ON sl.item_id = i.id
+          WHERE i.brand IS NOT NULL AND i.brand != ''
+        ),
+        OpeningStock AS (
+          SELECT i.brand,
+            SUM(CASE WHEN sl.type='In' THEN (sl.quantity+sl.bonus_quantity) ELSE -(sl.quantity+sl.bonus_quantity) END) as opening
+          FROM stock_ledger sl JOIN items i ON sl.item_id = i.id
+          WHERE sl.date < ? AND i.brand IS NOT NULL GROUP BY i.brand
+        ),
+        Movement AS (
+          SELECT i.brand,
+            SUM(CASE WHEN sl.type='In' THEN sl.quantity ELSE 0 END) as purchased,
+            SUM(CASE WHEN sl.type='In' THEN sl.bonus_quantity ELSE 0 END) as p_bonus,
+            SUM(CASE WHEN sl.type='Out' THEN sl.quantity ELSE 0 END) as sold,
+            SUM(CASE WHEN sl.type='Out' THEN sl.bonus_quantity ELSE 0 END) as s_bonus
+          FROM stock_ledger sl JOIN items i ON sl.item_id = i.id
+          WHERE sl.date BETWEEN ? AND ? AND i.brand IS NOT NULL GROUP BY i.brand
+        )
+        SELECT ab.brand as name, '' as barcode, '' as category, ab.brand as brand, '' as uom,
+          IFNULL(os.opening,0) as opening,
+          IFNULL(m.purchased,0) as purchased, IFNULL(m.p_bonus,0) as p_bonus,
+          IFNULL(m.sold,0) as sold, IFNULL(m.s_bonus,0) as s_bonus,
+          (IFNULL(os.opening,0)+IFNULL(m.purchased,0)+IFNULL(m.p_bonus,0)-IFNULL(m.sold,0)-IFNULL(m.s_bonus,0)) as closing
+        FROM AllBrands ab
+        LEFT JOIN OpeningStock os ON ab.brand = os.brand
+        LEFT JOIN Movement m ON ab.brand = m.brand
+        ORDER BY ab.brand ASC
+      `;
+      return query(sql, [startDate, startDate, endDate]);
+    }
+
+    // ── Category-level groupBy ───────────────────────────────────────────────
+    if (groupBy === 'category') {
+      const sql = `
+        WITH AllCats AS (
+          SELECT DISTINCT i.category FROM stock_ledger sl
+          JOIN items i ON sl.item_id = i.id
+          WHERE i.category IS NOT NULL AND i.category != ''
+        ),
+        OpeningStock AS (
+          SELECT i.category,
+            SUM(CASE WHEN sl.type='In' THEN (sl.quantity+sl.bonus_quantity) ELSE -(sl.quantity+sl.bonus_quantity) END) as opening
+          FROM stock_ledger sl JOIN items i ON sl.item_id = i.id
+          WHERE sl.date < ? AND i.category IS NOT NULL GROUP BY i.category
+        ),
+        Movement AS (
+          SELECT i.category,
+            SUM(CASE WHEN sl.type='In' THEN sl.quantity ELSE 0 END) as purchased,
+            SUM(CASE WHEN sl.type='In' THEN sl.bonus_quantity ELSE 0 END) as p_bonus,
+            SUM(CASE WHEN sl.type='Out' THEN sl.quantity ELSE 0 END) as sold,
+            SUM(CASE WHEN sl.type='Out' THEN sl.bonus_quantity ELSE 0 END) as s_bonus
+          FROM stock_ledger sl JOIN items i ON sl.item_id = i.id
+          WHERE sl.date BETWEEN ? AND ? AND i.category IS NOT NULL GROUP BY i.category
+        )
+        SELECT ac.category as name, '' as barcode, ac.category as category, '' as brand, '' as uom,
+          IFNULL(os.opening,0) as opening,
+          IFNULL(m.purchased,0) as purchased, IFNULL(m.p_bonus,0) as p_bonus,
+          IFNULL(m.sold,0) as sold, IFNULL(m.s_bonus,0) as s_bonus,
+          (IFNULL(os.opening,0)+IFNULL(m.purchased,0)+IFNULL(m.p_bonus,0)-IFNULL(m.sold,0)-IFNULL(m.s_bonus,0)) as closing
+        FROM AllCats ac
+        LEFT JOIN OpeningStock os ON ac.category = os.category
+        LEFT JOIN Movement m ON ac.category = m.category
+        ORDER BY ac.category ASC
+      `;
+      return query(sql, [startDate, startDate, endDate]);
+    }
+
+    // ── Product-level groupBy (default) ─────────────────────────────────────
     let sql = `
       WITH OpeningStock AS (
         SELECT item_id, SUM(CASE WHEN type='In' THEN (quantity + bonus_quantity) ELSE -(quantity + bonus_quantity) END) as opening 
@@ -38,13 +112,18 @@ export const ERPService = {
         GROUP BY item_id
       )
       SELECT 
-        i.name, i.barcode, i.category, i.brand, i.uom,
+        i.name, i.barcode, i.category, i.brand, i.uom, i.purchase_rate, i.sales_rate,
         ifnull(os.opening, 0) as opening,
         ifnull(m.purchased, 0) as purchased,
         ifnull(m.p_bonus, 0) as p_bonus,
         ifnull(m.sold, 0) as sold,
         ifnull(m.s_bonus, 0) as s_bonus,
-        (ifnull(os.opening, 0) + ifnull(m.purchased, 0) + ifnull(m.p_bonus, 0) - ifnull(m.sold, 0) - ifnull(m.s_bonus, 0)) as closing
+        (ifnull(os.opening, 0) + ifnull(m.purchased, 0) + ifnull(m.p_bonus, 0) - ifnull(m.sold, 0) - ifnull(m.s_bonus, 0)) as closing,
+        -- Value calculations
+        i.purchase_rate as tp,
+        i.sales_rate as mrp,
+        ((ifnull(os.opening, 0) + ifnull(m.purchased, 0) + ifnull(m.p_bonus, 0) - ifnull(m.sold, 0) - ifnull(m.s_bonus, 0)) * i.purchase_rate) as value_at_tp,
+        ((ifnull(os.opening, 0) + ifnull(m.purchased, 0) + ifnull(m.p_bonus, 0) - ifnull(m.sold, 0) - ifnull(m.s_bonus, 0)) * i.sales_rate) as value_at_mrp
       FROM items i
       LEFT JOIN OpeningStock os ON i.id = os.item_id
       LEFT JOIN Movement m ON i.id = m.item_id
@@ -52,15 +131,8 @@ export const ERPService = {
     `;
     const params: any[] = [startDate, startDate, endDate];
 
-    if (itemId) {
-      sql += " AND i.id = ?";
-      params.push(itemId);
-    }
-    if (categoryId) {
-      sql += " AND i.category = ?";
-      params.push(categoryId);
-    }
-
+    if (itemId) { sql += " AND i.id = ?"; params.push(itemId); }
+    if (categoryId) { sql += " AND i.category = ?"; params.push(categoryId); }
     sql += " ORDER BY i.name ASC";
     return query(sql, params);
   },
@@ -153,6 +225,43 @@ export const ERPService = {
     return query(sql, params);
   },
 
+  // Detailed DSR (Includes all invoice items)
+  async getDetailedDSRReport(filters: DSRFilter) {
+    const { startDate, endDate, ssrId, dsrId } = filters;
+
+    let sql = `
+      SELECT 
+        s.date,
+        s.id as invoice_id,
+        p.name as customer_name,
+        st_ssr.name as ssr_name,
+        st_dsr.name as dsr_name,
+        i.name as item_name,
+        si.batch_number,
+        si.expiry_date,
+        si.quantity,
+        si.bonus_quantity,
+        si.rate,
+        si.discount_amount,
+        (si.quantity * si.rate) - si.discount_amount as net_total,
+        (si.rate - i.purchase_rate) * si.quantity as profit
+      FROM sales_invoices s
+      JOIN sales_invoice_items si ON s.id = si.invoice_id
+      LEFT JOIN items i ON si.item_id = i.id
+      LEFT JOIN parties p ON s.customer_id = p.id
+      LEFT JOIN staff st_ssr ON s.ssr_id = st_ssr.id
+      LEFT JOIN staff st_dsr ON s.dsr_id = st_dsr.id
+      WHERE s.date BETWEEN ? AND ?
+    `;
+    const params: any[] = [startDate, endDate];
+
+    if (ssrId) { sql += " AND s.ssr_id = ?"; params.push(ssrId); }
+    if (dsrId) { sql += " AND s.dsr_id = ?"; params.push(dsrId); }
+
+    sql += " ORDER BY s.date DESC, s.id DESC";
+    return query(sql, params);
+  },
+
   // Settings CRUD
   async updateSetting(key: string, value: string) {
     execute('INSERT OR REPLACE INTO erp_settings (key, value) VALUES (?, ?)', [key, value]);
@@ -192,5 +301,52 @@ export const ERPService = {
 
   async getExpenseCategories() {
     return query('SELECT * FROM expense_categories ORDER BY name ASC');
+  },
+
+  // ─── Staff ────────────────────────────────────────────────────────────────
+  async getStaff(role?: string) {
+    let sql = 'SELECT id, name, role FROM staff WHERE is_active = 1';
+    const params: any[] = [];
+    if (role) { sql += ' AND role = ?'; params.push(role); }
+    sql += ' ORDER BY name ASC';
+    return query(sql, params) as unknown as { id: string; name: string; role: string }[];
+  },
+
+  // ─── Summarized Reports for Distributor Shortcuts ──────────────────────────
+  async getCustomerSalesSummary(startDate: string, endDate: string) {
+    const sql = `
+      SELECT 
+        p.name as customer_name,
+        p.city as city,
+        COUNT(s.id) as total_visits,
+        SUM(s.total_amount) as total_billed,
+        SUM(s.paid_amount) as total_paid,
+        SUM(s.total_amount - s.paid_amount) as outstanding
+      FROM parties p
+      JOIN sales_invoices s ON s.customer_id = p.id
+      WHERE s.date BETWEEN ? AND ?
+      GROUP BY p.id
+      ORDER BY total_billed DESC
+    `;
+    return query(sql, [startDate, endDate]);
+  },
+
+  async getSalesmanPerformanceReport(startDate: string, endDate: string) {
+    const sql = `
+      SELECT 
+        st.name as salesman_name,
+        st.role as role,
+        COUNT(s.id) as total_invoices,
+        SUM(s.total_amount) as total_sales,
+        SUM(s.paid_amount) as total_recovered,
+        SUM(s.total_amount - s.paid_amount) as total_credit
+      FROM staff st
+      LEFT JOIN sales_invoices s ON (s.dsr_id = st.id OR s.ssr_id = st.id) AND s.date BETWEEN ? AND ?
+      WHERE st.is_active = 1
+      GROUP BY st.id
+      HAVING total_sales > 0
+      ORDER BY total_sales DESC
+    `;
+    return query(sql, [startDate, endDate, startDate, endDate]);
   }
 };

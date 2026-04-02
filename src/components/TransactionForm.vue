@@ -3,9 +3,16 @@
     <!-- STICKY HEADER -->
     <header class="sticky top-0 z-[60] bg-card-bg border-b border-border px-4 md:px-6 py-1.5 md:py-2 flex flex-col md:flex-row items-center justify-between gap-3 shadow-sm">
       <div class="flex items-center gap-3 w-full md:w-auto">
-        <h1 class="text-sm md:text-base font-black tracking-tighter text-text-primary leading-none uppercase">
-          {{ type === 'Sales' ? 'Sale Invoice' : 'Purchase Bill' }}
+        <h1 class="text-sm md:text-base font-black tracking-tighter text-text-primary leading-none uppercase flex items-center gap-2">
+          {{ type === 'Sales' ? 'Sale' : 'Purchase' }}
+          <span :class="['px-2 py-0.5 rounded-md text-[10px] shadow-sm', form.document_type === 'Return' ? 'bg-rose-500 text-white' : 'bg-brand/10 text-brand']">
+            {{ form.document_type === 'Return' ? 'RETURN' : (type === 'Sales' ? 'INVOICE' : 'BILL') }}
+          </span>
         </h1>
+        <button @click="form.document_type = form.document_type === 'Return' ? (type==='Sales'?'Invoice':'Bill') : 'Return'" 
+          :class="['px-3 py-1 rounded-lg text-[9px] font-black uppercase transition-all tracking-widest', form.document_type === 'Return' ? 'bg-text-primary text-card-bg' : 'bg-rose-500 border-none text-white shadow-md hover:bg-rose-600']">
+          Switch to {{ form.document_type === 'Return' ? 'Regular Entry' : 'Return' }}
+        </button>
       </div>
       <div class="flex items-center gap-2 w-full md:w-auto">
         <button @click="$emit('cancel')" class="flex-1 md:flex-none px-4 py-2 rounded-xl border border-border text-[10px] md:text-xs font-black uppercase tracking-widest text-text-muted hover:bg-hover-bg transition-all flex items-center justify-center gap-2">
@@ -56,6 +63,14 @@
           <div class="space-y-1.5">
             <label class="label-tiny">Transaction Date</label>
             <SmartDateInput v-model="form.date" />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="label-tiny">Tax Rule</label>
+            <select v-model="form.tax_id" class="w-full bg-card-bg border border-border rounded-xl px-4 py-2 text-xs font-bold text-text-primary outline-none focus:ring-2 focus:ring-brand/10 transition-all">
+               <option value="">No Tax Appies</option>
+               <option v-for="t in validTaxes" :key="t.id" :value="t.id">{{ t.name }} ({{ t.type === 'Percentage' ? t.rate+'%' : 'PKR '+t.rate }})</option>
+            </select>
           </div>
 
           <!-- NO MORE HEADER MULTI-COMPANY FILTER -->
@@ -210,6 +225,10 @@
                     <span class="text-[10px] font-black uppercase tracking-widest">Disc. Savings</span>
                     <span class="text-sm font-black tabular-nums">-{{ formatAmount(totals.discount) }}</span>
                  </div>
+                 <div v-if="totals.tax_amount > 0" class="flex justify-between items-center text-amber-400">
+                    <span class="text-[10px] font-black uppercase tracking-widest">{{ totals.tax_inclusive ? 'Tax Included' : 'Applied Tax' }}</span>
+                    <span class="text-sm font-black tabular-nums">{{ totals.tax_inclusive ? '' : '+' }}{{ formatAmount(totals.tax_amount) }}</span>
+                 </div>
                  <div v-if="totals.bonus > 0" class="flex justify-between items-center text-brand border-t border-white/5 pt-3">
                     <span class="text-[10px] font-black uppercase tracking-widest">Bonus Pack Units</span>
                     <span class="text-sm font-black tabular-nums">{{ totals.bonus }}</span>
@@ -271,6 +290,7 @@ import { usePartyStore } from '../stores/parties';
 import { useInventoryStore } from '../stores/inventory';
 import { useBatchStore } from '../stores/batches';
 import { useStaffStore } from '../stores/staff';
+import { useTaxStore } from '../stores/tax';
 import SmartDateInput from './SmartDateInput.vue';
 import AutoCompleteWithCreate from './AutoCompleteWithCreate.vue';
 import PartyForm from './PartyForm.vue';
@@ -295,6 +315,7 @@ interface TransactionFormGroup {
 }
 
 interface TransactionForm {
+  document_type: string;
   party_id: string;
   date: string;
   sales_manager: string;
@@ -302,6 +323,7 @@ interface TransactionForm {
   dsr_id: string;
   frappe_reference: string;
   notes: string;
+  tax_id: string;
   groups: TransactionFormGroup[];
 }
 
@@ -316,8 +338,13 @@ const partyStore = usePartyStore();
 const inventoryStore = useInventoryStore();
 const batchStore = useBatchStore();
 const staffStore = useStaffStore();
+const taxStore = useTaxStore();
 
 const parties = computed(() => props.type === 'Sales' ? partyStore.customers : partyStore.suppliers);
+
+const validTaxes = computed(() => {
+   return taxStore.taxes.filter(t => t.is_active && (t.applicable_on === 'Both' || t.applicable_on === props.type || (props.type === 'Purchase' && t.applicable_on === 'Purchases')));
+});
 
 // Multiple Company Filter Logic
 // Multiple Company Filter Logic
@@ -361,6 +388,7 @@ const activeItemLineIdx = ref<{gIdx: number, iIdx: number} | null>(null);
 const activeBatchIdx = ref<{gIdx: number, iIdx: number} | null>(null);
 
 const form = ref<TransactionForm>({
+  document_type: props.type === 'Sales' ? 'Invoice' : 'Bill',
   party_id: '',
   date: new Date().toISOString().split('T')[0],
   sales_manager: '',
@@ -368,6 +396,7 @@ const form = ref<TransactionForm>({
   dsr_id: '',
   frappe_reference: '',
   notes: '',
+  tax_id: '',
   groups: [
     { company: 'General', items: [{ item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] }
   ]
@@ -405,7 +434,8 @@ onMounted(async () => {
     partyStore.fetchParties(),
     inventoryStore.fetchItems(),
     batchStore.fetchBatches(),
-    staffStore.fetchStaff()
+    staffStore.fetchStaff(),
+    taxStore.fetchTaxes()
   ]);
 
   document.addEventListener('click', closeDropdowns);
@@ -438,7 +468,20 @@ function onItemSelect(gIdx: number, iIdx: number, suggestion: any) {
     if (!line) return;
     const item = inventoryStore.items.find(i => i.id === suggestion.id);
     if (item) {
-        line.rate = props.type === 'Sales' ? ((item as any).sales_rate || 0) : ((item as any).purchase_rate || 0);
+        if (props.type === 'Sales') {
+             line.rate = ((item as any).sales_rate || 0);
+        } else {
+             const party = partyStore.suppliers.find(s => s.id === form.value.party_id);
+             if (party && (party as any).company_type === 'Percentage') {
+                 const basePrice = (item as any).mrp || (item as any).trade_price || (item as any).sales_rate || 0;
+                 const defaultPct = (party as any).default_percentage || 0;
+                 line.rate = basePrice;
+                 line.discount_pct = defaultPct;
+             } else {
+                 line.rate = ((item as any).purchase_rate || 0);
+             }
+        }
+
         if (line.quantity === 0) {
            line.quantity = 1;
            line.qtyInput = '1';
@@ -460,7 +503,19 @@ async function onItemSubmit(payload: any) {
             (form.value.groups[gIdx].items[iIdx] as any).item_id = id as any;
             const item = inventoryStore.items.find(i => i.id === (id as any));
             if (item) {
-                 (form.value.groups[gIdx].items[iIdx] as any).rate = props.type === 'Sales' ? ((item as any).sales_rate || 0) : ((item as any).purchase_rate || 0);
+                 if (props.type === 'Sales') {
+                      (form.value.groups[gIdx].items[iIdx] as any).rate = ((item as any).sales_rate || 0);
+                 } else {
+                      const party = partyStore.suppliers.find(s => s.id === form.value.party_id);
+                      if (party && (party as any).company_type === 'Percentage') {
+                          const basePrice = (item as any).mrp || (item as any).trade_price || (item as any).sales_rate || 0;
+                          const defaultPct = (party as any).default_percentage || 0;
+                          (form.value.groups[gIdx].items[iIdx] as any).rate = basePrice;
+                          (form.value.groups[gIdx].items[iIdx] as any).discount_pct = defaultPct;
+                      } else {
+                          (form.value.groups[gIdx].items[iIdx] as any).rate = ((item as any).purchase_rate || 0);
+                      }
+                 }
             }
         }
     }
@@ -514,17 +569,43 @@ function calculateLineNet(line: TransactionItem) {
 }
 
 const totals = computed(() => {
-  return form.value.groups.reduce((acc, g) => {
+  let grossAc = 0;
+  let discountAc = 0;
+  let bonusAc = 0;
+
+  form.value.groups.forEach(g => {
     g.items.forEach(l => {
       const gross = (l.quantity || 0) * (l.rate || 0);
       const disc = gross * ((l.discount_pct || 0) / 100);
-      acc.gross += gross;
-      acc.discount += disc;
-      acc.bonus += (l.bonus_quantity || 0);
-      acc.grand += (gross - disc);
+      grossAc += gross;
+      discountAc += disc;
+      bonusAc += (l.bonus_quantity || 0);
     });
-    return acc;
-  }, { gross: 0, discount: 0, bonus: 0, grand: 0 });
+  });
+
+  let grandAc = grossAc - discountAc;
+  let taxAmount = 0;
+  let taxInclusive = false;
+
+  if (form.value.tax_id) {
+     const tax = taxStore.taxes.find(t => t.id === form.value.tax_id);
+     if (tax) {
+         if (tax.type === 'Percentage') {
+             taxAmount = grandAc * (tax.rate / 100);
+         } else {
+             taxAmount = tax.rate; // Fixed Amount applies per transaction
+         }
+         
+         taxInclusive = !!tax.is_inclusive;
+         
+         if (!taxInclusive) {
+             grandAc += taxAmount; 
+         }
+         // if inclusive, grand remains the same, but the UI shows that the tax is embedded within it
+     }
+  }
+
+  return { gross: grossAc, discount: discountAc, bonus: bonusAc, grand: grandAc, tax_amount: taxAmount, tax_inclusive: taxInclusive };
 });
 
 const isFormValid = computed(() => {
@@ -564,6 +645,7 @@ function handleSubmit() {
 
   const payload = {
     ...form.value,
+    document_type: form.value.document_type,
     items: flatItems,
     total_amount: totals.value.grand,
     discount_amount: totals.value.discount,

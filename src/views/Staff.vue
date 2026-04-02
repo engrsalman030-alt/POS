@@ -59,31 +59,85 @@
           <button @click="showModal = false" class="text-text-muted hover:text-text-primary transition-colors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
         </div>
         
-        <form @submit.prevent="save" class="p-6 space-y-5">
-          <div class="space-y-1">
-            <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Full Name</label>
-            <input v-model="form.name" type="text" required placeholder="e.g. Ali Ahmed" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-brand/20 transition-all"/>
-          </div>
-          
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Role</label>
-              <select v-model="form.role" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-bold outline-none">
-                <option value="SSR">SSR (Order Taker)</option>
-                <option value="DSR (Delivery)">DSR (Delivery)</option>
-                <option value="DSR">DSR</option>
-                <option value="Manager">Manager</option>
-              </select>
+        <form @submit.prevent="save" class="p-6">
+          <!-- Form Scrollable Area -->
+          <div class="h-[50vh] overflow-y-auto pr-2 custom-scrollbar space-y-6">
+            
+            <!-- Basic Info Section -->
+            <div class="space-y-4">
+              <h3 class="text-[10px] font-black text-brand uppercase tracking-[0.2em] border-b border-border pb-1">Basic Info</h3>
+              
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Full Name *</label>
+                <input v-model="form.name" type="text" required placeholder="e.g. Ali Ahmed" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-brand/20 transition-all"/>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Phone</label>
+                  <input v-model="form.phone" type="text" placeholder="03xx-xxxxxxx" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-mono font-bold outline-none border-transparent focus:border-brand"/>
+                </div>
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">CNIC</label>
+                  <input v-model="form.cnic" type="text" placeholder="00000-0000000-0" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-mono font-bold outline-none border-transparent focus:border-brand"/>
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Address</label>
+                <input v-model="form.address" type="text" placeholder="Street, City" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-bold outline-none"/>
+              </div>
             </div>
-            <div class="space-y-1">
-              <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Phone</label>
-              <input v-model="form.phone" type="text" placeholder="03xx-xxxxxxx" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-mono font-bold outline-none"/>
+
+            <!-- Job Info Section -->
+            <div class="space-y-4">
+              <h3 class="text-[10px] font-black text-brand uppercase tracking-[0.2em] border-b border-border pb-1">Job Info</h3>
+              
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Role *</label>
+                  <select v-model="form.role" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-bold outline-none border-transparent focus:border-brand h-[42px]">
+                    <option value="SSR">SSR (Order Taker)</option>
+                    <option value="DSR">DSR (Delivery)</option>
+                    <option value="Sales Manager">Sales Manager</option>
+                    <option value="Accountant">Accountant</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                </div>
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Salary</label>
+                  <input v-model.number="form.salary" type="number" placeholder="0.00" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-bold outline-none border-transparent focus:border-brand h-[42px]"/>
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Joining Date</label>
+                <input v-model="form.joining_date" type="date" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-bold outline-none font-mono"/>
+              </div>
             </div>
+
+            <!-- Status Section -->
+            <div class="space-y-4">
+              <h3 class="text-[10px] font-black text-brand uppercase tracking-[0.2em] border-b border-border pb-1">Network Status</h3>
+              
+              <div class="flex items-center gap-3 bg-hover-bg/50 p-4 rounded-xl border border-border">
+                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <input v-model="form.is_active" :true-value="1" :false-value="0" type="checkbox" name="toggle" id="toggle" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer" style="border-color: var(--card-bg) !important;"/>
+                    <label for="toggle" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-text-primary block leading-none">Active Employee</label>
+                  <span class="text-[10px] text-text-muted mt-1 leading-none">Can login and access the system</span>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          <div class="pt-4 flex gap-4">
+          <!-- Footer Buttons -->
+          <div class="pt-6 mt-2 border-t border-border flex gap-4 bg-card-bg">
              <button type="button" @click="showModal = false" class="flex-1 px-6 py-3 rounded-xl border border-border text-text-muted font-bold text-[10px] uppercase tracking-widest hover:bg-hover-bg transition-all">Cancel</button>
-             <button type="submit" class="flex-1 px-6 py-3 rounded-xl bg-brand text-white font-bold text-[10px] uppercase tracking-widest hover:opacity-90 shadow-lg shadow-brand/20 transition-all active:scale-95">Save Member</button>
+             <button type="submit" class="flex-1 px-6 py-3 rounded-xl bg-brand text-white font-bold text-[10px] uppercase tracking-widest hover:opacity-90 shadow-lg shadow-brand/20 transition-all active:scale-95">Save Profile</button>
           </div>
         </form>
       </div>
@@ -104,6 +158,10 @@ const form = ref<any>({
   name: '',
   role: 'SSR',
   phone: '',
+  cnic: '',
+  address: '',
+  salary: 0,
+  joining_date: new Date().toISOString().split('T')[0],
   is_active: 1
 });
 
@@ -116,7 +174,7 @@ function openModal(member?: Staff) {
     form.value = { ...member };
     isEditing.value = true;
   } else {
-    form.value = { name: '', role: 'SSR', phone: '', is_active: 1 };
+    form.value = { name: '', role: 'SSR', phone: '', cnic: '', address: '', salary: 0, joining_date: new Date().toISOString().split('T')[0], is_active: 1 };
     isEditing.value = false;
   }
   showModal.value = true;

@@ -4,9 +4,14 @@ import { query, execute, saveDb } from '../db/database';
 export interface Staff {
   id: string;
   name: string;
-  role: 'SSR' | 'DSR' | 'Admin' | 'Sales Manager';
+  role: 'SSR' | 'DSR' | 'Admin' | 'Sales Manager' | 'Accountant';
   phone?: string;
   is_active: number;
+  cnic?: string;
+  address?: string;
+  salary?: number;
+  joining_date?: string;
+  permissions_json?: string;
 }
 
 export const useStaffStore = defineStore('staff', {
@@ -20,8 +25,8 @@ export const useStaffStore = defineStore('staff', {
     async addStaff(member: Omit<Staff, 'id'>) {
       const id = crypto.randomUUID();
       execute(
-        'INSERT INTO staff (id, name, role, phone, is_active) VALUES (?, ?, ?, ?, ?)',
-        [id, member.name, member.role, member.phone || '', member.is_active ?? 1]
+        'INSERT INTO staff (id, name, role, phone, is_active, cnic, address, salary, joining_date, permissions_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [id, member.name, member.role, member.phone || '', member.is_active ?? 1, member.cnic || null, member.address || null, member.salary || 0, member.joining_date || null, member.permissions_json || null]
       );
       saveDb();
       await this.fetchStaff();
@@ -29,8 +34,8 @@ export const useStaffStore = defineStore('staff', {
     },
     async updateStaff(member: Staff) {
       execute(
-        'UPDATE staff SET name = ?, role = ?, phone = ?, is_active = ? WHERE id = ?',
-        [member.name, member.role, member.phone || '', member.is_active, member.id]
+        'UPDATE staff SET name = ?, role = ?, phone = ?, is_active = ?, cnic = ?, address = ?, salary = ?, joining_date = ?, permissions_json = ? WHERE id = ?',
+        [member.name, member.role, member.phone || '', member.is_active, member.cnic || null, member.address || null, member.salary || 0, member.joining_date || null, member.permissions_json || null, member.id]
       );
       saveDb();
       await this.fetchStaff();

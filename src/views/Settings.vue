@@ -97,10 +97,60 @@
                  <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">Customize customer-facing documents</p>
               </div>
               <div class="p-8 space-y-6">
-                 <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-text-muted">Invoice Footer Notes</label>
-                    <textarea v-model="settings.print_footer_text" rows="4" placeholder="Terms & Conditions, Bank Details, etc." class="w-full bg-hover-bg/50 border border-border rounded-2xl px-5 py-4 text-xs font-medium outline-none focus:ring-2 focus:ring-brand/20 transition-all resize-none"></textarea>
+                 <div class="space-y-4">
+                    <div class="space-y-2">
+                       <label class="text-[10px] font-black uppercase tracking-widest text-text-muted">Invoice Layout Template</label>
+                       <select v-model="settings.print_template" class="w-full bg-hover-bg/50 border border-border rounded-2xl px-5 py-4 text-xs font-black text-brand outline-none focus:ring-2 focus:ring-brand/20 transition-all cursor-pointer">
+                          <option value="Corporate">Corporate Full Page</option>
+                          <option value="Wholesale">Wholesale Dense Layout</option>
+                          <option value="PharmacyThermal">Pharmacy Thermal (80mm)</option>
+                          <option value="DotMatrix">Dot-Matrix Raw Text</option>
+                          <option value="SimplePOS">Classic Simple POS</option>
+                       </select>
+                    </div>
+                    <div class="space-y-2">
+                       <label class="text-[10px] font-black uppercase tracking-widest text-text-muted">Invoice Footer Notes</label>
+                       <textarea v-model="settings.print_footer_text" rows="4" placeholder="Terms & Conditions, Bank Details, etc." class="w-full bg-hover-bg/50 border border-border rounded-2xl px-5 py-4 text-xs font-medium outline-none focus:ring-2 focus:ring-brand/20 transition-all resize-none"></textarea>
+                    </div>
                  </div>
+              </div>
+           </div>
+        </section>
+
+        <!-- DATA SECURITY -->
+        <section v-if="activeTab === 'backup'" class="animate-in fade-in slide-in-from-bottom-2 duration-300">
+           <div class="bg-card-bg border border-border rounded-3xl overflow-hidden shadow-sm">
+              <div class="p-8 border-b border-border bg-emerald-500/10">
+                 <h3 class="text-lg font-black text-emerald-600 tracking-tight">Database Security</h3>
+                 <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">Backup and Restore offline data</p>
+              </div>
+              <div class="p-8 space-y-6">
+                 
+                 <!-- Backup -->
+                 <div class="p-6 rounded-2xl bg-hover-bg/30 border border-border flex flex-col md:flex-row items-center justify-between gap-4">
+                     <div>
+                        <h4 class="text-sm font-black text-text-primary">Download Backup</h4>
+                        <p class="text-xs text-text-muted mt-1">Save a hard-copy of your entire POS database to your local machine.</p>
+                     </div>
+                     <button @click="backupDatabase" class="shrink-0 px-6 py-3 rounded-xl bg-brand text-white text-xs font-black uppercase tracking-widest shadow-xl hover:opacity-90 active:scale-95 transition-all">
+                        Backup Now
+                     </button>
+                 </div>
+
+                 <!-- Restore -->
+                 <div class="p-6 rounded-2xl border border-rose-500/20 bg-rose-500/5 flex flex-col md:flex-row items-center justify-between gap-4">
+                     <div>
+                        <h4 class="text-sm font-black text-rose-500">Restore from Backup</h4>
+                        <p class="text-xs text-rose-500/70 mt-1">WARNING: This will permanently overwrite your current data with the backup file.</p>
+                     </div>
+                     <div class="relative shrink-0">
+                        <input type="file" accept=".sqlite" @change="handleRestore" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                        <button class="px-6 py-3 rounded-xl bg-rose-500 text-white text-xs font-black uppercase tracking-widest shadow-xl hover:opacity-90 active:scale-95 transition-all focus:outline-none pointer-events-none">
+                           Select Backup
+                        </button>
+                     </div>
+                 </div>
+
               </div>
            </div>
         </section>
@@ -160,7 +210,7 @@
 import { ref, onMounted, defineComponent, h } from 'vue';
 import { useThemeStore } from '../stores/theme';
 import { useERPStore } from '../stores/erpSettings';
-import { wipeDatabase, query } from '../db/database';
+import { wipeDatabase, query, backupDatabase, restoreDatabase } from '../db/database';
 import { usePartyStore } from '../stores/parties';
 import { useInventoryStore } from '../stores/inventory';
 import { useTransactionStore } from '../stores/transactions';
@@ -177,13 +227,15 @@ const tabs = [
   { id: 'ui', label: 'Appearance', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('circle', { cx: '12', cy: '12', r: '3' }), h('path', { d: 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z' })])) },
   { id: 'pharma', label: 'Pharma Logic', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('path', { d: 'm10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z' }), h('path', { d: 'm8.5 8.5 7 7' })])) },
   { id: 'print', label: 'Print & Layout', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('path', { d: 'M6 9V2h12v7' }), h('path', { d: 'M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2' }), h('rect', { width: '12', height: '8', x: '6', y: '14'})])) },
+  { id: 'backup', label: 'Data Security', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('path', { d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' })])) },
   { id: 'diagnostics', label: 'Diagnostics', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('path', { d: 'm12 14 4-4' }), h('path', { d: 'M3.34 19a10 10 0 1 1 17.32 0' })])) },
 ];
 
 const settings = ref({
   pharma_expiry_threshold: 6,
   pharma_restrict_expired: true,
-  print_footer_text: ''
+  print_footer_text: '',
+  print_template: 'Corporate'
 });
 
 onMounted(async () => {
@@ -191,15 +243,35 @@ onMounted(async () => {
     settings.value.pharma_expiry_threshold = parseInt(erpStore.getSetting('pharma_expiry_threshold', '6'));
     settings.value.pharma_restrict_expired = erpStore.getSetting('pharma_restrict_expired', 'true') === 'true';
     settings.value.print_footer_text = erpStore.getSetting('print_footer_text', 'Thank you for your business!');
+    settings.value.print_template = erpStore.getSetting('print_template', 'Corporate');
 });
 
 async function saveAll() {
     await erpStore.updateSetting('pharma_expiry_threshold', settings.value.pharma_expiry_threshold.toString());
     await erpStore.updateSetting('pharma_restrict_expired', settings.value.pharma_restrict_expired.toString());
     await erpStore.updateSetting('print_footer_text', settings.value.print_footer_text);
+    await erpStore.updateSetting('print_template', settings.value.print_template);
     
     // Notification logic could go here
     alert('ERP Configuration Saved Successfully!');
+}
+
+async function handleRestore(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    
+    if (confirm("CRITICAL WARNING: You are about to permanently overwrite your entire POS database with this backup file. All current data not in the backup will be lost. Are you absolutely sure?")) {
+        try {
+            await restoreDatabase(file);
+            alert("Database successfully restored! The application will now reload.");
+            window.location.href = '/';
+        } catch (err) {
+            console.error(err);
+            alert("Failed to restore database. Ensure the file is a valid .sqlite backup.");
+        }
+    }
+    // reset input
+    (event.target as HTMLInputElement).value = '';
 }
 
 function wipeAll() {

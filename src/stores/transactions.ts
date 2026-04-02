@@ -29,10 +29,12 @@ export const useTransactionStore = defineStore('transactions', {
         async createInvoice(invoice: Omit<SalesInvoice, 'id' | 'status'>) {
             const id = crypto.randomUUID();
             
+            const isReturn = (invoice as any).document_type === 'Return';
+
             // 1. Insert Header
             execute(
-                `INSERT INTO sales_invoices (id, date, customer_id, total_amount, discount_amount, discount_pct, tax_amount, status, outstanding_amount, shift_id, sales_manager, frappe_reference, ssr_id, dsr_id) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                `INSERT INTO sales_invoices (id, date, customer_id, total_amount, discount_amount, discount_pct, tax_amount, status, outstanding_amount, shift_id, sales_manager, frappe_reference, ssr_id, dsr_id, document_type) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     id, 
                     invoice.date, 
@@ -47,7 +49,8 @@ export const useTransactionStore = defineStore('transactions', {
                     invoice.sales_manager || null, 
                     invoice.frappe_reference || null,
                     (invoice as any).ssr_id || null,
-                    (invoice as any).dsr_id || null
+                    (invoice as any).dsr_id || null,
+                    isReturn ? 'Return' : 'Invoice'
                 ]
             );
 
@@ -71,28 +74,29 @@ export const useTransactionStore = defineStore('transactions', {
                 );
 
                 if (finalBatchId) {
-                    await InventoryService.recordBatchQuantity(finalBatchId, -(item.quantity + (item.bonus_quantity || 0)));
+                    const qtyMod = isReturn ? 1 : -1;
+                    await InventoryService.recordBatchQuantity(finalBatchId, qtyMod * (item.quantity + (item.bonus_quantity || 0)));
                 }
 
                 const cogs = await InventoryService.calculateCogs(item.item_id, item.quantity + (item.bonus_quantity || 0));
                 totalCogs += cogs;
 
-                // Record stock movement (out = quantity + bonus)
+                // Record stock movement (out = quantity + bonus, reversed for return)
                 await InventoryService.recordStockTransaction({
                     item_id: item.item_id,
                     date: invoice.date,
-                    type: 'Out',
+                    type: isReturn ? 'In' : 'Out',
                     quantity: item.quantity,
                     bonus_quantity: item.bonus_quantity || 0,
                     rate: item.rate,
                     value: cogs,
-                    reference_type: 'Invoice',
+                    reference_type: isReturn ? 'SalesReturn' : 'Invoice',
                     reference_id: id
                 });
             }
 
             // 3. Post to accounting
-            await AccountingService.postSalesInvoice({ ...invoice, id, status: 'Submitted' } as any, totalCogs);
+            await AccountingService.postSalesInvoice({ ...invoice, id, status: 'Submitted', document_type: isReturn ? 'Return' : 'Invoice' } as any, totalCogs, isReturn);
             
             saveDb();
             await this.fetchInvoices();
@@ -102,10 +106,12 @@ export const useTransactionStore = defineStore('transactions', {
         async createBill(bill: Omit<PurchaseBill, 'id' | 'status'>) {
             const id = crypto.randomUUID();
 
+            const isReturn = (bill as any).document_type === 'Return';
+
             // 1. Insert Header
             execute(
-                `INSERT INTO purchase_bills (id, date, supplier_id, total_amount, discount_amount, discount_pct, tax_amount, status, outstanding_amount, sales_manager, frappe_reference) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                `INSERT INTO purchase_bills (id, date, supplier_id, total_amount, discount_amount, discount_pct, tax_amount, status, outstanding_amount, sales_manager, frappe_reference, document_type) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     id, 
                     bill.date, 
@@ -117,7 +123,8 @@ export const useTransactionStore = defineStore('transactions', {
                     'Submitted', 
                     bill.total_amount, 
                     bill.sales_manager || null, 
-                    bill.frappe_reference || null
+                    bill.frappe_reference || null,
+                    isReturn ? 'Return' : 'Bill'
                 ]
             );
 
@@ -136,24 +143,25 @@ export const useTransactionStore = defineStore('transactions', {
                 );
 
                 if (batchId) {
-                    await InventoryService.recordBatchQuantity(batchId, item.quantity + (item.bonus_quantity || 0));
+                    const qtyMod = isReturn ? -1 : 1;
+                    await InventoryService.recordBatchQuantity(batchId, qtyMod * (item.quantity + (item.bonus_quantity || 0)));
                 }
 
                 await InventoryService.recordStockTransaction({
                     item_id: item.item_id,
                     date: bill.date,
-                    type: 'In',
+                    type: isReturn ? 'Out' : 'In',
                     quantity: item.quantity,
                     bonus_quantity: item.bonus_quantity || 0,
                     rate: item.rate,
                     value: lineTotal,
-                    reference_type: 'Bill',
+                    reference_type: isReturn ? 'PurchaseReturn' : 'Bill',
                     reference_id: id
                 });
             }
 
             // 3. Post to accounting
-            await AccountingService.postPurchaseBill({ ...bill, id, status: 'Submitted' } as any);
+            await AccountingService.postPurchaseBill({ ...bill, id, status: 'Submitted', document_type: isReturn ? 'Return' : 'Bill' } as any, isReturn);
 
             saveDb();
             await this.fetchBills();
@@ -179,9 +187,9 @@ export const useTransactionStore = defineStore('transactions', {
         },
 
         async fetchLedger(partyId: string) {
-            const invoices = query('SELECT id, date, total_amount as amount, status, "Invoice" as type FROM sales_invoices WHERE customer_id = ?', [partyId]);
-            const bills = query('SELECT id, date, total_amount as amount, status, "Bill" as type FROM purchase_bills WHERE supplier_id = ?', [partyId]);
-            const payments = query('SELECT id, date, amount, "Posted" as status, "Payment" as type, payment_type FROM payments WHERE party_id = ?', [partyId]);
+            const invoices = query(`SELECT id, date, total_amount as amount, status, 'Invoice' as type, document_type FROM sales_invoices WHERE customer_id = ?`, [partyId]);
+            const bills = query(`SELECT id, date, total_amount as amount, status, 'Bill' as type, document_type FROM purchase_bills WHERE supplier_id = ?`, [partyId]);
+            const payments = query(`SELECT id, date, amount, 'Posted' as status, 'Payment' as type, payment_type FROM payments WHERE party_id = ?`, [partyId]);
 
             const ledger = [...invoices, ...bills, ...payments].sort((a: any, b: any) => 
                 new Date(b.date).getTime() - new Date(a.date).getTime()

@@ -3,14 +3,14 @@
     <form @submit.prevent="handleSubmit" class="space-y-8 pb-10">
       
       <!-- ROLE SELECTOR -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
         <label v-for="r in roles" :key="r.id" class="cursor-pointer relative">
           <input type="radio" v-model="form.role" :value="r.id" class="peer sr-only">
-          <div class="p-4 rounded-xl border-2 border-border bg-card-bg transition-all hover:bg-hover-bg/30 peer-checked:border-brand peer-checked:bg-brand/5 flex flex-col items-center justify-center gap-1 group">
-             <div class="text-2xl group-hover:scale-110 transition-transform">{{ r.icon }}</div>
-             <div class="text-xs font-bold text-text-primary uppercase tracking-wider">{{ r.label }}</div>
-             <div class="text-[9px] text-text-muted font-medium">{{ r.desc }}</div>
-             <div class="absolute top-2 right-2 w-3 h-3 rounded-full border-2 border-border peer-checked:border-brand peer-checked:bg-brand"></div>
+          <div class="p-3 rounded-xl border-2 border-border bg-card-bg transition-all hover:bg-hover-bg/30 peer-checked:border-brand peer-checked:bg-brand/5 flex flex-col items-center justify-center gap-1 min-h-[80px] group">
+             <div class="text-xl group-hover:scale-110 transition-transform">{{ r.icon }}</div>
+             <div class="text-[10px] font-bold text-text-primary uppercase tracking-wider text-center leading-tight">{{ r.label }}</div>
+             <div class="text-[8px] text-text-muted font-medium text-center leading-tight">{{ r.desc }}</div>
+             <div class="absolute top-2 right-2 w-2.5 h-2.5 rounded-full border-2 border-border peer-checked:border-brand peer-checked:bg-brand"></div>
           </div>
         </label>
       </div>
@@ -74,6 +74,24 @@
                      allow-create
                      @create="val => handleCreateOption('category', val)"
                   />
+                </div>
+              </div>
+
+              <!-- COMPANY TYPE -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border mt-3 pt-3">
+                <div class="space-y-1">
+                  <label class="section-label">Company Structure</label>
+                   <select v-model="form.company_type" class="erp-input font-bold text-brand">
+                    <option value="Non-Percentage">Standard (Non-Percentage)</option>
+                    <option value="Percentage">Percentage-Based Supply</option>
+                  </select>
+                </div>
+                <div class="space-y-1">
+                  <label class="section-label" :class="{'opacity-50': form.company_type !== 'Percentage'}">Default Margin %</label>
+                  <div class="relative">
+                    <input v-model.number="form.default_percentage" :disabled="form.company_type !== 'Percentage'" type="number" step="0.01" class="erp-input pr-10 font-mono" placeholder="15.0"/>
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-[10px] font-bold">%</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -275,9 +293,13 @@ const sections = ref({
 });
 
 const roles = [
-  { id: 'Customer', label: 'Customer', icon: '👤', desc: 'Client / Buyer', color: 'bg-emerald-50 text-emerald-600' },
-  { id: 'Supplier', label: 'Supplier', icon: '🏢', desc: 'Vendor / Seller', color: 'bg-blue-50 text-blue-600' },
-  { id: 'Both', label: 'Associate', icon: '🤝', desc: 'Both buy & sell', color: 'bg-purple-50 text-purple-600' }
+  { id: 'Customer',    label: 'Customer',    icon: '👤', desc: 'Client / Buyer'     },
+  { id: 'Supplier',    label: 'Supplier',    icon: '🏢', desc: 'Vendor / Seller'    },
+  { id: 'Both',        label: 'Associate',   icon: '🤝', desc: 'Buys & sells'       },
+  { id: 'Salesman',    label: 'Salesman',    icon: '🧑‍💼', desc: 'SSR / DSR Rep'    },
+  { id: 'Transporter', label: 'Transporter', icon: '🚚', desc: 'Delivery / Logistics'},
+  { id: 'Agent',       label: 'Agent',       icon: '🤖', desc: 'Commission Agent'   },
+  { id: 'Walk-in',     label: 'Walk-in',     icon: '🚶', desc: 'Cash / No account'  },
 ];
 
 const form = ref<any>({
@@ -300,7 +322,9 @@ const form = ref<any>({
   default_receivable_account: 'debtors',
   default_payable_account: 'creditors',
   image: null,
-  notes: ''
+  notes: '',
+  company_type: 'Non-Percentage',
+  default_percentage: 0
 });
 
 const localOptions = ref({
@@ -335,7 +359,9 @@ onMounted(() => {
       default_receivable_account: d.receivable_account_id || 'debtors',
       default_payable_account: d.payable_account_id || 'creditors',
       image: d.image || null,
-      party_group: d.customer_group || d.supplier_category || 'General'
+      party_group: d.customer_group || d.supplier_category || 'General',
+      company_type: d.company_type || 'Non-Percentage',
+      default_percentage: d.default_percentage || 0
     };
   }
 });

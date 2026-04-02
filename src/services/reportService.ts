@@ -162,5 +162,98 @@ export const ReportService = {
         });
 
         return balances;
-    }
+    },
+
+    // ─── Customer Ledger ────────────────────────────────────────────────────────
+    async getCustomerLedger(customerId: string, startDate: string, endDate: string) {
+        // Opening balance = party's manual opening + all invoices before startDate - all payments before startDate
+        const partyRow = query(
+            `SELECT opening_balance, balance_type, name FROM parties WHERE id = ?`,
+            [customerId]
+        ) as any[];
+        const party = partyRow[0] || {};
+        const manualOpening = party.balance_type === 'Debit'
+            ? (party.opening_balance || 0)
+            : -(party.opening_balance || 0);
+
+        const invBefore = query(
+            `SELECT COALESCE(SUM(total_amount), 0) as total FROM sales_invoices WHERE customer_id = ? AND date < ?`,
+            [customerId, startDate]
+        ) as any[];
+        const payBefore = query(
+            `SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE party_id = ? AND payment_type = 'Receive' AND date < ?`,
+            [customerId, startDate]
+        ) as any[];
+        const openingBalance = manualOpening + (invBefore[0]?.total || 0) - (payBefore[0]?.total || 0);
+
+        const transactions = query(
+            `SELECT date, id as reference, 'Sales Invoice' as description, total_amount as debit, 0 as credit
+             FROM sales_invoices WHERE customer_id = ? AND date BETWEEN ? AND ?
+             UNION ALL
+             SELECT date, id as reference, 'Payment Received' as description, 0 as debit, amount as credit
+             FROM payments WHERE party_id = ? AND payment_type = 'Receive' AND date BETWEEN ? AND ?
+             ORDER BY date ASC, reference ASC`,
+            [customerId, startDate, endDate, customerId, startDate, endDate]
+        ) as any[];
+
+        let runningBalance = openingBalance;
+        const rows = transactions.map(t => {
+            runningBalance += (t.debit || 0) - (t.credit || 0);
+            return { ...t, balance: runningBalance };
+        });
+
+        return { rows, openingBalance, closingBalance: runningBalance, partyName: party.name };
+    },
+
+    // ─── Supplier Ledger ─────────────────────────────────────────────────────────
+    async getSupplierLedger(supplierId: string, startDate: string, endDate: string) {
+        const partyRow = query(
+            `SELECT opening_balance, balance_type, name FROM parties WHERE id = ?`,
+            [supplierId]
+        ) as any[];
+        const party = partyRow[0] || {};
+        const manualOpening = party.balance_type === 'Credit'
+            ? (party.opening_balance || 0)
+            : -(party.opening_balance || 0);
+
+        const billsBefore = query(
+            `SELECT COALESCE(SUM(total_amount), 0) as total FROM purchase_bills WHERE supplier_id = ? AND date < ?`,
+            [supplierId, startDate]
+        ) as any[];
+        const payBefore = query(
+            `SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE party_id = ? AND payment_type = 'Pay' AND date < ?`,
+            [supplierId, startDate]
+        ) as any[];
+        const openingBalance = manualOpening + (billsBefore[0]?.total || 0) - (payBefore[0]?.total || 0);
+
+        const transactions = query(
+            `SELECT date, id as reference, 'Purchase Bill' as description, 0 as debit, total_amount as credit
+             FROM purchase_bills WHERE supplier_id = ? AND date BETWEEN ? AND ?
+             UNION ALL
+             SELECT date, id as reference, 'Payment Made' as description, amount as debit, 0 as credit
+             FROM payments WHERE party_id = ? AND payment_type = 'Pay' AND date BETWEEN ? AND ?
+             ORDER BY date ASC, reference ASC`,
+            [supplierId, startDate, endDate, supplierId, startDate, endDate]
+        ) as any[];
+
+        let runningBalance = openingBalance;
+        const rows = transactions.map(t => {
+            runningBalance += (t.credit || 0) - (t.debit || 0);
+            return { ...t, balance: runningBalance };
+        });
+
+        return { rows, openingBalance, closingBalance: runningBalance, partyName: party.name };
+    },
+
+    // ─── Parties List ────────────────────────────────────────────────────────────
+    async getParties(type?: 'Customer' | 'Supplier') {
+        let sql = `SELECT id, name, type FROM parties WHERE is_active = 1`;
+        const params: any[] = [];
+        if (type) {
+            sql += ` AND (type = ? OR type = 'Both')`;
+            params.push(type);
+        }
+        sql += ' ORDER BY name ASC';
+        return query(sql, params) as unknown as { id: string; name: string; type: string }[];
+    },
 };

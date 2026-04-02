@@ -304,9 +304,71 @@ CREATE TABLE IF NOT EXISTS erp_settings (
 -- Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_stock_ledger_item_date ON stock_ledger(item_id, date);
 CREATE INDEX IF NOT EXISTS idx_sales_invoices_date ON sales_invoices(date);
+CREATE INDEX IF NOT EXISTS idx_sales_invoices_customer ON sales_invoices(customer_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_bills_supplier ON purchase_bills(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_bills_date ON purchase_bills(date);
 CREATE INDEX IF NOT EXISTS idx_journal_items_account ON journal_items(account_id);
+CREATE INDEX IF NOT EXISTS idx_journals_date ON journals(date);
+CREATE INDEX IF NOT EXISTS idx_payments_party ON payments(party_id, payment_type);
 CREATE INDEX IF NOT EXISTS idx_item_batches_item ON item_batches(item_id);
+CREATE INDEX IF NOT EXISTS idx_items_brand ON items(brand);
+CREATE INDEX IF NOT EXISTS idx_items_category ON items(category);
 `;
+
+// --- IndexedDB Helpers ---
+const DB_NAME = 'POS_DB_STORE';
+const STORE_NAME = 'sqlite_store';
+const DB_KEY = 'pos_db_binary';
+
+function openIDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(STORE_NAME)) {
+        request.result.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function saveToIDB(data: Uint8Array): Promise<void> {
+  return openIDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.put(data, DB_KEY);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+function loadFromIDB(): Promise<Uint8Array | null> {
+  return openIDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.get(DB_KEY);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+function clearIDB(): Promise<void> {
+  return openIDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.delete(DB_KEY);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+// ------------------------
 
 export async function getDb(): Promise<Database> {
   if (db) return db;
@@ -315,12 +377,33 @@ export async function getDb(): Promise<Database> {
     locateFile: (file) => `/${file}`
   });
 
-  const savedDb = localStorage.getItem('pos_db');
-  if (savedDb) {
-    const uint8Array = new Uint8Array(JSON.parse(savedDb));
-    db = new SQL.Database(uint8Array);
-  } else {
-    db = new SQL.Database();
+  try {
+    let uint8Array = await loadFromIDB();
+
+    if (!uint8Array) {
+      // Data Migration from localStorage (Legacy)
+      const savedDb = localStorage.getItem('pos_db');
+      if (savedDb) {
+        console.log("Migrating database from localStorage to IndexedDB...");
+        uint8Array = new Uint8Array(JSON.parse(savedDb));
+        
+        // Save to the new more sustainable IndexedDB immediately
+        await saveToIDB(uint8Array);
+        
+        // Clear old storage to free up the 5MB browser limit
+        localStorage.removeItem('pos_db');
+        console.log("Migration successful!");
+      }
+    }
+
+    if (uint8Array) {
+      db = new SQL.Database(uint8Array);
+    } else {
+      db = new SQL.Database();
+    }
+  } catch (error) {
+    console.error("Failed to load DB from IDB:", error);
+    db = new SQL.Database(); // Fallback to empty DB on catastrophic error
   }
 
   // Always run schema to ensure all tables exist (IF NOT EXISTS is safe)
@@ -424,6 +507,25 @@ export async function getDb(): Promise<Database> {
     { table: 'sales_invoices', column: 'discount_pct', type: 'REAL DEFAULT 0' },
     { table: 'purchase_bills', column: 'discount_amount', type: 'REAL DEFAULT 0' },
     { table: 'purchase_bills', column: 'discount_pct', type: 'REAL DEFAULT 0' },
+    
+    // Returns
+    { table: 'sales_invoices', column: 'document_type', type: "TEXT DEFAULT 'Invoice'" },
+    { table: 'purchase_bills', column: 'document_type', type: "TEXT DEFAULT 'Bill'" },
+
+    // ERP Upgrade
+    { table: 'parties', column: 'company_type', type: 'TEXT' },
+    { table: 'parties', column: 'default_percentage', type: 'REAL DEFAULT 0' },
+    { table: 'parties', column: 'code', type: 'TEXT' },
+    { table: 'staff', column: 'cnic', type: 'TEXT' },
+    { table: 'staff', column: 'address', type: 'TEXT' },
+    { table: 'staff', column: 'salary', type: 'REAL DEFAULT 0' },
+    { table: 'staff', column: 'joining_date', type: 'TEXT' },
+    { table: 'staff', column: 'permissions_json', type: 'TEXT' },
+    { table: 'taxes', column: 'type', type: "TEXT DEFAULT 'Percentage'" },
+    { table: 'taxes', column: 'applicable_on', type: "TEXT DEFAULT 'Invoice'" },
+    { table: 'taxes', column: 'is_inclusive', type: 'INTEGER DEFAULT 0' },
+    { table: 'taxes', column: 'effective_date', type: 'TEXT' },
+    { table: 'items', column: 'code', type: 'TEXT' },
   ];
 
   for (const m of migrations) {
@@ -442,9 +544,9 @@ export async function getDb(): Promise<Database> {
     db.run("UPDATE items SET category = 'General' WHERE category IS NULL;");
   } catch (e) {}
 
-  // Rebranding Migration: Set default name to B & H Pharmaceutical (PVT) LTD
+  // Rebranding Migration: Set default name and address
   try {
-    db.run("UPDATE company SET name = 'B & H Pharmaceutical (PVT) LTD' WHERE name = 'Nexus POS' OR name = 'Pharmacy Dashboard' OR name = 'VTS SOLUTIONS';");
+    db.run("UPDATE company SET name = 'B & H Pharmaceuticals (PVT ) LTd', address = 'Ismail Adda Khwazakhela Swat'");
   } catch (e) {}
 
   saveDb();
@@ -452,11 +554,33 @@ export async function getDb(): Promise<Database> {
   return db;
 }
 
-export function saveDb() {
+let isSaving = false;
+let pendingSave = false;
+
+export async function saveDb() {
   if (!db) return;
-  const data = db.export();
-  const array = Array.from(data);
-  localStorage.setItem('pos_db', JSON.stringify(array));
+
+  // Queued saving to prevent blocking the UI thread and concurrent writes
+  if (isSaving) {
+    pendingSave = true;
+    return;
+  }
+
+  isSaving = true;
+  pendingSave = false;
+
+  try {
+    const data = db.export(); // Binary array direct export
+    await saveToIDB(data);
+  } catch (error) {
+    console.error("Failed to save DB to IDB:", error);
+  } finally {
+    isSaving = false;
+    // Process next save if an execution happened while we were saving
+    if (pendingSave) {
+      saveDb();
+    }
+  }
 }
 
 export function query(sql: string, params: any[] = []) {
@@ -484,5 +608,39 @@ export function execute(sql: string, params: any[] = []) {
 
 export function wipeDatabase() {
   localStorage.removeItem('pos_db');
+  clearIDB().catch(e => console.error("Failed to wipe IDB:", e));
   db = null;
+}
+
+export async function backupDatabase() {
+  if (!db) return;
+  const data = db.export();
+  const blob = new Blob([data.buffer as ArrayBuffer], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const dateStr = new Date().toISOString().split('T')[0];
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pos_backup_${dateStr}.sqlite`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export async function restoreDatabase(file: File) {
+  return new Promise<void>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const arrayBuffer = reader.result as ArrayBuffer;
+        const uint8Array = new Uint8Array(arrayBuffer);
+        await saveToIDB(uint8Array);
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(file);
+  });
 }

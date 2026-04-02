@@ -18,7 +18,7 @@
         <footer v-if="companyStore.isInitialized && !route.meta.hideSidebar" class="mt-auto border-t border-border bg-card-bg/30 backdrop-blur-md py-3 px-6 shrink-0 z-10 w-full transition-all">
           <div class="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
             <p class="text-[11px] font-bold text-text-muted">
-              &copy; {{ new Date().getFullYear() }} {{ companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD' }}. All rights reserved.
+              &copy; {{ new Date().getFullYear() }} {{ companyStore.company?.name || 'B & H Pharmaceuticals (PVT ) LTd' }}. All rights reserved.
             </p>
             <div class="flex items-center gap-2 group cursor-default">
               <p class="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/70 group-hover:text-text-muted transition-colors">

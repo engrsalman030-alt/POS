@@ -119,25 +119,25 @@ export const AccountingService = {
         saveDb();
     },
 
-    async postPurchaseBill(bill: PurchaseBill) {
+    async postPurchaseBill(bill: PurchaseBill, isReturn: boolean = false) {
         const items: JournalEntryItem[] = [];
 
-        // Debit Inventory (or Expense if not inventory)
+        // Debit/Credit Inventory (or Expense if not inventory)
         items.push({
             id: crypto.randomUUID(),
             journal_entry_id: '',
             account_id: 'inventory',
-            debit: bill.total_amount,
-            credit: 0
+            debit: isReturn ? 0 : bill.total_amount,
+            credit: isReturn ? bill.total_amount : 0
         });
 
-        // Credit Accounts Payable
+        // Credit/Debit Accounts Payable
         items.push({
             id: crypto.randomUUID(),
             journal_entry_id: '',
             account_id: 'ap',
-            debit: 0,
-            credit: bill.total_amount
+            debit: isReturn ? bill.total_amount : 0,
+            credit: isReturn ? 0 : bill.total_amount
         });
 
         await this.postJournalEntry({
@@ -150,25 +150,25 @@ export const AccountingService = {
         });
     },
 
-    async postSalesInvoice(invoice: SalesInvoice, cogsAmount: number) {
+    async postSalesInvoice(invoice: SalesInvoice, cogsAmount: number, isReturn: boolean = false) {
         const items: JournalEntryItem[] = [];
 
-        // Debit Acc Receivable
+        // Debit/Credit Acc Receivable
         items.push({
             id: crypto.randomUUID(),
             journal_entry_id: '',
             account_id: 'ar',
-            debit: invoice.total_amount,
-            credit: 0
+            debit: isReturn ? 0 : invoice.total_amount,
+            credit: isReturn ? invoice.total_amount : 0
         });
 
-        // Credit Sales Income
+        // Credit/Debit Sales Income
         items.push({
             id: crypto.randomUUID(),
             journal_entry_id: '',
             account_id: 'sales_income',
-            debit: 0,
-            credit: invoice.total_amount
+            debit: isReturn ? invoice.total_amount : 0,
+            credit: isReturn ? 0 : invoice.total_amount
         });
 
         // COGS impact
@@ -177,15 +177,15 @@ export const AccountingService = {
                 id: crypto.randomUUID(),
                 journal_entry_id: '',
                 account_id: 'cogs',
-                debit: cogsAmount,
-                credit: 0
+                debit: isReturn ? 0 : cogsAmount,
+                credit: isReturn ? cogsAmount : 0
             });
             items.push({
                 id: crypto.randomUUID(),
                 journal_entry_id: '',
                 account_id: 'inventory',
-                debit: 0,
-                credit: cogsAmount
+                debit: isReturn ? cogsAmount : 0,
+                credit: isReturn ? 0 : cogsAmount
             });
         }
 

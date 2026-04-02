@@ -64,7 +64,7 @@
 
       <!-- Footer -->
       <div v-else class="p-8 text-center bg-hover-bg/50">
-        <p class="text-xs text-text-muted">Search for anything in <span class="font-bold text-text-secondary">B & H Pharmaceutical (PVT) LTD</span></p>
+        <p class="text-xs text-text-muted">Search for anything in <span class="font-bold text-text-secondary">B & H Pharmaceuticals (PVT ) LTd</span></p>
         <div class="mt-4 flex justify-center gap-4">
             <div class="flex items-center gap-1.5 text-[10px] text-text-muted">
                 <kbd class="px-1 py-0.5 rounded border border-border bg-card-bg">↑↓</kbd> <span>Navigate</span>
@@ -117,12 +117,12 @@ const results = computed(() => {
     .map(p => ({ ...p, id: `page-${p.name}`, category: 'Navigation', subtitle: 'Application Page' }));
   
   // Filter Items
-  const filteredItems = inventoryStore.items.filter(i => i.name.toLowerCase().includes(q) || i.sku?.toLowerCase().includes(q))
-    .map(i => ({ id: i.id, name: i.name, category: 'Items', path: '/inventory', icon: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><mpath d="m3.3 7 8.7 5 8.7-5"/><mpath d="M12 22V12"/>', subtitle: `SKU: ${i.sku || 'N/A'} • Stock: ${i.stock_quantity}` }));
+  const filteredItems = inventoryStore.items.filter(i => i.name.toLowerCase().includes(q) || i.sku?.toLowerCase().includes(q) || (i as any).code?.toLowerCase().includes(q))
+    .map(i => ({ id: i.id, name: i.name, category: 'Items', path: '/inventory', icon: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><mpath d="m3.3 7 8.7 5 8.7-5"/><mpath d="M12 22V12"/>', subtitle: `Code: ${(i as any).code || 'N/A'} • SKU: ${i.sku || 'N/A'} • Stock: ${i.stock_quantity}` }));
 
   // Filter Parties
-  const filteredParties = partyStore.parties.filter(p => p.name.toLowerCase().includes(q) || p.phone?.includes(q))
-    .map(p => ({ id: p.id, name: p.name, category: 'Parties', path: '/parties', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>', subtitle: `${p.type} • ${p.phone || 'No Phone'}` }));
+  const filteredParties = partyStore.parties.filter(p => p.name.toLowerCase().includes(q) || p.phone?.includes(q) || (p as any).code?.toLowerCase().includes(q))
+    .map(p => ({ id: p.id, name: p.name, category: 'Parties', path: '/parties', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>', subtitle: `${(p as any).code || ''} • ${p.type} • ${p.phone || 'No Phone'}` }));
 
   // Filter Transactions (Bills/Invoices)
   const filteredInvoices = transactionStore.invoices.filter(i => i.id.toLowerCase().includes(q))
