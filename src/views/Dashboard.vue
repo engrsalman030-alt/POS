@@ -95,21 +95,49 @@
       </div>
 
       <!-- Quick Actions / Tasks -->
-      <div class="lg:col-span-1 card-std overflow-hidden">
-        <div class="px-6 py-4 bg-hover-bg border-b border-border">
-          <h2 class="text-label-small">Quick Actions</h2>
+      <div class="lg:col-span-1 space-y-6">
+        <div class="card-std overflow-hidden">
+          <div class="px-6 py-4 bg-hover-bg border-b border-border">
+            <h2 class="text-label-small">Quick Actions</h2>
+          </div>
+          <div class="p-4 grid grid-cols-2 gap-3">
+            <router-link v-for="action in quickActions" :key="action.label" :to="action.link"
+              class="flex flex-col items-start gap-3 p-4 rounded-xl border border-border bg-card-bg transition-all hover:-translate-y-1 hover:shadow-lg group">
+              <div :class="['w-10 h-10 rounded-lg flex items-center justify-center border transition-all group-hover:scale-110', action.color || 'bg-hover-bg border-border text-text-primary']">
+                <span class="text-lg">{{ action.icon }}</span>
+              </div>
+              <div>
+                <p class="text-[11px] font-black uppercase tracking-tight text-text-primary group-hover:text-brand transition-colors">{{ action.label }}</p>
+                <p class="text-[9px] font-medium text-text-muted mt-0.5 line-clamp-1">{{ action.desc }}</p>
+              </div>
+            </router-link>
+          </div>
         </div>
-        <div class="p-4 grid grid-cols-2 gap-3">
-          <router-link v-for="action in quickActions" :key="action.label" :to="action.link"
-            class="flex flex-col items-start gap-3 p-4 rounded-xl border border-border bg-card-bg transition-all hover:-translate-y-1 hover:shadow-lg group">
-            <div :class="['w-10 h-10 rounded-lg flex items-center justify-center border transition-all group-hover:scale-110', action.color || 'bg-hover-bg border-border text-text-primary']">
-              <span class="text-lg">{{ action.icon }}</span>
+
+        <!-- Quick Reports -->
+        <div class="card-std overflow-hidden border-brand/20 shadow-sm shadow-brand/5">
+          <div class="px-6 py-4 bg-brand/5 border-b border-brand/10 flex justify-between items-center">
+            <h2 class="text-label-small text-brand">Quick Reports</h2>
+            <div class="flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></span>
+              <span class="text-[8px] font-black text-brand uppercase tracking-tighter">Auto-Print Ready</span>
             </div>
-            <div>
-              <p class="text-[11px] font-black uppercase tracking-tight text-text-primary group-hover:text-brand transition-colors">{{ action.label }}</p>
-              <p class="text-[9px] font-medium text-text-muted mt-0.5 line-clamp-1">{{ action.desc }}</p>
-            </div>
-          </router-link>
+          </div>
+          <div class="p-4 grid grid-cols-1 gap-2">
+            <router-link v-for="rpt in quickReports" :key="rpt.label" :to="rpt.link"
+              class="flex items-center gap-4 p-3 rounded-xl border border-border bg-card-bg transition-all hover:border-brand/40 hover:bg-brand/[0.02] group">
+              <div :class="['w-9 h-9 rounded-lg flex items-center justify-center border transition-all group-hover:scale-110 shadow-sm', rpt.color]">
+                <span class="text-base">{{ rpt.icon }}</span>
+              </div>
+              <div class="flex-1">
+                <p class="text-[10px] font-black uppercase tracking-widest text-text-primary group-hover:text-brand transition-colors">{{ rpt.label }}</p>
+                <p class="text-[8px] font-bold text-text-muted uppercase tracking-tighter mt-0.5">{{ rpt.desc }}</p>
+              </div>
+              <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="text-brand"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+              </div>
+            </router-link>
+          </div>
         </div>
       </div>
 
@@ -212,6 +240,14 @@ const quickActions: QuickAction[] = [
   { label: 'Bank Entry', desc: 'Receive or Pay funds', link: '/bank', icon: '🏦', color: 'text-teal-500 bg-teal-500/10 border-teal-500/20' },
   { label: 'Financials', desc: 'P&L & Balance Sheet', link: '/reports', icon: '📊', color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' },
   { label: 'Shift History', desc: 'End-of-day summary', link: '/reports', icon: '⏱️', color: 'text-slate-500 bg-slate-500/10 border-slate-500/20' }
+];
+
+const quickReports = [
+  { label: "Today's Sales", desc: 'Daily Transaction Summary', link: '/reports?shortcut=today_dsr&autoprint=1', icon: '📅', color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
+  { label: 'Stock (SSR)', desc: 'Inventory Movement Report', link: '/reports?shortcut=ssr&autoprint=1', icon: '📦', color: 'text-orange-600 bg-orange-50 border-orange-100' },
+  { label: 'Salesman Perf.', desc: 'Monthly Performance Summary', link: '/reports?shortcut=salesman&autoprint=1', icon: '🏆', color: 'text-blue-600 bg-blue-50 border-blue-100' },
+  { label: 'Customer Billing', desc: 'Party Outstanding Summary', link: '/reports?shortcut=customer_sales&autoprint=1', icon: '👥', color: 'text-purple-600 bg-purple-50 border-purple-100' },
+  { label: 'Recovery Ledger', desc: 'Outstanding Balance Ledger', link: '/reports?shortcut=recovery&autoprint=1', icon: '💸', color: 'text-rose-600 bg-rose-50 border-rose-100' },
 ];
 
 const lowStockItems = computed(() => {

@@ -13,6 +13,7 @@ export interface Company {
     address?: string;
     phone?: string;
     business_type: 'Pharmacy' | 'Mobile' | 'Grocery' | 'General';
+    license_number?: string;
 }
 
 export const useCompanyStore = defineStore('company', {
@@ -51,8 +52,8 @@ export const useCompanyStore = defineStore('company', {
             if (!this.company) return;
             const updated = { ...this.company, ...data };
             execute(
-                `UPDATE company SET name = ?, country = ?, currency = ?, ntn = ?, address = ?, phone = ?, business_type = ? WHERE id = ?`,
-                [updated.name, updated.country, updated.currency, updated.ntn || '', updated.address || '', updated.phone || '', updated.business_type, updated.id]
+                `UPDATE company SET name = ?, country = ?, currency = ?, ntn = ?, address = ?, phone = ?, business_type = ?, license_number = ? WHERE id = ?`,
+                [updated.name, updated.country, updated.currency, updated.ntn || '', updated.address || '', updated.phone || '', updated.business_type, updated.license_number || '', updated.id]
             );
             saveDb();
             this.company = updated;
@@ -74,9 +75,9 @@ export const useCompanyStore = defineStore('company', {
             // Create new company
             const id = crypto.randomUUID();
             execute(
-                `INSERT INTO company (id, name, country, currency, fiscal_year_start, is_setup, ntn)
-                 VALUES (?, ?, ?, ?, ?, 1, ?)`,
-                [id, form.name, form.country, form.currency, form.fiscalYearStart || form.fiscal_year_start, form.ntn]
+                `INSERT INTO company (id, name, country, currency, fiscal_year_start, is_setup, ntn, license_number)
+                 VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
+                [id, form.name, form.country, form.currency, form.fiscalYearStart || form.fiscal_year_start, form.ntn, form.license_number]
             );
             saveDb();
 

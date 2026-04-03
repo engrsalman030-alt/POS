@@ -51,7 +51,7 @@
 
           <!-- CREATE NEW BUTTON -->
           <div 
-            v-if="allowCreate"
+            v-if="allowCreate && searchQuery.trim().length > 0"
             class="px-3 py-3 mt-1.5 border-t border-border/50 cursor-pointer flex items-center gap-3 group border-b last:border-b-0"
             :class="highlightedIndex === filteredOptions.length ? 'bg-emerald-500 text-white' : 'hover:bg-emerald-50 text-emerald-600'"
             @mousedown.prevent="handleCreateClick"
@@ -59,7 +59,10 @@
             <div class="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-white/20 group-hover:text-white transition-colors">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
             </div>
-            <span class="text-[10px] font-black uppercase tracking-widest">{{ createLabel || `Add ${searchQuery || 'New'}` }}</span>
+            <div class="flex flex-col">
+              <span class="text-[8px] font-black uppercase text-text-muted/50 tracking-widest group-hover:text-white/70">Create New Option</span>
+              <span class="text-[11px] font-black uppercase tracking-tight">{{ createLabel || `Add "${searchQuery}"` }}</span>
+            </div>
           </div>
 
           <div v-if="filteredOptions.length === 0 && !allowCreate" class="p-4 text-center">
@@ -186,12 +189,7 @@ function selectHighlighted() {
 }
 
 function handleCreateClick() {
-  let val = searchQuery.value;
-  if (!val) {
-    const userInput = prompt(`Enter new ${props.createLabel || 'option'}:`);
-    if (!userInput) return; // User cancelled or entered blank
-    val = userInput.trim();
-  }
+  const val = searchQuery.value?.trim();
   if (!val) return;
   emit('create', val);
   showOptions.value = false;

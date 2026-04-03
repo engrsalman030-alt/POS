@@ -78,9 +78,11 @@ import type { Party } from '../types/party';
 import AutoCompleteWithCreate from './AutoCompleteWithCreate.vue';
 import { useAccountStore } from '../stores/accounts';
 import { usePartyStore } from '../stores/parties';
+import { useToastStore } from '../stores/toast';
 
 const accountStore = useAccountStore();
 const partyStore = usePartyStore();
+const toastStore = useToastStore();
 
 const props = defineProps<{
   party?: Party | null;
@@ -106,7 +108,10 @@ onMounted(() => {
 });
 
 function handleSubmit() {
-    if (form.value.amount <= 0) return alert('Amount must be greater than 0');
+    if (form.value.amount <= 0) {
+        toastStore.warning('Amount must be greater than 0');
+        return;
+    }
     emit('submit', { ...form.value });
 }
 </script>

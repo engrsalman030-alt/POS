@@ -127,7 +127,7 @@ export const ReportService = {
         // Calculate balance for each customer (Debit Invoices - Credit Payments)
         const customerBalances = query(`
             SELECT p.id, 
-                   IFNULL(SUM(si.total_amount), 0) - IFNULL(p_pay.paid_total, 0) as balance
+                   IFNULL(SUM(CASE WHEN si.document_type = 'Return' THEN -si.total_amount ELSE si.total_amount END), 0) - IFNULL(p_pay.paid_total, 0) as balance
             FROM parties p
             LEFT JOIN sales_invoices si ON p.id = si.customer_id
             LEFT JOIN (
@@ -143,7 +143,7 @@ export const ReportService = {
         // Calculate balance for each supplier (Credit Bills - Debit Payments)
         const supplierBalances = query(`
             SELECT p.id, 
-                   IFNULL(SUM(pb.total_amount), 0) - IFNULL(p_pay.paid_total, 0) as balance
+                   IFNULL(SUM(CASE WHEN pb.document_type = 'Return' THEN -pb.total_amount ELSE pb.total_amount END), 0) - IFNULL(p_pay.paid_total, 0) as balance
             FROM parties p
             LEFT JOIN purchase_bills pb ON p.id = pb.supplier_id
             LEFT JOIN (
@@ -177,7 +177,8 @@ export const ReportService = {
             : -(party.opening_balance || 0);
 
         const invBefore = query(
-            `SELECT COALESCE(SUM(total_amount), 0) as total FROM sales_invoices WHERE customer_id = ? AND date < ?`,
+            `SELECT COALESCE(SUM(CASE WHEN document_type = 'Return' THEN -total_amount ELSE total_amount END), 0) as total 
+             FROM sales_invoices WHERE customer_id = ? AND date < ?`,
             [customerId, startDate]
         ) as any[];
         const payBefore = query(
@@ -187,7 +188,10 @@ export const ReportService = {
         const openingBalance = manualOpening + (invBefore[0]?.total || 0) - (payBefore[0]?.total || 0);
 
         const transactions = query(
-            `SELECT date, id as reference, 'Sales Invoice' as description, total_amount as debit, 0 as credit
+            `SELECT date, id as reference, 
+                    CASE WHEN document_type = 'Return' THEN 'Sales Return' ELSE 'Sales Invoice' END as description, 
+                    CASE WHEN document_type = 'Return' THEN 0 ELSE total_amount END as debit, 
+                    CASE WHEN document_type = 'Return' THEN total_amount ELSE 0 END as credit
              FROM sales_invoices WHERE customer_id = ? AND date BETWEEN ? AND ?
              UNION ALL
              SELECT date, id as reference, 'Payment Received' as description, 0 as debit, amount as credit
@@ -217,7 +221,8 @@ export const ReportService = {
             : -(party.opening_balance || 0);
 
         const billsBefore = query(
-            `SELECT COALESCE(SUM(total_amount), 0) as total FROM purchase_bills WHERE supplier_id = ? AND date < ?`,
+            `SELECT COALESCE(SUM(CASE WHEN document_type = 'Return' THEN -total_amount ELSE total_amount END), 0) as total 
+             FROM purchase_bills WHERE supplier_id = ? AND date < ?`,
             [supplierId, startDate]
         ) as any[];
         const payBefore = query(
@@ -227,7 +232,10 @@ export const ReportService = {
         const openingBalance = manualOpening + (billsBefore[0]?.total || 0) - (payBefore[0]?.total || 0);
 
         const transactions = query(
-            `SELECT date, id as reference, 'Purchase Bill' as description, 0 as debit, total_amount as credit
+            `SELECT date, id as reference, 
+                    CASE WHEN document_type = 'Return' THEN 'Purchase Return' ELSE 'Purchase Bill' END as description, 
+                    CASE WHEN document_type = 'Return' THEN total_amount ELSE 0 END as debit, 
+                    CASE WHEN document_type = 'Return' THEN 0 ELSE total_amount END as credit
              FROM purchase_bills WHERE supplier_id = ? AND date BETWEEN ? AND ?
              UNION ALL
              SELECT date, id as reference, 'Payment Made' as description, amount as debit, 0 as credit
@@ -256,4 +264,18 @@ export const ReportService = {
         sql += ' ORDER BY name ASC';
         return query(sql, params) as unknown as { id: string; name: string; type: string }[];
     },
+
+    async getAreaSales(startDate: string, endDate: string) {
+        return query(`
+            SELECT COALESCE(a.name, p.area, 'Unassigned') as area, 
+                   COUNT(si.id) as invoice_count,
+                   SUM(CASE WHEN si.document_type = 'Return' THEN -si.total_amount ELSE si.total_amount END) as net_sales
+            FROM parties p
+            JOIN sales_invoices si ON p.id = si.customer_id
+            LEFT JOIN areas a ON p.area_id = a.id
+            WHERE date(si.date) BETWEEN date(?) AND date(?)
+            GROUP BY COALESCE(a.name, p.area, 'Unassigned')
+            ORDER BY net_sales DESC
+        `, [startDate, endDate]);
+    }
 };

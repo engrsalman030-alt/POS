@@ -27,6 +27,9 @@
               <option value="customer_ledger">Customer Ledger</option>
               <option value="supplier_ledger">Supplier Ledger</option>
             </optgroup>
+            <optgroup label="Geographic">
+              <option value="area_sales">Area-wise Sales Summary</option>
+            </optgroup>
             <optgroup label="Operations">
               <option value="shifts">Shift Performance</option>
             </optgroup>
@@ -90,7 +93,7 @@
 
         <!-- Date Range & Secondary Filters -->
         <div class="flex items-center gap-4">
-          <div v-if="['ssr','dsr','vendor_sales','customer_ledger','supplier_ledger','salesman_summary','customer_summary'].includes(activeTab)" class="flex items-center gap-1">
+          <div v-if="['ssr','dsr','vendor_sales','customer_ledger','supplier_ledger','salesman_summary','customer_summary','area_sales'].includes(activeTab)" class="flex items-center gap-1">
             <input type="date" v-model="startDate" @change="refreshData" class="input-std py-1.5 px-2 text-[10px]" />
             <span class="text-[9px] font-bold text-text-muted">TO</span>
             <input type="date" v-model="endDate" @change="refreshData" class="input-std py-1.5 px-2 text-[10px]" />
@@ -266,7 +269,10 @@
               
               <td v-if="isDetailed" class="py-2 px-4">
                 <div class="flex flex-col">
-                  <span class="font-black text-[10px] uppercase text-brand">{{ row.item_name }}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="font-black text-[10px] uppercase text-brand">{{ row.item_name }}</span>
+                    <span v-if="row.document_type === 'Return'" class="px-1 py-0.5 rounded bg-rose-500 text-white text-[7px] font-black uppercase">Return</span>
+                  </div>
                   <span class="text-[9px] text-text-muted italic">Inv: {{ String(row.invoice_id||'').slice(0,8).toUpperCase() }}</span>
                 </div>
               </td>
@@ -466,9 +472,9 @@
             <img :src="'/logo.png'" style="max-width:60px;max-height:60px;object-fit:contain;" onerror="this.style.display='none'" />
           </div>
           <div class="flex-grow text-left">
-            <h1 class="text-xl font-black uppercase text-text-primary tracking-tighter leading-none mb-1">RAAZEE Therapeutics <span class="text-[10px]">(PRIVATE) LIMITED</span></h1>
-            <p class="text-[10px] font-black text-text-primary">Head office &amp; Plant: 48 km, Lahore-Kasur road, Kasur</p>
-            <p class="text-[10px] font-black text-text-primary mt-0.5">NTN : 1526202-2 &nbsp;&nbsp;&nbsp; STRN : 03-04-3000-021-37</p>
+            <h1 class="text-xl font-black uppercase text-text-primary tracking-tighter leading-none mb-1">{{ companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD' }}</h1>
+            <p class="text-[10px] font-black text-text-primary">{{ companyStore.company?.address || 'Ismail Adda, Khwaza Khela. Swat' }}</p>
+            <p class="text-[10px] font-black text-text-primary mt-0.5">NTN : {{ companyStore.company?.ntn || '1526202-2' }} &nbsp;&nbsp;&nbsp; STRN : 03-04-3000-021-37</p>
           </div>
           <div class="flex-shrink-0 text-right ml-4">
             <h1 class="text-lg font-black text-text-primary uppercase tracking-tighter">Vendor Sales Report</h1>
@@ -538,6 +544,38 @@
         </table>
       </div>
 
+      <!-- ── Area-wise Sales ────────────────────────────────────────── -->
+      <div v-if="activeTab === 'area_sales'" class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr>
+              <th class="table-th">Geographical Area</th>
+              <th class="table-th text-center">Inv. Count</th>
+              <th class="table-th text-right">Net Sales (PKR)</th>
+              <th class="table-th text-right">Performance</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border/50">
+            <tr v-for="row in areaSalesData" :key="row.area" class="hover:bg-hover-bg/30 transition-colors">
+              <td class="py-3 px-4 font-black uppercase text-xs">{{ row.area || 'UNSPECIFIED' }}</td>
+              <td class="py-3 px-4 text-center font-mono font-bold">{{ row.invoice_count }}</td>
+              <td class="py-3 px-4 text-right font-mono font-black text-brand">{{ formatCurrency(row.net_sales) }}</td>
+              <td class="py-3 px-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                   <div class="w-24 h-1.5 bg-hover-bg rounded-full overflow-hidden">
+                      <div class="h-full bg-brand" :style="{ width: (row.net_sales / Math.max(...areaSalesData.map(r => r.net_sales)) * 100) + '%' }"></div>
+                   </div>
+                   <span class="text-[9px] font-bold text-text-muted">{{ Math.round(row.net_sales / areaSalesData.reduce((s,r)=>s+Math.max(0,r.net_sales), 0) * 100) }}%</span>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="areaSalesData.length === 0" class="h-64">
+              <td colspan="4" class="text-center py-20 italic text-text-muted">No area-wise data found for this period.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div><!-- /printable-report-body -->
 
     <!-- ── Shift Performance (separate printable block) ──────────── -->
@@ -579,6 +617,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { ReportService } from '../services/reportService';
 import { shiftService } from '../services/shiftService';
 import { useCompanyStore } from '../stores/company';
@@ -586,6 +625,7 @@ import { ERPService } from '../services/erpService';
 import { ExportService } from '../services/exportService';
 import { reportLabels } from '../services/reportEngine';
 
+const route = useRoute();
 const companyStore = useCompanyStore();
 const activeTab = ref('pl');
 const isDetailed = ref(false);
@@ -608,6 +648,7 @@ const vendorSalesData = ref<any[]>([]);
 const ledgerData = ref<any[]>([]);
 const ledgerSummary = ref<any>({ openingBalance: 0, closingBalance: 0, totalDebit: 0, totalCredit: 0 });
 const ledgerPartyName = ref('');
+const areaSalesData = ref<any[]>([]);
 
 // Party / filter refs
 const brands = ref<any[]>([]);
@@ -683,6 +724,8 @@ async function refreshData() {
     salesmanData.value = await ERPService.getSalesmanPerformanceReport(startDate.value || '', endDate.value || '') as any[];
   } else if (activeTab.value === 'customer_summary') {
     customerSummaryData.value = await ERPService.getCustomerSalesSummary(startDate.value || '', endDate.value || '') as any[];
+  } else if (activeTab.value === 'area_sales') {
+    areaSalesData.value = await ReportService.getAreaSales(startDate.value || '', endDate.value || '') as any[];
   }
 }
 
@@ -823,9 +866,9 @@ function handlePrintReport() {
           <div style="display:flex;align-items:center;gap:12px;">
             <img src="/logo.png" style="max-width:80px;max-height:80px;object-fit:contain;" onerror="this.style.display='none'" />
             <div>
-              <div style="font-size:18px;font-weight:900;text-transform:uppercase;letter-spacing:-0.5px;">RAAZEE Therapeutics <span style="font-size:12px;">(PRIVATE) LIMITED</span></div>
-              <div style="font-size:9px;font-weight:700;">Head office &amp; Plant: 48 km, Lahore-Kasur road, Kasur</div>
-              <div style="font-size:9px;font-weight:700;">NTN : 1526202-2 &nbsp;&nbsp; STRN : 03-04-3000-021-37</div>
+              <div style="font-size:18px;font-weight:900;text-transform:uppercase;letter-spacing:-0.5px;">${companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD'}</div>
+              <div style="font-size:9px;font-weight:700;">${companyStore.company?.address || 'Ismail Adda, Khwaza Khela. Swat'}</div>
+              <div style="font-size:9px;font-weight:700;">NTN : ${companyStore.company?.ntn || '1526202-2'} &nbsp;&nbsp; STRN : 03-04-3000-021-37</div>
             </div>
           </div>
           <div style="text-align:right;">
@@ -870,7 +913,20 @@ onMounted(async () => {
   const allParties = await ReportService.getParties();
   customers.value = allParties.filter(p => p.type === 'Customer' || p.type === 'Both');
   suppliers.value = allParties.filter(p => p.type === 'Supplier' || p.type === 'Both');
-  refreshData();
+  
+  // Handle URL shortcuts from Dashboard
+  const { shortcut, autoprint } = route.query;
+  if (shortcut) {
+      await runShortcut(shortcut as any);
+      if (autoprint === '1') {
+          // Give a small moment for the DOM to settle even after async data is ready
+          setTimeout(() => {
+              handlePrintReport();
+          }, 500);
+      }
+  } else {
+      await refreshData();
+  }
 });
 
 function formatCurrency(val: number) {

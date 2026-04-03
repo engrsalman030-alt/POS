@@ -176,6 +176,60 @@
            </div>
         </section>
 
+        <!-- COMPANY PROFILE -->
+        <section v-if="activeTab === 'company'" class="animate-in fade-in slide-in-from-bottom-2 duration-300">
+           <div class="bg-card-bg border border-border rounded-3xl overflow-hidden shadow-sm">
+              <div class="p-8 border-b border-border bg-hover-bg/30">
+                 <h3 class="text-lg font-black text-text-primary tracking-tight">Business Identity</h3>
+                 <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">Manage your legal & contact details</p>
+              </div>
+              <div class="p-8 space-y-6">
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div class="space-y-2">
+                      <label class="text-[10px] font-black uppercase tracking-widest text-text-muted">Company Legal Name</label>
+                      <input v-model="companySettings.name" type="text" class="w-full bg-hover-bg/50 border border-border rounded-2xl px-5 py-3 text-sm font-black outline-none focus:ring-2 focus:ring-brand/20 transition-all"/>
+                   </div>
+                   <div class="space-y-2">
+                      <label class="text-[10px] font-black uppercase tracking-widest text-text-muted">Business Type</label>
+                      <select v-model="companySettings.business_type" class="w-full bg-hover-bg/50 border border-border rounded-2xl px-5 py-3 text-sm font-black outline-none focus:ring-2 focus:ring-brand/20 transition-all">
+                         <option value="Pharmacy">Pharmacy</option>
+                         <option value="Mobile">Mobile Store</option>
+                         <option value="Grocery">Grocery</option>
+                         <option value="General">General Trading</option>
+                      </select>
+                   </div>
+                 </div>
+
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div class="space-y-2">
+                      <label class="text-[10px] font-black uppercase tracking-widest text-text-muted">NTN / Tax ID</label>
+                      <input v-model="companySettings.ntn" type="text" class="w-full bg-hover-bg/50 border border-border rounded-2xl px-5 py-3 text-sm font-mono font-black outline-none focus:ring-2 focus:ring-brand/20 transition-all"/>
+                   </div>
+                   <div class="space-y-2">
+                      <label class="text-[10px] font-black uppercase tracking-widest text-text-muted">Drug License Number (DLN)</label>
+                      <input v-model="companySettings.license_number" type="text" class="w-full bg-hover-bg/50 border border-border rounded-2xl px-5 py-3 text-sm font-mono font-black outline-none focus:ring-2 focus:ring-brand/20 transition-all"/>
+                   </div>
+                 </div>
+
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div class="space-y-2">
+                      <label class="text-[10px] font-black uppercase tracking-widest text-text-muted">Phone / Contact</label>
+                      <input v-model="companySettings.phone" type="text" class="w-full bg-hover-bg/50 border border-border rounded-2xl px-5 py-3 text-sm font-black outline-none focus:ring-2 focus:ring-brand/20 transition-all"/>
+                   </div>
+                   <div class="space-y-2">
+                      <label class="text-[10px] font-black uppercase tracking-widest text-text-muted">Base Currency</label>
+                      <input v-model="companySettings.currency" type="text" disabled class="w-full bg-hover-bg/20 border border-border rounded-2xl px-5 py-3 text-sm font-black opacity-50 cursor-not-allowed"/>
+                   </div>
+                 </div>
+
+                 <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-text-muted">Business Address</label>
+                    <textarea v-model="companySettings.address" rows="3" class="w-full bg-hover-bg/50 border border-border rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-brand/20 transition-all resize-none"></textarea>
+                 </div>
+              </div>
+           </div>
+        </section>
+
       </div>
     </div>
 
@@ -214,9 +268,13 @@ import { wipeDatabase, query, backupDatabase, restoreDatabase } from '../db/data
 import { usePartyStore } from '../stores/parties';
 import { useInventoryStore } from '../stores/inventory';
 import { useTransactionStore } from '../stores/transactions';
+import { useToastStore } from '../stores/toast';
+import { useCompanyStore } from '../stores/company';
 
 const themeStore = useThemeStore();
 const erpStore = useERPStore();
+const companyStore = useCompanyStore();
+const toastStore = useToastStore();
 
 const activeTab = ref('ui');
 const showWipeConfirm = ref(false);
@@ -229,6 +287,7 @@ const tabs = [
   { id: 'print', label: 'Print & Layout', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('path', { d: 'M6 9V2h12v7' }), h('path', { d: 'M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2' }), h('rect', { width: '12', height: '8', x: '6', y: '14'})])) },
   { id: 'backup', label: 'Data Security', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('path', { d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' })])) },
   { id: 'diagnostics', label: 'Diagnostics', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('path', { d: 'm12 14 4-4' }), h('path', { d: 'M3.34 19a10 10 0 1 1 17.32 0' })])) },
+  { id: 'company', label: 'Company Profile', icon: defineComponent(() => () => h('svg', { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "3" }, [h('path', { d: 'M3 9h18' }), h('rect', { x: '3', y: '4', width: '18', height: '16', rx: '2' }), h('path', { d: 'M9 22V12h6v10' })])) },
 ];
 
 const settings = ref({
@@ -244,6 +303,31 @@ onMounted(async () => {
     settings.value.pharma_restrict_expired = erpStore.getSetting('pharma_restrict_expired', 'true') === 'true';
     settings.value.print_footer_text = erpStore.getSetting('print_footer_text', 'Thank you for your business!');
     settings.value.print_template = erpStore.getSetting('print_template', 'Corporate');
+    
+    if (companyStore.company) {
+      const c = companyStore.company;
+      companySettings.value = {
+        name: c.name || '',
+        address: c.address || '',
+        phone: c.phone || '',
+        ntn: c.ntn || '',
+        license_number: c.license_number || '',
+        business_type: (c.business_type as any) || 'Pharmacy',
+        currency: c.currency || 'PKR',
+        country: c.country || 'Pakistan'
+      };
+    }
+});
+
+const companySettings = ref({
+  name: '',
+  address: '',
+  phone: '',
+  ntn: '',
+  license_number: '',
+  business_type: 'Pharmacy' as any,
+  currency: 'PKR',
+  country: 'Pakistan'
 });
 
 async function saveAll() {
@@ -252,8 +336,12 @@ async function saveAll() {
     await erpStore.updateSetting('print_footer_text', settings.value.print_footer_text);
     await erpStore.updateSetting('print_template', settings.value.print_template);
     
-    // Notification logic could go here
-    alert('ERP Configuration Saved Successfully!');
+    if (activeTab.value === 'company') {
+      await companyStore.updateCompany(companySettings.value);
+    }
+
+    // Notification logic
+    toastStore.success('ERP Configuration Saved Successfully!');
 }
 
 async function handleRestore(event: Event) {
@@ -263,11 +351,13 @@ async function handleRestore(event: Event) {
     if (confirm("CRITICAL WARNING: You are about to permanently overwrite your entire POS database with this backup file. All current data not in the backup will be lost. Are you absolutely sure?")) {
         try {
             await restoreDatabase(file);
-            alert("Database successfully restored! The application will now reload.");
-            window.location.href = '/';
+            toastStore.success("Database successfully restored! The application will now reload.");
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
         } catch (err) {
             console.error(err);
-            alert("Failed to restore database. Ensure the file is a valid .sqlite backup.");
+            toastStore.error("Failed to restore database. Ensure the file is a valid .sqlite backup.");
         }
     }
     // reset input

@@ -1,5 +1,6 @@
 <template>
   <div :class="['flex h-screen bg-app-bg text-text-primary font-sans overflow-hidden', themeStore.theme]">
+    <ToastContainer />
     <Sidebar v-if="companyStore.isInitialized && !route.meta.hideSidebar" :is-open="isSidebarOpen" @close="isSidebarOpen = false" @search="globalSearch?.open()" />
     <GlobalSearch ref="globalSearch" />
     <main class="flex-1 overflow-hidden relative flex flex-col">
@@ -46,6 +47,7 @@ import { useRoute } from 'vue-router';
 import Sidebar from './components/Sidebar.vue';
 import TopHeader from './components/TopHeader.vue';
 import GlobalSearch from './components/GlobalSearch.vue';
+import ToastContainer from './components/ToastContainer.vue';
 import { useCompanyStore } from './stores/company';
 import { useInventoryStore } from './stores/inventory';
 import { usePartyStore } from './stores/parties';

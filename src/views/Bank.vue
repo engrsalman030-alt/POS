@@ -193,6 +193,7 @@ import { useTransactionStore } from '../stores/transactions';
 import { query } from '../db/database';
 import { usePagination } from '../composables/usePagination';
 import Pagination from '../components/Pagination.vue';
+import { useToastStore } from '../stores/toast';
 
 interface Account {
   id: string;
@@ -217,6 +218,7 @@ const companyStore = useCompanyStore();
 // Store for party data
 const partyStore = usePartyStore();
 const transactionStore = useTransactionStore();
+const toastStore = useToastStore();
 
 const selectedAccount = ref<Account | null>(null);
 const transactions = ref<Transaction[]>([]);
@@ -303,7 +305,7 @@ const handleSubmitPayment = async () => {
         await refreshLedger();
     } catch (err) {
         console.error('Failed to save payment:', err);
-        alert('Failed to save entry. Please check console for details.');
+        toastStore.error('Failed to save entry. Please check console for details.');
     }
 };
 

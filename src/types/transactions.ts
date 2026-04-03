@@ -13,6 +13,7 @@ export interface PurchaseBill {
     outstanding_amount: number;
     sales_manager?: string;
     frappe_reference?: string;
+    document_type?: string;
 }
 
 export interface PurchaseBillItem {
@@ -44,6 +45,7 @@ export interface SalesInvoice {
     notes?: string;
     sales_manager?: string;
     frappe_reference?: string;
+    document_type?: string;
 }
 
 export interface SalesInvoiceItem {

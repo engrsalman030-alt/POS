@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS company (
   ntn TEXT,
   address TEXT,
   phone TEXT,
-  business_type TEXT DEFAULT 'Pharmacy'
+  business_type TEXT DEFAULT 'Pharmacy',
+  license_number TEXT
 );
 
 CREATE TABLE IF NOT EXISTS accounts (
@@ -108,6 +109,7 @@ CREATE TABLE IF NOT EXISTS parties (
   customer_group TEXT,
   supplier_category TEXT,
   price_list TEXT,
+  license_number TEXT,
   default_currency TEXT,
   is_active INTEGER DEFAULT 1,
   notes TEXT,
@@ -218,6 +220,12 @@ CREATE TABLE IF NOT EXISTS sales_invoice_items (
   batch_id TEXT,
   FOREIGN KEY (invoice_id) REFERENCES sales_invoices(id),
   FOREIGN KEY (item_id) REFERENCES items(id)
+);
+
+CREATE TABLE IF NOT EXISTS areas (
+  id TEXT PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  is_active INTEGER DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS purchase_bills (
@@ -526,6 +534,10 @@ export async function getDb(): Promise<Database> {
     { table: 'taxes', column: 'is_inclusive', type: 'INTEGER DEFAULT 0' },
     { table: 'taxes', column: 'effective_date', type: 'TEXT' },
     { table: 'items', column: 'code', type: 'TEXT' },
+    { table: 'company', column: 'license_number', type: 'TEXT' },
+    { table: 'parties', column: 'license_number', type: 'TEXT' },
+    { table: 'parties', column: 'area', type: 'TEXT' },
+    { table: 'parties', column: 'area_id', type: 'TEXT' },
   ];
 
   for (const m of migrations) {
@@ -546,8 +558,36 @@ export async function getDb(): Promise<Database> {
 
   // Rebranding Migration: Set default name and address
   try {
-    db.run("UPDATE company SET name = 'B & H Pharmaceuticals (PVT ) LTd', address = 'Ismail Adda Khwazakhela Swat'");
+    db.run("UPDATE company SET name = 'B & H Pharmaceutical (PVT) LTD', address = 'Ismail Adda, Khwaza Khela. Swat'");
   } catch (e) {}
+
+  // ─── Formalize Areas Migration ──────────────────────────────────
+  if (db) {
+    try {
+      // 1. Get all unique areas from parties
+      const existingAreas = db.exec("SELECT DISTINCT area FROM parties WHERE area IS NOT NULL AND area != ''") as any[];
+      if (existingAreas.length > 0 && existingAreas[0].values) {
+        existingAreas[0].values.forEach((row: any[]) => {
+          const areaName = row[0];
+          if (!areaName) return;
+          // 2. Insert into areas table (will fail if exists due to UNIQUE)
+          try {
+            const areaId = crypto.randomUUID();
+            db?.run("INSERT OR IGNORE INTO areas (id, name) VALUES (?, ?)", [areaId, areaName]);
+            
+            // 3. Update parties with the new area_id for this area name
+            const res = db?.exec("SELECT id FROM areas WHERE name = ?", [areaName]) as any[];
+            if (res.length > 0 && res[0].values) {
+               const actualId = res[0].values[0][0];
+               db?.run("UPDATE parties SET area_id = ? WHERE area = ?", [actualId as string, areaName]);
+            }
+          } catch (e) {}
+        });
+      }
+    } catch (e) {
+      console.error("Area migration error:", e);
+    }
+  }
 
   saveDb();
 

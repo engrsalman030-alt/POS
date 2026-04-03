@@ -182,7 +182,7 @@
       </section>
 
       <!-- CLASSIFICATION -->
-      <section class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
          <div class="form-section bg-card-bg border border-border rounded-xl p-5 shadow-none space-y-4">
             <div class="space-y-1">
               <label class="section-label">Party Group</label>
@@ -213,6 +213,13 @@
               <input v-model="form.tax_id" type="text" placeholder="1234567-8" class="erp-input font-mono"/>
             </div>
          </div>
+
+         <div class="form-section bg-card-bg border border-border rounded-xl p-5 shadow-none space-y-4">
+            <div class="space-y-1">
+              <label class="section-label">Drug License Number</label>
+              <input v-model="form.license_number" type="text" placeholder="Optional" class="erp-input font-mono"/>
+            </div>
+         </div>
       </section>
 
       <!-- LOCATION & ADDRESS -->
@@ -228,7 +235,18 @@
               <textarea v-model="form.address" rows="2" class="erp-input py-2" placeholder="House #, Street, Area..."></textarea>
            </div>
            
-           <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div class="space-y-1">
+                <label class="section-label">Area / Sector</label>
+                <AutoCompleteWithCreate
+                   v-model="form.area_id"
+                   :options="areaStore.areas"
+                   placeholder="e.g. Khwaza Khela"
+                   allow-create
+                   @create="handleCreateArea"
+                   @select="opt => { form.area = opt.name }"
+                />
+              </div>
               <div class="space-y-1">
                 <label class="section-label">City</label>
                 <input v-model="form.city" type="text" placeholder="e.g. Lahore" class="erp-input"/>
@@ -274,9 +292,11 @@ import type { Party } from '../types/party';
 import AutoCompleteWithCreate from './AutoCompleteWithCreate.vue';
 import { usePartyStore } from '../stores/parties';
 import { useAccountStore } from '../stores/accounts';
+import { useAreaStore } from '../stores/areas';
 
 const partyStore = usePartyStore();
 const accountStore = useAccountStore();
+const areaStore = useAreaStore();
 
 const props = defineProps<{
   initialData?: Party | null;
@@ -315,6 +335,8 @@ const form = ref<any>({
   city: '',
   region: '',
   country: 'Pakistan',
+  area: '',
+  area_id: '',
   credit_limit: 0,
   payment_terms: 'Immediate',
   credit_days: 30,
@@ -324,7 +346,8 @@ const form = ref<any>({
   image: null,
   notes: '',
   company_type: 'Non-Percentage',
-  default_percentage: 0
+  default_percentage: 0,
+  license_number: ''
 });
 
 const localOptions = ref({
@@ -345,6 +368,7 @@ const uniqueGroups = computed(() => Array.from(new Set([...[...partyStore.custom
 
 onMounted(() => {
   accountStore.fetchAccounts();
+  areaStore.fetchAreas();
   if (partyStore.customers.length === 0) partyStore.fetchParties();
 
   if (props.initialData) {
@@ -361,10 +385,23 @@ onMounted(() => {
       image: d.image || null,
       party_group: d.customer_group || d.supplier_category || 'General',
       company_type: d.company_type || 'Non-Percentage',
-      default_percentage: d.default_percentage || 0
+      default_percentage: d.default_percentage || 0,
+      license_number: d.license_number || '',
+      area: d.area || '',
+      area_id: d.area_id || ''
     };
   }
 });
+
+async function handleCreateArea(name: string) {
+  try {
+    const newId = await areaStore.addArea(name);
+    form.value.area_id = newId;
+    form.value.area = name;
+  } catch (e) {
+    console.error("Failed to create area from form:", e);
+  }
+}
 
 function handleFileUpload(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0];

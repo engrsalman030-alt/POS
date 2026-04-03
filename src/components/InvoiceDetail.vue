@@ -20,9 +20,9 @@
                  </div>
                </div>
                <div class="flex-grow text-left">
-                 <h1 class="text-2xl font-black uppercase text-black tracking-tighter leading-none mb-1">RAAZEE Therapeutics <span class="text-lg">(PRIVATE) LIMITED</span></h1>
-                 <p class="text-[11px] font-black text-black">Head office & Plant: 48 km, Lahore-Kasur road, Kasur</p>
-                 <p class="text-[11px] font-black text-black mt-0.5 tracking-tight">NTN : 1526202-2 &nbsp;&nbsp;&nbsp; STRN : 03-04-3000-021-37</p>
+                 <h1 class="text-2xl font-black uppercase text-black tracking-tighter leading-none mb-1">{{ companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD' }}</h1>
+                 <p class="text-[11px] font-black text-black">{{ companyStore.company?.address || 'Ismail Adda, Khwaza Khela. Swat' }}</p>
+                 <p class="text-[11px] font-black text-black mt-0.5 tracking-tight">NTN : {{ companyStore.company?.ntn || '1526202-2' }} &nbsp;&nbsp;&nbsp; DLN : {{ companyStore.company?.license_number || 'N/A' }}</p>
                </div>
                <div class="flex-shrink-0 text-right ml-4">
                  <div class="border-black border-2 px-4 py-2 bg-black text-white inline-block">
@@ -38,6 +38,7 @@
                  <p><span class="font-bold">Party ID :</span> <span class="font-black text-xs ml-1">{{ invoice.customer_id || invoice.supplier_id }}</span></p>
                  <p class="font-black text-sm uppercase">{{ customerName }}</p>
                  <p class="text-slate-600 uppercase font-bold text-[10px] max-w-xs">{{ invoice.billing_address || 'Address Not Provided' }}</p>
+                 <p v-if="partyLicense" class="text-black font-black text-[9px] mt-1 italic uppercase underline decoration-emerald-500/30 underline-offset-2">Drug License: {{ partyLicense }}</p>
                </div>
                <div class="text-right space-y-1">
                  <p><span class="font-bold">Invoice No :</span> <span class="font-black ml-1 text-xs">{{ invoice.id.slice(0, 8).toUpperCase() }}</span></p>
@@ -63,7 +64,7 @@
                </thead>
                <tbody>
                    <tr v-for="(item, iIdx) in invoice.items" :key="item.item_id" class="border border-black hover:bg-slate-50">
-                       <td class="border border-black text-center py-1 font-bold">{{ iIdx + 1 }}</td>
+                       <td class="border border-black text-center py-1 font-bold">{{ Number(iIdx) + 1 }}</td>
                        <td class="border border-black text-center py-1 font-bold">{{ item.item_id.slice(0,6).toUpperCase() }}</td>
                        <td class="border border-black py-1 px-2 font-black uppercase text-[10px]">{{ getItemName(item) }}</td>
                        <td class="border border-black text-center py-1 font-mono font-bold">{{ item.batch_number || '-' }}</td>
@@ -87,8 +88,9 @@
         
         <!-- Pharmacy Thermal Print Preview -->
         <div v-else-if="printTemplate === 'PharmacyThermal'" class="flex flex-col items-center">
-            <h1 class="text-xl font-bold uppercase mb-1 text-center">RAAZEE Therapeutics</h1>
+            <h1 class="text-xl font-bold uppercase mb-1 text-center">{{ companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD' }}</h1>
             <p class="text-center">{{ customerName }}</p>
+            <p v-if="partyLicense" class="text-center text-[10px] italic">DLN: {{ partyLicense }}</p>
             <p class="text-center mb-4">Inv: {{ invoice.id.slice(0,4) }} | {{ invoice.date }}</p>
             
             <div class="w-full border-t border-dashed border-black mb-2"></div>
@@ -115,9 +117,13 @@
         <button @click="$emit('close')" class="px-6 py-3 rounded border border-slate-300 bg-white text-slate-700 font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 shadow-sm">
           Close Preview
         </button>
-        <button @click="handlePrint" class="px-6 py-3 rounded bg-black text-white font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-lg flex items-center justify-center gap-3">
+        <button @click="handlePrint" class="px-6 py-3 rounded bg-black text-white font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all active:scale-90 shadow-lg flex items-center justify-center gap-3">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
           Print Document
+        </button>
+        <button @click="$emit('edit', invoice)" class="px-6 py-3 rounded bg-brand text-white font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all active:scale-90 shadow-lg flex items-center justify-center gap-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit Invoice
         </button>
     </footer>
 
@@ -127,54 +133,37 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useCompanyStore } from '../stores/company';
 import { useInventoryStore } from '../stores/inventory';
 import { useStaffStore } from '../stores/staff';
 import { useERPStore } from '../stores/erpSettings';
+import { usePartyStore } from '../stores/parties';
 
 const props = defineProps<{
   invoice: any;
   customerName: string;
 }>();
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'edit']);
+
+const partyLicense = computed(() => {
+    const party = partyStore.parties.find(p => p.id === props.invoice.customer_id || p.id === props.invoice.supplier_id);
+    return party?.license_number;
+});
 
 const companyStore = useCompanyStore();
 const inventoryStore = useInventoryStore();
 const staffStore = useStaffStore();
 const erpStore = useERPStore();
+const partyStore = usePartyStore();
 
 const printTemplate = computed(() => erpStore.getSetting('print_template', 'Corporate'));
-
-const totalBonusUnits = computed(() => {
-  return props.invoice.items.reduce((sum: number, item: any) => sum + (item.bonus_quantity || 0), 0);
-});
 
 onMounted(async () => {
   await inventoryStore.fetchItems();
   await staffStore.fetchStaff();
   await erpStore.loadSettings();
-});
-
-const groupedItems = computed(() => {
-  const groups: Record<string, any[]> = {};
-  props.invoice.items.forEach((item: any) => {
-    const info = getItemInfo(item.item_id);
-    const brand = item.brand || info?.brand || 'General';
-    if (!groups[brand]) groups[brand] = [];
-    groups[brand].push({
-      ...item,
-      brand,
-      generic: info?.generic_name || '',
-      sku: info?.sku || ''
-    });
-  });
-  return groups;
-});
-
-const companyInitials = computed(() => {
-  return companyStore.getMonogram(companyStore.company?.name || 'B & H Pharmaceuticals (PVT ) LTd');
 });
 
 function getItemInfo(itemId: string) {
@@ -204,7 +193,6 @@ function handlePrint() {
     const doc = frame.contentWindow?.document;
     if (!doc) return;
 
-    const brandGroups = groupedItems.value;
     const templateHtml = () => {
        const template = printTemplate.value;
        
@@ -212,8 +200,9 @@ function handlePrint() {
             return `
                <div class="flex items-center justify-between border-b-2 border-black pb-4 mb-4">
                   <div class="flex-grow text-left">
-                     <h1 class="text-2xl font-black uppercase text-black tracking-tighter leading-none mb-1">RAAZEE Therapeutics <span class="text-lg">(PRIVATE) LIMITED</span></h1>
-                     <p class="text-[11px] font-black text-black">Head office & Plant: 48 km, Lahore-Kasur road, Kasur</p>
+                     <h1 class="text-2xl font-black uppercase text-black tracking-tighter leading-none mb-1">${companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD'}</h1>
+                     <p class="text-[11px] font-black text-black">${companyStore.company?.address || 'Ismail Adda, Khwaza Khela. Swat'}</p>
+                     <p class="text-[10px] font-black italic">NTN: ${companyStore.company?.ntn || 'N/A'} | DLN: ${companyStore.company?.license_number || 'N/A'}</p>
                   </div>
                </div>
                <table class="w-full table-tight border-collapse mb-2">
@@ -239,8 +228,9 @@ function handlePrint() {
        } else if (template === 'PharmacyThermal') {
             return `
                <div style="width: 80mm; font-family: monospace; text-align: center;">
-                   <h2 style="font-size: 16px; margin: 0;">RAAZEE Therapeutics</h2>
+                   <h2 style="font-size: 16px; margin: 0;">${companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD'}</h2>
                    <p style="margin: 0; font-size: 10px;">${props.customerName}</p>
+                   ${partyLicense.value ? `<p style="margin: 0; font-size: 9px; font-style: italic;">DLN: ${partyLicense.value}</p>` : ''}
                    <p style="margin: 0; font-size: 10px; border-bottom: 1px dashed black; padding-bottom: 5px; margin-bottom: 5px;">Inv: ${props.invoice.id.slice(0,6)} | ${props.invoice.date}</p>
                    <div style="text-align: left;">
                        ${props.invoice.items.map((item: any) => `
@@ -260,7 +250,7 @@ function handlePrint() {
             return `
                <pre style="font-family: monospace; font-size: 12px; line-height: 1.2;">
 ===============================================
-               RAAZEE Therapeutics
+               ${companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD'}
                Sales Invoice
 ===============================================
 To: ${props.customerName}

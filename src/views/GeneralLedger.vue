@@ -116,7 +116,7 @@ const startDate = ref('');
 const endDate = ref(new Date().toISOString().split('T')[0]);
 
 const companyInitials = computed(() => {
-  return companyStore.getMonogram(companyStore.company?.name || 'B & H Pharmaceuticals (PVT ) LTd');
+  return companyStore.getMonogram(companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD');
 });
 
 const currentBalance = computed(() => accountStore.getAccountBalance(props.id));
@@ -207,11 +207,11 @@ function handlePrint() {
                 </div>
              </div>
 
-             <!-- COMPANY HEADER (RAAZEE Therapeutics) -->
+             <!-- COMPANY HEADER (B & H Pharmaceutical) -->
              <div class="flex-grow text-left">
-                <h1 class="text-2xl font-black uppercase text-black tracking-tighter leading-none mb-1">RAAZEE Therapeutics <span class="text-lg">(PRIVATE) LIMITED</span></h1>
-                <p class="text-[11px] font-black text-black">Head office & Plant: 48 km, Lahore-Kasur road, Kasur</p>
-                <p class="text-[11px] font-black text-black mt-0.5 tracking-tight">NTN : 1526202-2 &nbsp;&nbsp;&nbsp; STRN : 03-04-3000-021-37</p>
+                <h1 class="text-2xl font-black uppercase text-black tracking-tighter leading-none mb-1">${companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD'}</h1>
+                <p class="text-[11px] font-black text-black">${companyStore.company?.address || 'Ismail Adda, Khwaza Khela. Swat'}</p>
+                <p class="text-[11px] font-black text-black mt-0.5 tracking-tight">NTN : ${companyStore.company?.ntn || '1526202-2'} &nbsp;&nbsp;&nbsp; STRN : 03-04-3000-021-37</p>
              </div>
              
              <!-- REPORT BADGE -->

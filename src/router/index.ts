@@ -86,6 +86,11 @@ const routes = [
         component: () => import('../views/Expenses.vue')
     },
     {
+        path: '/areas',
+        name: 'Areas',
+        component: () => import('../views/Areas.vue')
+    },
+    {
         path: '/ledger/:id',
         name: 'GeneralLedger',
         component: () => import('../views/GeneralLedger.vue'),

@@ -35,7 +35,7 @@
             <label class="label-tiny">Distribution Party</label>
             <AutoCompleteWithCreate
               v-model="form.party_id"
-              :options="parties.map(p => ({ id: p.id, name: p.name, sub: p.phone }))"
+              :options="parties.map(p => ({ id: p.id || '', name: p.name || '', sub: p.phone }))"
               :placeholder="`Search ${type === 'Sales' ? 'Customer' : 'Supplier'}...`"
               allow-create
               @create="handleCreateParty"
@@ -46,7 +46,7 @@
             <label class="label-tiny">SSR (Order Taker)</label>
             <AutoCompleteWithCreate
               v-model="form.ssr_id"
-              :options="staffStore.ssrs.map(s => ({ id: s.id, name: s.name }))"
+              :options="staffStore.ssrs.map(s => ({ id: s.id || '', name: s.name || '' }))"
               placeholder="Select SSR..."
             />
           </div>
@@ -55,7 +55,7 @@
             <label class="label-tiny">DSR (Delivery)</label>
             <AutoCompleteWithCreate
               v-model="form.dsr_id"
-              :options="staffStore.dsrs.map(d => ({ id: d.id, name: d.name }))"
+              :options="staffStore.dsrs.map(d => ({ id: d.id || '', name: d.name || '' }))"
               placeholder="Select DSR..."
             />
           </div>
@@ -89,7 +89,7 @@
              <AutoCompleteWithCreate
                 ref="companyFilterAc"
                 v-model="tempCompanyFilter"
-                :options="uniqueBrands.map(b => ({id: b, name: b}))"
+                :options="uniqueBrands.map(b => ({id: b || '', name: b || ''}))"
                 placeholder="+ Add New Company Section..."
                 allow-free-text
                 allow-create
@@ -151,6 +151,7 @@
                         v-model="line.batch_number" 
                         type="text" 
                         placeholder="BATCH-00x"
+                        autocomplete="off"
                         :id="`batch-input-${gIdx}-${iIdx}`"
                         @focus="activeBatchIdx = {gIdx, iIdx}"
                         class="w-full bg-transparent border-none text-[10px] font-black text-text-primary text-left uppercase outline-none focus:text-brand" 
@@ -165,6 +166,13 @@
                                <span class="text-[9px] font-bold text-brand bg-brand/5 px-2 py-0.5 rounded-lg">Stk: {{ b.quantity }}</span>
                             </div>
                             <p class="text-[8px] font-bold text-text-muted mt-1 uppercase tracking-tighter">Exp: {{ b.expiry_date || 'N/A' }}</p>
+                         </div>
+                         <!-- New Batch Button in Popper -->
+                         <div @click="openInlineBatchModal(gIdx, iIdx)" class="p-3 mt-1 border-t border-border/50 cursor-pointer flex items-center justify-center gap-2 group hover:bg-emerald-50 rounded-xl transition-all">
+                            <div class="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                            </div>
+                            <span class="text-[9px] font-black uppercase text-emerald-600 tracking-widest group-hover:tracking-wider transition-all">Create New Batch</span>
                          </div>
                       </div>
                     </div>
@@ -279,6 +287,17 @@
              </div>
           </div>
        </div>
+
+       <!-- Batch Modal -->
+       <div v-if="showBatchModal" class="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center p-6">
+          <div class="bg-card-bg border border-border rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden">
+             <BatchForm 
+                :preselected-item-id="activeBatchIdx ? form.groups[activeBatchIdx.gIdx]?.items[activeBatchIdx.iIdx]?.item_id : undefined" 
+                @close="showBatchModal = false" 
+                @saved="handleBatchSaved"
+             />
+          </div>
+       </div>
     </Teleport>
 
   </div>
@@ -295,6 +314,7 @@ import SmartDateInput from './SmartDateInput.vue';
 import AutoCompleteWithCreate from './AutoCompleteWithCreate.vue';
 import PartyForm from './PartyForm.vue';
 import ItemForm from './ItemForm.vue';
+import BatchForm from './BatchForm.vue';
 
 interface TransactionItem {
   item_id: string;
@@ -382,6 +402,7 @@ function handleAddCompanyGroup(val: string) {
 // Modals
 const showPartyModal = ref(false);
 const showItemModal = ref(false);
+const showBatchModal = ref(false);
 const initialSearchTerm = ref('');
 const activeItemLineIdx = ref<{gIdx: number, iIdx: number} | null>(null);
 
@@ -423,7 +444,7 @@ onMounted(async () => {
       ...form.value,
       ...data,
       party_id: (props.type === 'Sales' ? data.customer_id : data.supplier_id) || '',
-      groups: Object.keys(grouped).map(k => ({ company: k, items: grouped[k] }))
+      groups: Object.keys(grouped).map(k => ({ company: k, items: grouped[k] })) || []
     };
     if (form.value.groups.length === 0) {
       form.value.groups = [{ company: 'General', items: [{ item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] }];
@@ -534,6 +555,33 @@ function onLineBatchChange(gIdx: number, iIdx: number, batchId: string) {
     line.batch_number = b.batch_number;
     line.expiry_date = b.expiry_date || '';
   }
+  activeBatchIdx.value = null;
+}
+
+function openInlineBatchModal(gIdx: number, iIdx: number) {
+  activeBatchIdx.value = { gIdx, iIdx };
+  showBatchModal.value = true;
+}
+
+async function handleBatchSaved() {
+  if (!activeBatchIdx.value) return;
+  const { gIdx, iIdx } = activeBatchIdx.value;
+  const group = form.value.groups[gIdx];
+  if (!group) return;
+  const line = group.items[iIdx];
+  if (!line) return;
+  
+  // The store has already been updated via fetchBatches in the addBatch call.
+  // We'll find the absolute latest batch created for this item.
+  const latestBatch = batchStore.batches
+    .filter(b => b.item_id === line.item_id)
+    .sort((a,b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0];
+
+  if (latestBatch && latestBatch.id) {
+     onLineBatchChange(gIdx, iIdx, latestBatch.id as string);
+  }
+  
+  showBatchModal.value = false;
   activeBatchIdx.value = null;
 }
 

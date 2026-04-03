@@ -34,4 +34,7 @@ export interface Party {
     balance?: number;
     notes?: string;
     tags?: string;
+    license_number?: string;
+    area?: string;
+    area_id?: string;
 }

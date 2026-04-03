@@ -806,6 +806,7 @@ import { useCompanyStore } from '../stores/company';
 import { usePosStore } from '../stores/pos';
 import { useShiftStore } from '../stores/shift';
 import { useBatchStore } from '../stores/batches';
+import { useToastStore } from '../stores/toast';
 import ShiftModal from '../components/ShiftModal.vue';
 import { storeToRefs } from 'pinia';
 
@@ -816,6 +817,7 @@ const companyStore = useCompanyStore();
 const posStore = usePosStore();
 const shiftStore = useShiftStore();
 const batchStore = useBatchStore();
+const toastStore = useToastStore();
 const router = useRouter();
 const activeTab = ref('items');
 const activeBatchItemId = ref<string | null>(null);
@@ -1085,7 +1087,7 @@ const filteredCustomers = computed(() => {
 async function handlePay() {
   if (posStore.cart.length === 0) return;
   if (!shiftStore.activeShift) {
-    alert('Please open a shift before processing payments.');
+    toastStore.warning('Please open a shift before processing payments.');
     return;
   }
   
@@ -1139,7 +1141,7 @@ async function handlePay() {
     showReceiptModal.value = true;
   } catch (e) {
     console.error(e);
-    alert('Failed to process payment');
+    toastStore.error('Failed to process payment');
   }
 }
 

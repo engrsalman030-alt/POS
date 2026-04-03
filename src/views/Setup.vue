@@ -41,6 +41,13 @@
             </div>
           </div>
 
+          <div>
+             <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Drug License Number (DLN)</label>
+             <input v-model="form.license_number" type="text" placeholder="e.g. 1234-DLN-PB"
+               class="w-full px-3 py-2 border border-border bg-app-bg rounded text-sm outline-none font-mono focus:border-text-primary focus:bg-card-bg text-text-primary placeholder:text-text-muted"
+             >
+          </div>
+
           <div class="grid grid-cols-2 gap-5">
             <div>
               <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Country</label>
@@ -104,8 +111,10 @@
 <script setup lang="ts">
 import { reactive, ref, toRaw, onMounted, computed } from 'vue';
 import { useCompanyStore } from '../stores/company';
+import { useToastStore } from '../stores/toast';
 
 const companyStore = useCompanyStore();
+const toastStore = useToastStore();
 const loading = ref(false);
 
 onMounted(async () => {
@@ -122,6 +131,7 @@ function selectCompany(comp: any) {
   form.currency = comp.currency;
   form.country = comp.country;
   form.ntn = comp.ntn || '';
+  form.license_number = comp.license_number || '';
   // Trigger setup immediately or just let them click the button
 }
 
@@ -134,6 +144,7 @@ const form = reactive({
   currency: 'PKR',
   country: 'Pakistan',
   ntn: '',
+  license_number: '',
   fiscalYearStart: fiscalStart
 });
 
@@ -142,7 +153,7 @@ async function handleSetup() {
   try {
     // Validate company name
     if (!form.name.trim()) {
-      alert('Company name is required');
+      toastStore.warning('Company name is required');
       loading.value = false;
       return;
     }
@@ -152,11 +163,13 @@ async function handleSetup() {
     // Setup company and seed accounts & taxes
     await companyStore.setupCompany({ ...toRaw(form) });
 
-    alert('Company setup successful! Reloading to start fresh.');
-    window.location.href = '/'; // hard reload to wipe memory state
+    toastStore.success('Company setup successful! Reloading to start fresh.');
+    setTimeout(() => {
+        window.location.href = '/'; // hard reload to wipe memory state
+    }, 2000);
   } catch (err: any) {
     console.error('Setup error:', err);
-    alert('Setup failed: ' + (err.message ?? err));
+    toastStore.error('Setup failed: ' + (err.message ?? err));
   } finally {
     loading.value = false;
   }
