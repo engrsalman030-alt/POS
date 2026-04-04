@@ -140,11 +140,11 @@ const fiscalStart = new Date(currentYear, 6, 1).toISOString().split('T')[0];
 
 const form = reactive({
   name: '',
-  currency: 'PKR',
-  country: 'Pakistan',
+  currency: '',
+  country: '',
   ntn: '',
   license_number: '',
-  fiscalYearStart: fiscalStart
+  fiscalYearStart: ''
 });
 
 async function handleSetup() {

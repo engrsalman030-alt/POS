@@ -291,10 +291,10 @@ const tabs = [
 ];
 
 const settings = ref({
-  pharma_expiry_threshold: 6,
-  pharma_restrict_expired: true,
+  pharma_expiry_threshold: '',
+  pharma_restrict_expired: false,
   print_footer_text: '',
-  print_template: 'Corporate'
+  print_template: ''
 });
 
 onMounted(async () => {

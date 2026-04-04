@@ -156,13 +156,13 @@ const isEditing = ref(false);
 
 const form = ref<any>({
   name: '',
-  role: 'SSR',
+  role: '',
   phone: '',
   cnic: '',
   address: '',
-  salary: 0,
-  joining_date: new Date().toISOString().split('T')[0],
-  is_active: 1
+  salary: '',
+  joining_date: '',
+  is_active: 0
 });
 
 onMounted(() => {
@@ -174,7 +174,7 @@ function openModal(member?: Staff) {
     form.value = { ...member };
     isEditing.value = true;
   } else {
-    form.value = { name: '', role: 'SSR', phone: '', cnic: '', address: '', salary: 0, joining_date: new Date().toISOString().split('T')[0], is_active: 1 };
+    form.value = { name: '', role: '', phone: '', cnic: '', address: '', salary: '', joining_date: '', is_active: 0 };
     isEditing.value = false;
   }
   showModal.value = true;

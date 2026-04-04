@@ -103,6 +103,50 @@ export const useTransactionStore = defineStore('transactions', {
             return id;
         },
 
+        async updateInvoice(invoice: SalesInvoice) {
+            const isReturn = (invoice as any).document_type === 'Return';
+            execute(
+                `UPDATE sales_invoices SET date = ?, customer_id = ?, total_amount = ?, discount_amount = ?, discount_pct = ?, tax_amount = ?, outstanding_amount = ?, shift_id = ?, sales_manager = ?, frappe_reference = ?, ssr_id = ?, dsr_id = ?, document_type = ? WHERE id = ?`,
+                [
+                    invoice.date,
+                    invoice.customer_id,
+                    invoice.total_amount,
+                    invoice.discount_amount || 0,
+                    (invoice as any).discount_pct || 0,
+                    invoice.tax_amount || 0,
+                    invoice.total_amount,
+                    invoice.shift_id || null,
+                    invoice.sales_manager || null,
+                    invoice.frappe_reference || null,
+                    (invoice as any).ssr_id || null,
+                    (invoice as any).dsr_id || null,
+                    isReturn ? 'Return' : 'Invoice',
+                    invoice.id
+                ]
+            );
+
+            execute(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`, [invoice.id]);
+
+            for (const item of invoice.items) {
+                const itemId = crypto.randomUUID();
+                let finalBatchId = (item as any).batch_id;
+                if (!finalBatchId && item.batch_number) {
+                    finalBatchId = await InventoryService.findOrCreateBatch(item.item_id, item.batch_number, item.expiry_date || undefined, item.rate);
+                }
+
+                const lineTotal = item.total ?? (item.quantity * item.rate);
+                execute(
+                    `INSERT INTO sales_invoice_items (id, invoice_id, item_id, quantity, bonus_quantity, batch_number, expiry_date, rate, tax_amount, total, batch_id) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [itemId, invoice.id, item.item_id, item.quantity, item.bonus_quantity || 0, item.batch_number || null, item.expiry_date || null, item.rate, item.tax_amount || 0, lineTotal, finalBatchId || null]
+                );
+            }
+
+            saveDb();
+            await this.fetchInvoices();
+            return invoice.id;
+        },
+
         async createBill(bill: Omit<PurchaseBill, 'id' | 'status'>) {
             const id = crypto.randomUUID();
 
@@ -166,6 +210,44 @@ export const useTransactionStore = defineStore('transactions', {
             saveDb();
             await this.fetchBills();
             return id;
+        },
+
+        async updateBill(bill: PurchaseBill) {
+            const isReturn = (bill as any).document_type === 'Return';
+            execute(
+                `UPDATE purchase_bills SET date = ?, supplier_id = ?, total_amount = ?, discount_amount = ?, discount_pct = ?, tax_amount = ?, outstanding_amount = ?, sales_manager = ?, frappe_reference = ?, document_type = ? WHERE id = ?`,
+                [
+                    bill.date,
+                    bill.supplier_id,
+                    bill.total_amount,
+                    (bill as any).discount_amount || 0,
+                    (bill as any).discount_pct || 0,
+                    bill.tax_amount || 0,
+                    bill.total_amount,
+                    bill.sales_manager || null,
+                    bill.frappe_reference || null,
+                    isReturn ? 'Return' : 'Bill',
+                    bill.id
+                ]
+            );
+
+            execute(`DELETE FROM purchase_bill_items WHERE bill_id = ?`, [bill.id]);
+
+            for (const item of bill.items) {
+                const itemId = crypto.randomUUID();
+                const batchId = await InventoryService.findOrCreateBatch(item.item_id, item.batch_number || 'GENERIC', item.expiry_date || undefined, item.rate);
+                const lineTotal = item.total ?? (item.quantity * item.rate);
+
+                execute(
+                    `INSERT INTO purchase_bill_items (id, bill_id, item_id, quantity, bonus_quantity, batch_number, expiry_date, rate, tax_amount, total, batch_id) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [itemId, bill.id, item.item_id, item.quantity, item.bonus_quantity || 0, item.batch_number || null, item.expiry_date || null, item.rate, item.tax_amount || 0, lineTotal, batchId || null]
+                );
+            }
+
+            saveDb();
+            await this.fetchBills();
+            return bill.id;
         },
 
         async createPayment(payment: Omit<import('../types/transactions').Payment, 'id'>) {

@@ -63,7 +63,7 @@
                  </tr>
                </thead>
                <tbody>
-                   <tr v-for="(item, iIdx) in invoice.items" :key="item.item_id" class="border border-black hover:bg-slate-50">
+                   <tr v-for="(item, iIdx) in invoice.items" :key="item.id || item.item_id || iIdx" class="border border-black hover:bg-slate-50">
                        <td class="border border-black text-center py-1 font-bold">{{ Number(iIdx) + 1 }}</td>
                        <td class="border border-black text-center py-1 font-bold">{{ item.item_id.slice(0,6).toUpperCase() }}</td>
                        <td class="border border-black py-1 px-2 font-black uppercase text-[10px]">{{ getItemName(item) }}</td>
@@ -147,16 +147,16 @@ const props = defineProps<{
 
 const emit = defineEmits(['close', 'edit']);
 
-const partyLicense = computed(() => {
-    const party = partyStore.parties.find(p => p.id === props.invoice.customer_id || p.id === props.invoice.supplier_id);
-    return party?.license_number;
-});
-
 const companyStore = useCompanyStore();
 const inventoryStore = useInventoryStore();
 const staffStore = useStaffStore();
 const erpStore = useERPStore();
 const partyStore = usePartyStore();
+
+const partyLicense = computed(() => {
+    const party = partyStore.parties.find(p => p.id === props.invoice.customer_id || p.id === props.invoice.supplier_id);
+    return party?.license_number;
+});
 
 const printTemplate = computed(() => erpStore.getSetting('print_template', 'Corporate'));
 

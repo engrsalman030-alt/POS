@@ -163,6 +163,16 @@ const navItems = [
     icon: '<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/>' 
   },
   { 
+    name: 'Credit/Debit Notes',           
+    path: '/credit-debit-notes', 
+    icon: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><path d="M$10:10 h4"/>' 
+  },
+  { 
+    name: 'Staff Assignments',           
+    path: '/staff-areas', 
+    icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="3"/>' 
+  },
+  { 
     name: 'Tax Settings',      
     path: '/tax', 
     icon: '<line x1="19" x2="5" y1="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>' 

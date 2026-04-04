@@ -138,7 +138,7 @@ const selectedArea = ref<Area | null>(null);
 
 const form = ref({
   name: '',
-  is_active: true
+  is_active: false
 });
 
 onMounted(() => {
@@ -154,7 +154,7 @@ const filteredAreas = computed(() => {
 function openAddModal() {
   editMode.value = false;
   selectedArea.value = null;
-  form.value = { name: '', is_active: true };
+  form.value = { name: '', is_active: false };
   showModal.value = true;
 }
 

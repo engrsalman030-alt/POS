@@ -57,7 +57,17 @@ const routes = [
     {
         path: '/reports',
         name: 'Reports',
-        component: () => import('../views/Reports.vue')
+        component: () => import('../views/ReportsCenter.vue')
+    },
+    {
+        path: '/credit-debit-notes',
+        name: 'CreditDebitNotes',
+        component: () => import('../views/CreditDebitNotes.vue')
+    },
+    {
+        path: '/staff-areas',
+        name: 'StaffAreaAssignments',
+        component: () => import('../views/StaffAreaAssignments.vue')
     },
     {
         path: '/settings',

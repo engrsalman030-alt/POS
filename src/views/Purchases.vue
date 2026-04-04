@@ -85,14 +85,14 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 relative z-10">
               <button @click.stop="openDetail(bill)" 
-                class="w-10 h-10 rounded-xl bg-hover-bg text-text-muted transition-all active:scale-90 hover:text-white shadow-sm hover:bg-emerald-500 flex items-center justify-center"
+                class="w-10 h-10 rounded-xl bg-hover-bg text-text-muted transition-all active:scale-90 hover:text-white shadow-sm hover:bg-emerald-500 flex items-center justify-center cursor-pointer"
                 title="View Bill">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
               <button @click.stop="handleEdit(bill)" 
-                class="w-10 h-10 rounded-xl bg-hover-bg text-text-muted transition-all active:scale-90 hover:text-white shadow-sm hover:bg-brand flex items-center justify-center"
+                class="w-10 h-10 rounded-xl bg-hover-bg text-text-muted transition-all active:scale-90 hover:text-white shadow-sm hover:bg-brand flex items-center justify-center cursor-pointer"
                 title="Edit Bill">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
               </button>
@@ -213,7 +213,7 @@ function openCreate() {
 }
 
 function openDetail(bill: any) {
-  selectedBill.value = bill;
+  selectedBill.value = { ...bill, type: 'purchase' };
   showDetailModal.value = true;
 }
 
@@ -241,7 +241,11 @@ async function handleSave(formData: any) {
         formData.document_type = currentTab.value === 'Returns' ? 'Return' : 'Bill';
     }
 
-    await transactionStore.createBill(formData);
+    if (formData.id) {
+        await transactionStore.updateBill(formData);
+    } else {
+        await transactionStore.createBill(formData);
+    }
     showModal.value = false;
     selectedBill.value = null;
     await partyStore.fetchParties();

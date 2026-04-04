@@ -321,8 +321,8 @@ const roles = [
 
 const form = ref<any>({
   name: '',
-  role: 'Customer',
-  status: 'Active',
+  role: '',
+  status: '',
   category: '',
   email: '',
   phone: '',
@@ -331,19 +331,19 @@ const form = ref<any>({
   address: '',
   city: '',
   region: '',
-  country: 'Pakistan',
+  country: '',
   area: '',
   area_id: '',
-  credit_limit: 0,
-  payment_terms: 'Immediate',
-  credit_days: 30,
+  credit_limit: '',
+  payment_terms: '',
+  credit_days: '',
   tax_id: '',
-  default_receivable_account: 'debtors',
-  default_payable_account: 'creditors',
+  default_receivable_account: '',
+  default_payable_account: '',
   image: null,
   notes: '',
-  company_type: 'Non-Percentage',
-  default_percentage: 0,
+  company_type: '',
+  default_percentage: '',
   license_number: ''
 });
 

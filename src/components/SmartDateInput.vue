@@ -2,7 +2,6 @@
   <div class="smart-date-input relative group">
     <div class="relative flex items-center">
       <input
-        ref="textInput"
         type="text"
         :value="displayValue"
         @input="handleInput"
@@ -45,7 +44,6 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:modelValue']);
 
-const textInput = ref<HTMLInputElement | null>(null);
 const datePicker = ref<HTMLInputElement | null>(null);
 
 // We keep a local display state for the text input to avoid issues with intermediate states

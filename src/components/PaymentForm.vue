@@ -40,15 +40,53 @@
         </div>
       </div>
 
+      <!-- Payment Method Type (Cash, Cheque, Bank, etc) -->
+      <div>
+        <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 italic">Payment Method Type</label>
+        <select v-model="form.payment_method" 
+          class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-bold text-text-primary outline-none focus:ring-2 focus:ring-brand/20 transition-all">
+          <option value="">Select Method...</option>
+          <option value="Cash">Cash</option>
+          <option value="Cheque">Cheque</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Credit Card">Credit Card</option>
+          <option value="Mobile Money">Mobile Money</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
       <!-- Account (Bank/Cash) -->
       <div>
-        <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 italic">Payment Method</label>
+        <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 italic">Account / Bank</label>
         <AutoCompleteWithCreate
            v-model="form.account_id"
            :options="accountStore.accounts.filter(a => a.type === 'Asset').map(a => ({ id: a.id, name: a.name, sub: a.code }))"
            placeholder="Search Bank/Cash..."
            allow-free-text
         />
+      </div>
+
+      <!-- Cheque Details (show only if payment_method is 'Cheque') -->
+      <div v-if="form.payment_method === 'Cheque'" class="col-span-1 md:col-span-2">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 italic">Cheque Number</label>
+            <input v-model="form.cheque_number" type="text" placeholder="e.g. CHK-001234"
+              class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-sm font-bold text-text-primary focus:ring-2 focus:ring-brand/20 outline-none transition-all" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 italic">Cheque Date</label>
+            <input v-model="form.cheque_date" type="date"
+              class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-sm font-bold text-text-primary focus:ring-2 focus:ring-brand/20 outline-none transition-all" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 italic">Cleared?</label>
+            <select v-model="form.is_cleared" class="w-full bg-hover-bg border border-border rounded-xl px-4 py-3 text-xs font-bold text-text-primary outline-none focus:ring-2 focus:ring-brand/20 transition-all">
+              <option :value="false">Pending</option>
+              <option :value="true">Cleared</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -91,12 +129,16 @@ const props = defineProps<{
 const emit = defineEmits(['submit', 'cancel']);
 
 const form = ref({
-  date: new Date().toISOString().split('T')[0],
+  date: '',
   party_id: props.party?.id || '',
-  party_type: props.party?.type || 'Customer',
-  payment_type: props.party?.type === 'Supplier' ? 'Pay' : 'Receive',
-  account_id: 'cash',
+  party_type: props.party?.type || '',
+  payment_type: '',
+  payment_method: '',
+  account_id: '',
   amount: 0,
+  cheque_number: '',
+  cheque_date: '',
+  is_cleared: false,
   memo: ''
 });
 

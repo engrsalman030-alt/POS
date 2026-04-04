@@ -42,6 +42,14 @@
             />
           </div>
 
+          <div class="space-y-1.5">
+            <label class="label-tiny">Area / Territory</label>
+            <select v-model="form.area_id" class="w-full bg-card-bg border border-border rounded-xl px-4 py-2 text-xs font-bold text-text-primary outline-none focus:ring-2 focus:ring-brand/10 transition-all">
+              <option value="">Select Area...</option>
+              <option v-for="area in areasStore.areas" :key="area.id" :value="area.id">{{ area.name }}</option>
+            </select>
+          </div>
+
           <div v-if="type === 'Sales'" class="space-y-1.5">
             <label class="label-tiny">SSR (Order Taker)</label>
             <AutoCompleteWithCreate
@@ -100,7 +108,7 @@
         </div>
 
         <div class="overflow-x-auto min-h-[400px]">
-          <template v-for="(group, gIdx) in form.groups" :key="group.id">
+          <template v-for="group in form.groups" :key="group.id">
             
             <!-- Group Header -->
             <div class="bg-brand/5 border-y border-brand/10 px-6 py-3 flex items-center justify-between">
@@ -109,8 +117,8 @@
                  Dealing Company: {{ group.company }}
                </h3>
                <div class="flex gap-2">
-                 <button @click.stop="removeGroup(group.id)" type="button" class="px-3 py-1.5 rounded-lg bg-transparent border border-rose-500/20 text-rose-500 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all shadow-sm">
-                   Remove
+                 <button @click.stop="removeLastItem(group.id)" type="button" class="px-3 py-1.5 rounded-lg bg-transparent border border-rose-500/20 text-rose-500 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all shadow-sm">
+                   Remove Item
                  </button>
                  <button @click.stop="addLine(group.id)" type="button" class="px-4 py-1.5 rounded-lg bg-white border border-brand/20 text-brand text-[9px] font-black uppercase tracking-widest hover:bg-brand hover:text-white transition-all shadow-sm">
                    + Add Item
@@ -125,7 +133,8 @@
                   <th class="py-3 px-6 text-[9px] font-black uppercase tracking-widest text-left">Medicine / Product</th>
                   <th class="w-40 py-3 px-4 text-[9px] font-black uppercase tracking-widest text-left">Batch ID</th>
                   <th class="w-32 py-3 px-4 text-[9px] font-black uppercase tracking-widest text-center">Expiry</th>
-                  <th class="w-32 py-3 px-4 text-[9px] font-black uppercase tracking-widest text-center">Quantity (B)</th>
+                  <th class="w-28 py-3 px-4 text-[9px] font-black uppercase tracking-widest text-center">Quantity</th>
+                  <th class="w-24 py-3 px-4 text-[9px] font-black uppercase tracking-widest text-center">Bonus</th>
                   <th class="w-32 py-3 px-4 text-[9px] font-black uppercase tracking-widest text-center">Unit Rate</th>
                   <th class="w-24 py-3 px-4 text-[9px] font-black uppercase tracking-widest text-center">Disc%</th>
                   <th class="w-40 py-3 px-6 text-[9px] font-black uppercase tracking-widest text-right">Net Total</th>
@@ -181,10 +190,10 @@
                     <input v-model="line.expiry_date" type="text" placeholder="MM/YY" class="w-full bg-transparent border-none text-[11px] font-black text-rose-500 text-center outline-none" />
                   </td>
                   <td class="py-3 px-4">
-                    <div class="flex flex-col items-center">
-                      <input v-model="line.qtyInput" @input="parseQuantity(group.id, line.id)" type="text" class="w-24 bg-hover-bg/50 border border-border rounded-xl py-1.5 text-center text-xs font-black outline-none focus:ring-2 focus:ring-brand/10" placeholder="0+0"/>
-                      <span v-if="line.bonus_quantity > 0" class="text-[8px] font-bold text-brand mt-1 uppercase">Bonus: {{ line.bonus_quantity }}</span>
-                    </div>
+                    <input v-model.number="line.quantity" type="number" min="0" class="w-full bg-hover-bg/50 border border-border rounded-xl py-1.5 text-center text-xs font-black outline-none focus:ring-2 focus:ring-brand/10" placeholder="0"/>
+                  </td>
+                  <td class="py-3 px-4">
+                    <input v-model.number="line.bonus_quantity" type="number" min="0" class="w-full bg-hover-bg/50 border border-border rounded-xl py-1.5 text-center text-xs font-black outline-none focus:ring-2 focus:ring-brand/10" placeholder="0"/>
                   </td>
                   <td class="py-3 px-4">
                     <input v-model.number="line.rate" type="number" class="w-full bg-transparent border-none text-center text-xs font-black outline-none" placeholder="0.00"/>
@@ -292,7 +301,7 @@
        <div v-if="showBatchModal" class="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center p-6">
           <div class="bg-card-bg border border-border rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden">
              <BatchForm 
-                :preselected-item-id="activeBatchIdx ? (() => { const g = form.groups.find(gr => gr.id === activeBatchIdx.groupId); const l = g?.items.find(li => li.id === activeBatchIdx.lineId); return l?.item_id; })() : undefined" 
+                :preselected-item-id="getPreselectedBatchItemId()" 
                 @close="showBatchModal = false" 
                 @saved="handleBatchSaved"
              />
@@ -304,12 +313,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { usePartyStore } from '../stores/parties';
 import { useInventoryStore } from '../stores/inventory';
 import { useBatchStore } from '../stores/batches';
 import { useStaffStore } from '../stores/staff';
 import { useTaxStore } from '../stores/tax';
+import { useAreaStore } from '../stores/areas';
 import SmartDateInput from './SmartDateInput.vue';
 import AutoCompleteWithCreate from './AutoCompleteWithCreate.vue';
 import PartyForm from './PartyForm.vue';
@@ -319,7 +329,6 @@ import BatchForm from './BatchForm.vue';
 interface TransactionItem {
   id: string;
   item_id: string;
-  qtyInput: string;
   quantity: number;
   bonus_quantity: number;
   batch_number: string;
@@ -339,6 +348,7 @@ interface TransactionFormGroup {
 interface TransactionForm {
   document_type: string;
   party_id: string;
+  area_id: string;
   date: string;
   sales_manager: string;
   ssr_id: string;
@@ -361,8 +371,42 @@ const inventoryStore = useInventoryStore();
 const batchStore = useBatchStore();
 const staffStore = useStaffStore();
 const taxStore = useTaxStore();
+const areasStore = useAreaStore();
+
+const form = ref<TransactionForm>({
+  document_type: '',
+  party_id: '',
+  area_id: '',
+  date: '' as string,
+  sales_manager: '',
+  ssr_id: '',
+  dsr_id: '',
+  frappe_reference: '',
+  notes: '',
+  tax_id: '',
+  groups: [
+    { id: 'general-' + Date.now(), company: 'General', items: [{ id: crypto.randomUUID(), item_id: '', quantity: 0, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] }
+  ]
+});
 
 const parties = computed(() => props.type === 'Sales' ? partyStore.customers : partyStore.parties);
+
+const selectedPartyGroup = computed(() => {
+  const party = parties.value.find(p => p.id === form.value.party_id);
+  if (!party) return '';
+  return props.type === 'Sales' ? (party.customer_group || '') : (party.supplier_category || '');
+});
+
+watch(
+  () => form.value.party_id,
+  () => {
+    const groupName = selectedPartyGroup.value;
+    if (!groupName) return;
+    if (form.value.groups.length === 1 && form.value.groups[0].company === 'General') {
+      form.value.groups[0].company = groupName;
+    }
+  }
+);
 
 const validTaxes = computed(() => {
    return taxStore.taxes.filter(t => t.is_active && (t.applicable_on === 'Both' || t.applicable_on === props.type || (props.type === 'Purchase' && t.applicable_on === 'Purchases')));
@@ -390,7 +434,7 @@ function handleAddCompanyGroup(val: string) {
        localCompanies.value.push(val);
    }
    if (val) {
-       form.value.groups = [...form.value.groups, { id: val + '-' + Date.now(), company: val, items: [{ id: 'item-' + Date.now() + Math.random(), item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] }];
+       form.value.groups = [...form.value.groups, { id: val + '-' + Date.now(), company: val, items: [createBlankLine()] }];
    }
    // Small delay to ensure the event processes before clearing the input
    setTimeout(() => {
@@ -410,21 +454,6 @@ const activeItemLineIdx = ref<{groupId: string, lineId: string} | null>(null);
 
 const activeBatchIdx = ref<{groupId: string, lineId: string} | null>(null);
 
-const form = ref<TransactionForm>({
-  document_type: props.type === 'Sales' ? 'Invoice' : 'Bill',
-  party_id: '',
-  date: new Date().toISOString().split('T')[0] as string,
-  sales_manager: '',
-  ssr_id: '',
-  dsr_id: '',
-  frappe_reference: '',
-  notes: '',
-  tax_id: '',
-  groups: [
-    { id: 'general-' + Date.now(), company: 'General', items: [{ id: 'item-' + Date.now(), item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] }
-  ]
-});
-
 onMounted(async () => {
   if (props.initialData) {
     const data = props.initialData;
@@ -437,9 +466,10 @@ onMounted(async () => {
        const brand = i.brand || info?.brand || 'General';
        if (!grouped[brand]) grouped[brand] = [];
        grouped[brand].push({
-         id: 'item-' + Date.now() + Math.random(),
          ...i,
-         qtyInput: i.bonus_quantity > 0 ? `${i.quantity}+${i.bonus_quantity}` : i.quantity.toString()
+         id: 'item-' + Date.now() + Math.random(),
+         quantity: i.quantity || 0,
+         bonus_quantity: i.bonus_quantity || 0
        });
     });
     
@@ -451,7 +481,7 @@ onMounted(async () => {
       groups: Object.keys(grouped).map(k => ({ id: k + '-' + Date.now() + Math.random(), company: k, items: grouped[k] })) || []
     };
     if (form.value.groups.length === 0) {
-      form.value.groups = [{ id: 'general-' + Date.now(), company: 'General', items: [{ id: 'item-' + Date.now(), item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] }];
+      form.value.groups = [{ id: 'general-' + Date.now(), company: 'General', items: [createBlankLine()] }];
     }
   }
   
@@ -494,25 +524,27 @@ function onItemSelect(groupId: string, lineId: string, suggestion: any) {
     if (!line) return;
     const item = inventoryStore.items.find(i => i.id === suggestion.id);
     if (item) {
-        if (props.type === 'Sales') {
-             line.rate = ((item as any).sales_rate || 0);
-        } else {
-             const party = partyStore.suppliers.find(s => s.id === form.value.party_id);
-             if (party && (party as any).company_type === 'Percentage') {
-                 const basePrice = (item as any).mrp || (item as any).trade_price || (item as any).sales_rate || 0;
-                 const defaultPct = (party as any).default_percentage || 0;
-                 line.rate = basePrice;
-                 line.discount_pct = defaultPct;
-             } else {
-                 line.rate = ((item as any).purchase_rate || 0);
-             }
-        }
+            if (props.type === 'Sales') {
+                line.rate = ((item as any).sales_rate || 0);
+            } else {
+                const party = partyStore.suppliers.find(s => s.id === form.value.party_id);
+                const hasManualDiscount = line.discount_pct > 0;
+                if (party && (party as any).company_type === 'Percentage') {
+                    const basePrice = (item as any).mrp || (item as any).trade_price || (item as any).sales_rate || 0;
+                    const defaultPct = (party as any).default_percentage || 0;
+                    line.rate = basePrice;
+                    if (!hasManualDiscount) {
+                        line.discount_pct = defaultPct;
+                    }
+                } else {
+                    line.rate = ((item as any).purchase_rate || 0);
+                }
+            }
 
-        if (line.quantity === 0) {
-           line.quantity = 1;
-           line.qtyInput = '1';
+            if (line.quantity === 0) {
+               line.quantity = 1;
+            }
         }
-    }
 }
 
 async function onPartySubmit(payload: any) {
@@ -535,11 +567,14 @@ async function onItemSubmit(payload: any) {
                       line.rate = ((item as any).sales_rate || 0);
                  } else {
                       const party = partyStore.suppliers.find(s => s.id === form.value.party_id);
+                      const hasManualDiscount = line.discount_pct > 0;
                       if (party && (party as any).company_type === 'Percentage') {
                           const basePrice = (item as any).mrp || (item as any).trade_price || (item as any).sales_rate || 0;
                           const defaultPct = (party as any).default_percentage || 0;
                           line.rate = basePrice;
-                          line.discount_pct = defaultPct;
+                          if (!hasManualDiscount) {
+                              line.discount_pct = defaultPct;
+                          }
                       } else {
                           line.rate = ((item as any).purchase_rate || 0);
                       }
@@ -552,6 +587,13 @@ async function onItemSubmit(payload: any) {
 
 function getItemBatches(itemId: string) {
   return batchStore.getBatchesForItem(itemId);
+}
+
+function getPreselectedBatchItemId() {
+  const idx = activeBatchIdx.value;
+  if (!idx) return undefined;
+  const group = form.value.groups.find(gr => gr.id === idx.groupId);
+  return group?.items.find(li => li.id === idx.lineId)?.item_id;
 }
 
 function onLineBatchChange(groupId: string, lineId: string, batchId: string) {
@@ -600,21 +642,6 @@ function getBatchPopperPos(groupId: string, lineId: string) {
      return { top: rect.bottom + 5, left: rect.left };
   }
   return { top: 0, left: 0 };
-}
-
-function parseQuantity(groupId: string, lineId: string) {
-  const group = form.value.groups.find(g => g.id === groupId);
-  const line = group?.items.find(l => l.id === lineId);
-  if (!line) return;
-  const val = line.qtyInput || '';
-  if (val.includes('+')) {
-    const [q, b] = val.split('+');
-    line.quantity = parseFloat(q || '0') || 0;
-    line.bonus_quantity = parseFloat(b || '0') || 0;
-  } else {
-    line.quantity = parseFloat(val) || 0;
-    line.bonus_quantity = 0;
-  }
 }
 
 function calculateLineNet(line: TransactionItem) {
@@ -669,27 +696,48 @@ const isFormValid = computed(() => {
   return !!form.value.party_id && form.value.groups.every(g => g.items.every(i => !!i.item_id && i.quantity > 0));
 });
 
+function createBlankLine() {
+  return {
+    id: crypto.randomUUID(),
+    item_id: '',
+    quantity: 0,
+    bonus_quantity: 0,
+    batch_number: '',
+    expiry_date: '',
+    rate: 0,
+    discount_pct: 0,
+    total: 0
+  };
+}
+
 function addLine(groupId: string) {
   const group = form.value.groups.find(g => g.id === groupId);
   if (group) {
-    group.items = [...group.items, { id: 'item-' + Date.now() + Math.random(), item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }];
+    const newItem = createBlankLine();
+    form.value.groups = form.value.groups.map(g => g.id === groupId ? { ...g, items: [...g.items, newItem] } : g);
   }
 }
 
 function removeLine(groupId: string, lineId: string) {
-  const group = form.value.groups.find(g => g.id === groupId);
-  if (!group) return;
-  
-  // Remove the item by creating a new array (ensures Vue reactivity)
-  group.items = group.items.filter(item => item.id !== lineId);
-  
-  // Keep the group even if empty, so user can add items back
+  form.value.groups = form.value.groups.map(g => {
+    if (g.id !== groupId) return g;
+    const items = g.items.filter(item => item.id !== lineId);
+    return {
+      ...g,
+      items: items.length ? items : [createBlankLine()]
+    };
+  });
 }
 
-function removeGroup(groupId: string) {
-   if (form.value.groups.length > 1) {
-      form.value.groups = form.value.groups.filter(g => g.id !== groupId);
-   }
+function removeLastItem(groupId: string) {
+  form.value.groups = form.value.groups.map(g => {
+    if (g.id !== groupId) return g;
+    const items = g.items.slice(0, -1);
+    return {
+      ...g,
+      items: items.length ? items : [createBlankLine()]
+    };
+  });
 }
 
 function handleSubmit() {

@@ -137,12 +137,12 @@ const showModal = ref(false);
 
 const form = ref<any>({
     name: '',
-    rate: 0,
-    type: 'Percentage',
-    applicable_on: 'Both',
+    rate: '',
+    type: '',
+    applicable_on: '',
     is_inclusive: 0,
     effective_date: '',
-    is_active: 1
+    is_active: 0
 });
 
 onMounted(() => {
@@ -152,7 +152,7 @@ onMounted(() => {
 async function handleAdd() {
     await taxStore.addTax({ ...form.value } as any);
     showModal.value = false;
-    form.value = { name: '', rate: 0, type: 'Percentage', applicable_on: 'Both', is_inclusive: 0, effective_date: '', is_active: 1 };
+    form.value = { name: '', rate: '', type: '', applicable_on: '', is_inclusive: 0, effective_date: '', is_active: 0 };
 }
 
 async function handleDelete(id: string) {

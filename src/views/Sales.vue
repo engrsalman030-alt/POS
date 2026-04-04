@@ -212,7 +212,7 @@ function openCreate() {
 }
 
 function openDetail(inv: any) {
-  selectedInvoice.value = inv;
+  selectedInvoice.value = { ...inv, type: 'sales' };
   showDetailModal.value = true;
 }
 
@@ -243,9 +243,15 @@ async function handleSave(formData: any) {
     if (!formData.id && !formData.document_type) {
         formData.document_type = currentTab.value === 'Returns' ? 'Return' : 'Invoice';
     }
-    
-    await transactionStore.createInvoice(formData);
+
+    if (formData.id) {
+        await transactionStore.updateInvoice(formData);
+    } else {
+        await transactionStore.createInvoice(formData);
+    }
+
     showModal.value = false;
+    selectedInvoice.value = null;
     await partyStore.fetchParties();
     await transactionStore.fetchInvoices();
 }

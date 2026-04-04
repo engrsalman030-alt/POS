@@ -108,9 +108,9 @@ const form = ref({
   batch_number: props.initialData?.batch_number || '',
   mfg_date: props.initialData?.mfg_date || '',
   expiry_date: props.initialData?.expiry_date || '',
-  quantity: props.initialData?.quantity || 0,
-  purchase_rate: props.initialData?.purchase_rate || 0,
-  sales_rate: props.initialData?.sales_rate || 0,
+  quantity: Number(props.initialData?.quantity || 0),
+  purchase_rate: Number(props.initialData?.purchase_rate || 0),
+  sales_rate: Number(props.initialData?.sales_rate || 0),
   supplier_id: props.initialData?.supplier_id || '',
   notes: props.initialData?.notes || '',
 });

@@ -298,12 +298,12 @@ watch(selectedAccount, () => {
 });
 
 const form = ref({
-    date: new Date().toISOString().split('T')[0],
+    date: '',
     party_id: '',
     party_type: 'Customer' as 'Customer' | 'Supplier',
     payment_type: 'Receive' as 'Receive' | 'Pay',
     account_id: '',
-    amount: 0,
+    amount: '',
     memo: '',
     reference_type: 'General' as const,
     reference_id: ''

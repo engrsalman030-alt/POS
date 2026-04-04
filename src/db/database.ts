@@ -304,6 +304,68 @@ CREATE TABLE IF NOT EXISTS expenses (
   FOREIGN KEY (category_id) REFERENCES expense_categories(id)
 );
 
+CREATE TABLE IF NOT EXISTS staff_areas (
+  id TEXT PRIMARY KEY,
+  staff_id TEXT NOT NULL,
+  area_id TEXT NOT NULL,
+  FOREIGN KEY (staff_id) REFERENCES staff(id),
+  FOREIGN KEY (area_id) REFERENCES areas(id)
+);
+
+CREATE TABLE IF NOT EXISTS staff_parties (
+  id TEXT PRIMARY KEY,
+  staff_id TEXT NOT NULL,
+  party_id TEXT NOT NULL,
+  role TEXT,
+  FOREIGN KEY (staff_id) REFERENCES staff(id),
+  FOREIGN KEY (party_id) REFERENCES parties(id)
+);
+
+CREATE TABLE IF NOT EXISTS sales_targets (
+  id TEXT PRIMARY KEY,
+  staff_id TEXT NOT NULL,
+  month TEXT NOT NULL,
+  target_amount REAL DEFAULT 0,
+  achieved_amount REAL DEFAULT 0,
+  FOREIGN KEY (staff_id) REFERENCES staff(id)
+);
+
+CREATE TABLE IF NOT EXISTS opening_balances (
+  id TEXT PRIMARY KEY,
+  account_id TEXT NOT NULL,
+  fiscal_year TEXT NOT NULL,
+  debit REAL DEFAULT 0,
+  credit REAL DEFAULT 0,
+  FOREIGN KEY (account_id) REFERENCES accounts(id)
+);
+
+CREATE TABLE IF NOT EXISTS credit_debit_notes (
+  id TEXT PRIMARY KEY,
+  date TEXT NOT NULL,
+  type TEXT NOT NULL,
+  party_id TEXT,
+  reference_invoice_id TEXT,
+  amount REAL DEFAULT 0,
+  tax_amount REAL DEFAULT 0,
+  reason TEXT,
+  status TEXT DEFAULT 'Draft',
+  ssr_id TEXT,
+  FOREIGN KEY (party_id) REFERENCES parties(id),
+  FOREIGN KEY (ssr_id) REFERENCES staff(id)
+);
+
+CREATE TABLE IF NOT EXISTS credit_debit_note_items (
+  id TEXT PRIMARY KEY,
+  note_id TEXT NOT NULL,
+  item_id TEXT,
+  batch_id TEXT,
+  quantity REAL DEFAULT 0,
+  rate REAL DEFAULT 0,
+  total REAL DEFAULT 0,
+  FOREIGN KEY (note_id) REFERENCES credit_debit_notes(id),
+  FOREIGN KEY (item_id) REFERENCES items(id)
+);
+
 CREATE TABLE IF NOT EXISTS erp_settings (
   key TEXT PRIMARY KEY,
   value TEXT
@@ -538,6 +600,47 @@ export async function getDb(): Promise<Database> {
     { table: 'parties', column: 'license_number', type: 'TEXT' },
     { table: 'parties', column: 'area', type: 'TEXT' },
     { table: 'parties', column: 'area_id', type: 'TEXT' },
+    
+    // PHARMA ERP ENHANCEMENTS - Sales Invoices
+    { table: 'sales_invoices', column: 'area_id', type: 'TEXT' },
+    { table: 'sales_invoices', column: 'return_reference_id', type: 'TEXT' },
+    
+    // PHARMA ERP ENHANCEMENTS - Purchase Bills
+    { table: 'purchase_bills', column: 'area_id', type: 'TEXT' },
+    { table: 'purchase_bills', column: 'return_reference_id', type: 'TEXT' },
+    { table: 'purchase_bills', column: 'ssr_id', type: 'TEXT' },
+    
+    // PHARMA ERP ENHANCEMENTS - Items (Tax & Pricing)
+    { table: 'items', column: 'sale_tax_pct', type: 'REAL DEFAULT 0' },
+    { table: 'items', column: 'purchase_tax_pct', type: 'REAL DEFAULT 0' },
+    { table: 'items', column: 'last_purchase_rate', type: 'REAL DEFAULT 0' },
+    { table: 'items', column: 'avg_purchase_rate', type: 'REAL DEFAULT 0' },
+    { table: 'items', column: 'opening_stock', type: 'REAL DEFAULT 0' },
+    { table: 'items', column: 'opening_stock_value', type: 'REAL DEFAULT 0' },
+    
+    // PHARMA ERP ENHANCEMENTS - Item Batches (Tracking)
+    { table: 'item_batches', column: 'quantity_sold', type: 'REAL DEFAULT 0' },
+    { table: 'item_batches', column: 'quantity_returned', type: 'REAL DEFAULT 0' },
+    { table: 'item_batches', column: 'landing_cost', type: 'REAL DEFAULT 0' },
+    
+    // PHARMA ERP ENHANCEMENTS - Payments (Payment Methods)
+    { table: 'payments', column: 'payment_method', type: "TEXT DEFAULT 'Cash'" },
+    { table: 'payments', column: 'bank_account', type: 'TEXT' },
+    { table: 'payments', column: 'cheque_number', type: 'TEXT' },
+    { table: 'payments', column: 'cheque_date', type: 'TEXT' },
+    { table: 'payments', column: 'is_cleared', type: 'INTEGER DEFAULT 0' },
+    
+    // PHARMA ERP ENHANCEMENTS - Expenses (Enhanced Tracking)
+    { table: 'expenses', column: 'payment_method', type: "TEXT DEFAULT 'Cash'" },
+    { table: 'expenses', column: 'reference_number', type: 'TEXT' },
+    { table: 'expenses', column: 'approved_by', type: 'TEXT' },
+    { table: 'expenses', column: 'account_id', type: 'TEXT' },
+    
+    // PHARMA ERP ENHANCEMENTS - Shifts (Enhanced Reporting)
+    { table: 'shifts', column: 'staff_id', type: 'TEXT' },
+    { table: 'shifts', column: 'total_sales', type: 'REAL DEFAULT 0' },
+    { table: 'shifts', column: 'total_collections', type: 'REAL DEFAULT 0' },
+    { table: 'shifts', column: 'total_expenses', type: 'REAL DEFAULT 0' },
   ];
 
   for (const m of migrations) {

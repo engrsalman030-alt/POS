@@ -95,7 +95,7 @@ const showModal = ref(false);
 const form = ref({
     name: '',
     code: '',
-    type: 'Asset' as any,
+    type: '' as any,
     parent_id: null,
     is_group: false
 });
@@ -107,6 +107,6 @@ onMounted(() => {
 async function handleAdd() {
     await accountStore.addAccount(form.value);
     showModal.value = false;
-    form.value = { name: '', code: '', type: 'Asset' as any, parent_id: null, is_group: false };
+    form.value = { name: '', code: '', type: '' as any, parent_id: null, is_group: false };
 }
 </script>
