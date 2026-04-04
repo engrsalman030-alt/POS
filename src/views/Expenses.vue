@@ -11,7 +11,7 @@
         <button @click="showCategoryModal = true" class="btn-ghost border border-border">
           Categories
         </button>
-        <button @click="showExpenseModal = true" class="btn-dark">
+        <button @click="showExpenseModal = true" class="btn-primary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
           Record Expense
         </button>
@@ -56,6 +56,7 @@
             <th class="px-4 py-3 text-left text-[9px] font-black uppercase tracking-widest text-text-muted">Description</th>
             <th class="px-4 py-3 text-left text-[9px] font-black uppercase tracking-widest text-text-muted">Method</th>
             <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-widest text-text-muted">Amount</th>
+            <th class="px-4 py-3 text-center text-[9px] font-black uppercase tracking-widest text-text-muted">Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-border/50">
@@ -76,9 +77,16 @@
             <td class="px-4 py-3 text-right">
               <span class="font-black text-rose-500 tabular-nums">{{ formatCurrency(expense.amount) }}</span>
             </td>
+            <td class="px-4 py-3 text-center">
+              <button @click="selectedExpense = expense; showExpenseDetailModal = true" 
+                class="w-8 h-8 rounded-lg bg-hover-bg text-text-muted hover:text-emerald-500 hover:bg-emerald-500/10 transition-all inline-flex items-center justify-center"
+                title="View Details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </td>
           </tr>
           <tr v-if="filteredExpenses.length === 0">
-            <td colspan="4" class="py-20 text-center">
+            <td colspan="7" class="py-20 text-center">
                <div class="w-16 h-16 bg-hover-bg rounded-2xl mx-auto flex items-center justify-center opacity-20 text-2xl">💸</div>
                <p class="text-xs font-bold text-text-muted uppercase tracking-widest mt-4">No expenses recorded for this period.</p>
             </td>
@@ -152,7 +160,7 @@
                    <textarea v-model="newExpense.notes" rows="2" placeholder="Describe the expenditure..." class="input-std resize-none"></textarea>
                 </div>
  
-                <button type="submit" class="btn-dark w-full py-4 text-sm mt-4">
+                <button type="submit" class="btn-primary w-full py-3 mt-4">
                    Confirm Expenditure
                 </button>
             </form>
@@ -184,10 +192,68 @@
                <label class="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1 block mb-2">Add New Category</label>
                <div class="flex gap-2">
                   <input v-model="newCategoryName" type="text" placeholder="e.g. Rent, Salaries" class="flex-1 bg-hover-bg/50 border border-border rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-brand/20 transition-all"/>
-                  <button @click="addCategory" :disabled="!newCategoryName" class="px-4 py-2.5 bg-text-primary text-card-bg rounded-xl font-black text-[10px] uppercase tracking-widest disabled:opacity-30">
+                  <button @click="addCategory" :disabled="!newCategoryName" class="btn-primary">
                     Add
                   </button>
                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- EXPENSE DETAIL MODAL -->
+    <Teleport to="body">
+      <div v-if="showExpenseDetailModal && selectedExpense" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-app-bg/60 backdrop-blur-md animate-in fade-in duration-200">
+        <div class="bg-white border border-slate-300 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+          <div class="p-8">
+            <header class="flex justify-between items-start mb-8 pb-6 border-b-2 border-slate-200">
+               <div>
+                 <h2 class="text-2xl font-black text-black uppercase tracking-tight mb-1">Expense Details</h2>
+                 <p class="text-sm font-bold text-slate-600 uppercase tracking-widest">{{ selectedExpense.category_name }}</p>
+               </div>
+               <button @click="showExpenseDetailModal = false" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-rose-500 transition-all">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+               </button>
+            </header>
+
+            <div class="space-y-6 mb-8">
+              <div class="grid grid-cols-2 gap-6">
+                <div>
+                  <p class="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Date</p>
+                  <p class="text-lg font-black text-black">{{ selectedExpense.date }}</p>
+                </div>
+                <div>
+                  <p class="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Amount</p>
+                  <p class="text-2xl font-black text-rose-500">{{ formatCurrency(selectedExpense.amount) }}</p>
+                </div>
+              </div>
+
+              <div class="bg-slate-50 rounded-xl p-6 border border-slate-200 space-y-4">
+                <div>
+                  <p class="text-xs font-bold text-slate-500 mb-1">Category</p>
+                  <p class="text-base font-bold text-black">{{ selectedExpense.category_name }}</p>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-500 mb-1">Merchant / Payee</p>
+                  <p class="text-base font-bold text-black">{{ selectedExpense.merchant || 'Not specified' }}</p>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-500 mb-1">Payment Method</p>
+                  <p class="text-base font-bold text-black">{{ selectedExpense.payment_method || 'Cash' }}</p>
+                </div>
+              </div>
+
+              <div v-if="selectedExpense.notes" class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                <p class="text-xs font-bold text-blue-600 mb-2 uppercase tracking-widest">Notes</p>
+                <p class="text-sm text-black leading-relaxed">{{ selectedExpense.notes }}</p>
+              </div>
+            </div>
+
+            <div class="flex gap-3 pt-6 border-t border-slate-200">
+              <button @click="showExpenseDetailModal = false" class="flex-1 py-3 px-4 rounded-lg bg-slate-100 text-black font-bold uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95">
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -208,8 +274,10 @@ const companyStore = useCompanyStore();
 
 const showExpenseModal = ref(false);
 const showCategoryModal = ref(false);
+const showExpenseDetailModal = ref(false);
 const filterDate = ref(new Date().toISOString().slice(0, 7)); // YYYY-MM
 const newCategoryName = ref('');
+const selectedExpense = ref<any>(null);
 
 const newExpense = ref({
   date: new Date().toISOString().split('T')[0],

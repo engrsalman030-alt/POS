@@ -1,11 +1,11 @@
 <template>
-  <div class="p-4 md:p-8 max-w-7xl mx-auto min-h-screen relative font-sans">
+  <div class="page-container relative">
     
     <!-- Header -->
     <header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-4 border-b border-border">
       <div>
-        <h1 class="text-2xl font-bold text-text-primary">Parties</h1>
-        <p class="text-sm mt-1 text-text-secondary">Manage customers, suppliers and their balances.</p>
+        <h1 class="text-heading">Parties</h1>
+        <p class="text-subheading underline decoration-brand/20 underline-offset-4">Manage customers, suppliers and their legacy corporate balances.</p>
       </div>
       <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
         <!-- Filter Tabs -->
@@ -20,7 +20,7 @@
           </button>
         </div>
         <button @click="showModal = true"
-          class="flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-bold transition-all bg-text-primary text-card-bg hover:opacity-90 hover:shadow-lg active:scale-95 text-center"
+          class="btn-primary"
         >
           + Add Party
         </button>

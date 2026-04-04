@@ -1,11 +1,11 @@
 <template>
-  <div class="p-8 max-w-6xl mx-auto font-sans">
+  <div class="page-container">
     
     <!-- Header -->
-    <header class="mb-8 flex justify-between items-end pb-4 border-b border-border">
+    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-text-primary">Bank & Cash</h1>
-        <p class="text-sm mt-1 text-text-secondary">Manage your liquid assets and reconcile entries.</p>
+        <h1 class="text-heading">Bank & Cash</h1>
+        <p class="text-subheading">Manage your liquid assets and reconcile entries.</p>
       </div>
     </header>
 
@@ -40,7 +40,7 @@
           </h2>
           <button v-if="selectedAccount"
             @click="openPaymentModal"
-            class="text-xs font-bold transition-all underline text-text-primary hover:opacity-80">
+            class="btn-ghost text-xs">
             + Manual Entry
           </button>
         </div>
@@ -53,6 +53,7 @@
                 <th class="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-text-muted">Reference / Memo</th>
                 <th class="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-right text-text-muted">In (Debit)</th>
                 <th class="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-right text-text-muted">Out (Credit)</th>
+                <th class="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-center text-text-muted">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -68,6 +69,13 @@
                 </td>
                 <td class="px-6 py-4 text-right font-bold text-sm text-rose-500">
                   {{ tx.credit > 0 ? formatCurrency(tx.credit) : '—' }}
+                </td>
+                <td class="px-6 py-4 text-center">
+                  <button @click="selectedTransaction = tx; showTransactionDetail = true"
+                    class="w-8 h-8 rounded-lg bg-hover-bg text-text-muted hover:text-emerald-500 hover:bg-emerald-500/10 transition-all inline-flex items-center justify-center"
+                    title="View Details">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -129,13 +137,13 @@
             <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Type</label>
             <div class="flex gap-2">
               <button type="button" @click="form.payment_type = 'Receive'"
-                class="flex-1 py-2 text-xs font-bold rounded border transition-all"
-                :class="form.payment_type === 'Receive' ? 'bg-text-primary text-card-bg border-text-primary' : 'bg-card-bg text-text-secondary border-border'">
+                class="flex-1 py-2 text-xs font-bold rounded-xl border transition-all"
+                :class="form.payment_type === 'Receive' ? 'bg-brand text-white border-brand' : 'bg-card-bg text-text-secondary border-border'">
                 Receipt (In)
               </button>
               <button type="button" @click="form.payment_type = 'Pay'"
-                class="flex-1 py-2 text-xs font-bold rounded border transition-all"
-                :class="form.payment_type === 'Pay' ? 'bg-text-primary text-card-bg border-text-primary' : 'bg-card-bg text-text-secondary border-border'">
+                class="flex-1 py-2 text-xs font-bold rounded-xl border transition-all"
+                :class="form.payment_type === 'Pay' ? 'bg-brand text-white border-brand' : 'bg-card-bg text-text-secondary border-border'">
                 Payment (Out)
               </button>
             </div>
@@ -173,11 +181,60 @@
 
           <div class="pt-4 flex gap-3">
             <button type="button" @click="showPaymentModal = false"
-              class="flex-1 px-4 py-2 border border-border rounded text-sm font-bold transition-all bg-card-bg text-text-secondary hover:bg-hover-bg">Cancel</button>
+              class="btn-ghost flex-1 py-3 h-auto">Cancel</button>
             <button type="submit"
-              class="flex-1 px-4 py-2 rounded text-sm font-bold transition-all bg-text-primary text-card-bg hover:opacity-90">Save Entry</button>
+              class="btn-primary flex-1 py-3 h-auto">Save Entry</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Transaction Detail Modal -->
+    <div v-if="showTransactionDetail && selectedTransaction" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-app-bg/60 backdrop-blur-md">
+      <div class="bg-white border border-slate-300 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div class="p-8">
+          <header class="flex justify-between items-start mb-8 pb-6 border-b-2 border-slate-200">
+             <div>
+               <h2 class="text-2xl font-black text-black uppercase tracking-tight mb-1">Transaction Details</h2>
+               <p class="text-sm font-bold text-slate-600 uppercase tracking-widest">{{ selectedAccount?.name }}</p>
+             </div>
+             <button @click="showTransactionDetail = false" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-rose-500 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+             </button>
+          </header>
+
+          <div class="space-y-6 mb-8">
+            <div class="grid grid-cols-2 gap-6">
+              <div>
+                <p class="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Date</p>
+                <p class="text-lg font-black text-black">{{ selectedTransaction.date }}</p>
+              </div>
+              <div>
+                <p class="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">{{ selectedTransaction.debit > 0 ? 'Debit (In)' : 'Credit (Out)' }}</p>
+                <p :class="['text-2xl font-black', selectedTransaction.debit > 0 ? 'text-emerald-600' : 'text-rose-500']">
+                  {{ formatCurrency(selectedTransaction.debit > 0 ? selectedTransaction.debit : selectedTransaction.credit) }}
+                </p>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 rounded-xl p-6 border border-slate-200 space-y-4">
+              <div>
+                <p class="text-xs font-bold text-slate-500 mb-1">Memo</p>
+                <p class="text-base font-bold text-black">{{ selectedTransaction.memo || 'No memo provided' }}</p>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-slate-500 mb-1">Reference</p>
+                <p class="text-base font-mono font-bold text-black">{{ selectedTransaction.reference_type }} #{{ selectedTransaction.reference_id }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 pt-6 border-t border-slate-200">
+            <button @click="showTransactionDetail = false" class="flex-1 py-3 px-4 rounded-lg bg-slate-100 text-black font-bold uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95">
+              Close
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -223,6 +280,8 @@ const toastStore = useToastStore();
 const selectedAccount = ref<Account | null>(null);
 const transactions = ref<Transaction[]>([]);
 const showPaymentModal = ref(false);
+const showTransactionDetail = ref(false);
+const selectedTransaction = ref<Transaction | null>(null);
 
 const { 
     currentPage, 

@@ -69,10 +69,9 @@
         <textarea v-model="form.notes" rows="2" placeholder="Optional notes..." class="w-full bg-hover-bg border border-border rounded-lg p-2 text-xs font-medium text-text-primary outline-none focus:ring-1 focus:ring-emerald-500/20 resize-none"></textarea>
       </div>
 
-      <!-- Actions -->
       <div class="flex gap-3 pt-3 border-t border-border">
-        <button @click="$emit('close')" class="flex-1 px-4 py-2 rounded-lg border border-border text-xs font-semibold text-text-secondary hover:bg-hover-bg transition-all">Cancel</button>
-        <button @click="handleSubmit" :disabled="!isValid" class="flex-[2] px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all disabled:opacity-50">
+        <button @click="$emit('close')" class="btn-ghost flex-1 py-2 h-auto text-xs">Cancel</button>
+        <button @click="handleSubmit" :disabled="!isValid" class="btn-primary flex-[2] py-2 h-auto text-xs">
           {{ isEdit ? 'Update Batch' : 'Create Batch' }}
         </button>
       </div>

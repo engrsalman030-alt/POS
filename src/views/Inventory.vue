@@ -7,7 +7,7 @@
         <h1 class="text-heading">Items & Inventory</h1>
         <p class="text-subheading">Track products, stock levels, and COGS automatically.</p>
       </div>
-      <button @click="openAddModal" class="btn-success">
+      <button @click="openAddModal" class="btn-primary">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
         Add New Item
       </button>
@@ -22,6 +22,11 @@
           
           <!-- Action buttons floating -->
           <div class="absolute top-2 left-2 flex gap-1 z-20">
+            <button @click.stop="openViewModal(item)" 
+              class="w-7 h-7 rounded-lg bg-card-bg/90 backdrop-blur border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-emerald-500 hover:text-white shadow-sm"
+              title="View Item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
             <button @click.stop="openEditModal(item)" 
               class="w-7 h-7 rounded-lg bg-card-bg/90 backdrop-blur border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-brand hover:text-white shadow-sm"
               title="Edit Item">
@@ -119,6 +124,15 @@
         </div>
       </div>
     </div>
+
+    <!-- View Item Detail Modal -->
+    <div v-if="showViewModal && viewingItem" class="fixed inset-0 flex items-center justify-center p-4 z-[100] bg-black/40 backdrop-blur-sm overflow-y-auto">
+      <ItemDetailView 
+        :item="viewingItem"
+        @close="showViewModal = false"
+        @edit="handleEditFromView"
+      />
+    </div>
   </div>
 </template>
 
@@ -129,6 +143,7 @@ import { useCompanyStore } from '../stores/company';
 import { usePagination } from '../composables/usePagination';
 import Pagination from '../components/Pagination.vue';
 import ItemForm from '../components/ItemForm.vue';
+import ItemDetailView from '../components/ItemDetailView.vue';
 
 const inventoryStore = useInventoryStore();
 const companyStore = useCompanyStore();
@@ -142,8 +157,10 @@ const {
     setPage 
 } = usePagination(computed(() => inventoryStore.items), 12);
 const showModal = ref(false);
+const showViewModal = ref(false);
 const isEditMode = ref(false);
 const editingItem = ref<any>(null);
+const viewingItem = ref<any>(null);
 const errorMessage = ref('');
 
 const addQtyMap = ref<Record<string, number>>({});
@@ -162,10 +179,20 @@ const openAddModal = () => {
     showModal.value = true;
 };
 
+const openViewModal = (item: any) => {
+    viewingItem.value = { ...item };
+    showViewModal.value = true;
+};
+
 const openEditModal = (item: any) => {
     isEditMode.value = true;
     editingItem.value = { ...item };
     showModal.value = true;
+};
+
+const handleEditFromView = (item: any) => {
+    showViewModal.value = false;
+    openEditModal(viewingItem.value);
 };
 
 const closeModal = () => {

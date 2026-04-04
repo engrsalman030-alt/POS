@@ -573,7 +573,7 @@
           <div class="p-8 pt-0 flex gap-4">
             <button @click="showPaymentModal = false" class="flex-1 py-6 rounded-3xl border-2 border-border font-black text-[12px] uppercase tracking-widest text-text-secondary hover:bg-hover-bg transition-all">Cancel</button>
             <button @click="handlePay" :disabled="changeAmount < 0 && selectedPaymentMethod === 'Cash'" 
-              class="flex-[2] py-6 rounded-3xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[12px] uppercase tracking-[0.3em] shadow-xl shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-3">
+              class="flex-[2] py-6 rounded-3xl bg-brand hover:bg-brand-hover text-white font-black text-[12px] uppercase tracking-[0.3em] shadow-xl shadow-brand/20 transition-all active:scale-95 flex items-center justify-center gap-3">
               Process & Print Invoice
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
             </button>
@@ -776,7 +776,7 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
                 Print
               </button>
-              <button @click="shareToWhatsApp" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] uppercase tracking-widest py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-2">
+              <button @click="shareToWhatsApp" class="flex-1 bg-brand hover:bg-brand-hover text-white font-black text-[10px] uppercase tracking-widest py-4 rounded-2xl transition-all shadow-lg shadow-brand/20 active:scale-95 flex items-center justify-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                 WhatsApp
               </button>

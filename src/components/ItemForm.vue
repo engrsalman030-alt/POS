@@ -309,14 +309,11 @@
          </div>
       </section>
 
-      <!-- FORM ACTIONS -->
       <div class="flex items-center gap-4 pt-2">
-        <button type="button" @click="$emit('cancel')" 
-          class="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-500 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-none">
+        <button type="button" @click="$emit('cancel')" class="btn-ghost flex-1 py-3 h-auto">
           Cancel
         </button>
-        <button type="submit" 
-          class="flex-[2] px-4 py-3 rounded-xl bg-brand text-white font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-sm">
+        <button type="submit" class="btn-primary flex-[2] py-3 h-auto">
           {{ initialData ? 'Update Record' : 'Save Product' }}
         </button>
       </div>

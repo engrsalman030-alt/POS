@@ -116,7 +116,7 @@
 
           <div class="pt-4 flex gap-3">
             <button type="button" @click="showModal = false" class="flex-1 px-6 py-3 rounded-xl border border-border text-xs font-black uppercase tracking-widest hover:bg-hover-bg transition-all">Cancel</button>
-            <button type="submit" class="flex-1 px-6 py-3 rounded-xl bg-brand text-white text-xs font-black uppercase tracking-widest hover:shadow-lg shadow-brand/20 transition-all flex items-center justify-center gap-2">
+            <button type="submit" class="btn-primary flex-1 py-3 h-auto justify-center gap-2">
                {{ editMode ? 'Update Area' : 'Create Area' }}
             </button>
           </div>

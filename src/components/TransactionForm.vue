@@ -10,16 +10,16 @@
           </span>
         </h1>
         <button @click="form.document_type = form.document_type === 'Return' ? (type==='Sales'?'Invoice':'Bill') : 'Return'" 
-          :class="['px-3 py-1 rounded-lg text-[9px] font-black uppercase transition-all tracking-widest', form.document_type === 'Return' ? 'bg-text-primary text-card-bg' : 'bg-rose-500 border-none text-white shadow-md hover:bg-rose-600']">
+          :class="['px-3 py-1 rounded-lg text-[9px] font-black uppercase transition-all tracking-widest', form.document_type === 'Return' ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'bg-rose-500 border-none text-white shadow-md hover:bg-rose-600']">
           Switch to {{ form.document_type === 'Return' ? 'Regular Entry' : 'Return' }}
         </button>
       </div>
       <div class="flex items-center gap-2 w-full md:w-auto">
-        <button @click="$emit('cancel')" class="flex-1 md:flex-none px-4 py-2 rounded-xl border border-border text-[10px] md:text-xs font-black uppercase tracking-widest text-text-muted hover:bg-hover-bg transition-all flex items-center justify-center gap-2">
+        <button @click="$emit('cancel')" class="btn-ghost flex-1 md:flex-none py-2 h-auto text-[10px] md:text-xs">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 18-6-6 6-6"/></svg>
           Cancel
         </button>
-        <button @click="handleSubmit" :disabled="!isFormValid" class="flex-[2] md:flex-none px-6 md:px-8 py-2 rounded-xl bg-brand text-white text-[10px] md:text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-brand/20 disabled:opacity-30 flex items-center justify-center gap-2">
+        <button @click="handleSubmit" :disabled="!isFormValid" class="btn-primary flex-[2] md:flex-none py-2 h-auto text-[10px] md:text-xs">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>
           Post Transaction
         </button>
@@ -35,7 +35,7 @@
             <label class="label-tiny">Distribution Party</label>
             <AutoCompleteWithCreate
               v-model="form.party_id"
-              :options="parties.map(p => ({ id: p.id || '', name: p.name || '', sub: p.phone }))"
+              :options="parties.map(p => ({ id: p.id || '', name: p.name || '', sub: [p.type, p.phone].filter(Boolean).join(' · ') }))"
               :placeholder="`Search ${type === 'Sales' ? 'Customer' : 'Supplier'}...`"
               allow-create
               @create="handleCreateParty"
@@ -100,7 +100,7 @@
         </div>
 
         <div class="overflow-x-auto min-h-[400px]">
-          <template v-for="(group, gIdx) in form.groups" :key="gIdx">
+          <template v-for="(group, gIdx) in form.groups" :key="group.id">
             
             <!-- Group Header -->
             <div class="bg-brand/5 border-y border-brand/10 px-6 py-3 flex items-center justify-between">
@@ -109,10 +109,10 @@
                  Dealing Company: {{ group.company }}
                </h3>
                <div class="flex gap-2">
-                 <button @click="removeGroup(gIdx)" type="button" class="px-3 py-1.5 rounded-lg bg-transparent border border-rose-500/20 text-rose-500 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all shadow-sm">
+                 <button @click.stop="removeGroup(group.id)" type="button" class="px-3 py-1.5 rounded-lg bg-transparent border border-rose-500/20 text-rose-500 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all shadow-sm">
                    Remove
                  </button>
-                 <button @click="addLine(gIdx)" type="button" class="px-4 py-1.5 rounded-lg bg-white border border-brand/20 text-brand text-[9px] font-black uppercase tracking-widest hover:bg-brand hover:text-white transition-all shadow-sm">
+                 <button @click.stop="addLine(group.id)" type="button" class="px-4 py-1.5 rounded-lg bg-white border border-brand/20 text-brand text-[9px] font-black uppercase tracking-widest hover:bg-brand hover:text-white transition-all shadow-sm">
                    + Add Item
                  </button>
                </div>
@@ -133,7 +133,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(line, iIdx) in group.items" :key="iIdx" class="group border-b border-border/50 hover:bg-hover-bg/20 transition-colors">
+                <tr v-for="(line, iIdx) in group.items" :key="line.id" class="group border-b border-border/50 hover:bg-hover-bg/20 transition-colors">
                   <td class="py-3 px-4 text-center text-[10px] font-black text-text-muted opacity-30">{{ iIdx + 1 }}</td>
                   <td class="py-3 px-6">
                     <AutoCompleteWithCreate
@@ -141,8 +141,8 @@
                       :options="inventoryStore.items.filter(i => group.company === 'General' || i.brand === group.company).map(i => ({ id: i.id || '', name: i.name || '', sub: i.brand }))"
                       placeholder="Search medicines..."
                       allow-create
-                      @create="handleCreateItem(gIdx, iIdx, $event)"
-                      @select="onItemSelect(gIdx, iIdx, $event)"
+                      @create="handleCreateItem(group.id, line.id, $event)"
+                      @select="onItemSelect(group.id, line.id, $event)"
                     />
                   </td>
                   <td class="py-3 px-4">
@@ -152,15 +152,15 @@
                         type="text" 
                         placeholder="BATCH-00x"
                         autocomplete="off"
-                        :id="`batch-input-${gIdx}-${iIdx}`"
-                        @focus="activeBatchIdx = {gIdx, iIdx}"
+                        :id="`batch-input-${group.id}-${line.id}`"
+                        @focus="activeBatchIdx = {groupId: group.id, lineId: line.id}"
                         class="w-full bg-transparent border-none text-[10px] font-black text-text-primary text-left uppercase outline-none focus:text-brand" 
                       />
                       <!-- Batch Popper -->
-                      <div v-if="activeBatchIdx && activeBatchIdx.gIdx === gIdx && activeBatchIdx.iIdx === iIdx" class="fixed z-[100] bg-card-bg border border-border rounded-2xl shadow-2xl p-2 min-w-[220px]" :style="{ top: getBatchPopperPos(gIdx, iIdx).top + 'px', left: getBatchPopperPos(gIdx, iIdx).left + 'px' }">
+                      <div v-if="activeBatchIdx && activeBatchIdx.groupId === group.id && activeBatchIdx.lineId === line.id" class="fixed z-[100] bg-card-bg border border-border rounded-2xl shadow-2xl p-2 min-w-[220px]" :style="{ top: getBatchPopperPos(group.id, line.id).top + 'px', left: getBatchPopperPos(group.id, line.id).left + 'px' }">
                          <p class="px-3 py-2 text-[8px] font-black uppercase tracking-widest text-text-muted border-b border-border/50 mb-1">Available Batches</p>
                          <div v-if="getItemBatches(line.item_id || '').length === 0" class="p-4 text-[10px] text-text-muted italic text-center">No batches found</div>
-                         <div v-for="b in getItemBatches(line.item_id || '')" :key="b.id" @click="onLineBatchChange(gIdx, iIdx, b.id)" class="p-3 rounded-xl hover:bg-hover-bg cursor-pointer transition-all border border-transparent hover:border-border">
+                         <div v-for="b in getItemBatches(line.item_id || '')" :key="b.id" @click="onLineBatchChange(group.id, line.id, b.id)" class="p-3 rounded-xl hover:bg-hover-bg cursor-pointer transition-all border border-transparent hover:border-border">
                             <div class="flex justify-between items-center">
                                <span class="text-[11px] font-black text-text-primary uppercase">{{ b.batch_number }}</span>
                                <span class="text-[9px] font-bold text-brand bg-brand/5 px-2 py-0.5 rounded-lg">Stk: {{ b.quantity }}</span>
@@ -168,7 +168,7 @@
                             <p class="text-[8px] font-bold text-text-muted mt-1 uppercase tracking-tighter">Exp: {{ b.expiry_date || 'N/A' }}</p>
                          </div>
                          <!-- New Batch Button in Popper -->
-                         <div @click="openInlineBatchModal(gIdx, iIdx)" class="p-3 mt-1 border-t border-border/50 cursor-pointer flex items-center justify-center gap-2 group hover:bg-emerald-50 rounded-xl transition-all">
+                         <div @click="openInlineBatchModal(group.id, line.id)" class="p-3 mt-1 border-t border-border/50 cursor-pointer flex items-center justify-center gap-2 group hover:bg-emerald-50 rounded-xl transition-all">
                             <div class="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                             </div>
@@ -182,7 +182,7 @@
                   </td>
                   <td class="py-3 px-4">
                     <div class="flex flex-col items-center">
-                      <input v-model="line.qtyInput" @input="parseQuantity(gIdx, iIdx)" type="text" class="w-24 bg-hover-bg/50 border border-border rounded-xl py-1.5 text-center text-xs font-black outline-none focus:ring-2 focus:ring-brand/10" placeholder="0+0"/>
+                      <input v-model="line.qtyInput" @input="parseQuantity(group.id, line.id)" type="text" class="w-24 bg-hover-bg/50 border border-border rounded-xl py-1.5 text-center text-xs font-black outline-none focus:ring-2 focus:ring-brand/10" placeholder="0+0"/>
                       <span v-if="line.bonus_quantity > 0" class="text-[8px] font-bold text-brand mt-1 uppercase">Bonus: {{ line.bonus_quantity }}</span>
                     </div>
                   </td>
@@ -196,7 +196,7 @@
                     {{ formatAmount(calculateLineNet(line)) }}
                   </td>
                   <td class="py-3 px-4">
-                    <button @click="removeLine(gIdx, iIdx)" class="w-8 h-8 rounded-xl flex items-center justify-center text-text-muted hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100">
+                    <button @click.stop="removeLine(group.id, line.id)" type="button" class="w-8 h-8 rounded-xl flex items-center justify-center text-text-muted hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                     </button>
                   </td>
@@ -292,7 +292,7 @@
        <div v-if="showBatchModal" class="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center p-6">
           <div class="bg-card-bg border border-border rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden">
              <BatchForm 
-                :preselected-item-id="activeBatchIdx ? form.groups[activeBatchIdx.gIdx]?.items[activeBatchIdx.iIdx]?.item_id : undefined" 
+                :preselected-item-id="activeBatchIdx ? (() => { const g = form.groups.find(gr => gr.id === activeBatchIdx.groupId); const l = g?.items.find(li => li.id === activeBatchIdx.lineId); return l?.item_id; })() : undefined" 
                 @close="showBatchModal = false" 
                 @saved="handleBatchSaved"
              />
@@ -317,6 +317,7 @@ import ItemForm from './ItemForm.vue';
 import BatchForm from './BatchForm.vue';
 
 interface TransactionItem {
+  id: string;
   item_id: string;
   qtyInput: string;
   quantity: number;
@@ -330,6 +331,7 @@ interface TransactionItem {
 }
 
 interface TransactionFormGroup {
+  id: string;
   company: string;
   items: TransactionItem[];
 }
@@ -360,7 +362,7 @@ const batchStore = useBatchStore();
 const staffStore = useStaffStore();
 const taxStore = useTaxStore();
 
-const parties = computed(() => props.type === 'Sales' ? partyStore.customers : partyStore.suppliers);
+const parties = computed(() => props.type === 'Sales' ? partyStore.customers : partyStore.parties);
 
 const validTaxes = computed(() => {
    return taxStore.taxes.filter(t => t.is_active && (t.applicable_on === 'Both' || t.applicable_on === props.type || (props.type === 'Purchase' && t.applicable_on === 'Purchases')));
@@ -388,7 +390,7 @@ function handleAddCompanyGroup(val: string) {
        localCompanies.value.push(val);
    }
    if (val) {
-       form.value.groups.push({ company: val, items: [{ item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] });
+       form.value.groups = [...form.value.groups, { id: val + '-' + Date.now(), company: val, items: [{ id: 'item-' + Date.now() + Math.random(), item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] }];
    }
    // Small delay to ensure the event processes before clearing the input
    setTimeout(() => {
@@ -404,14 +406,14 @@ const showPartyModal = ref(false);
 const showItemModal = ref(false);
 const showBatchModal = ref(false);
 const initialSearchTerm = ref('');
-const activeItemLineIdx = ref<{gIdx: number, iIdx: number} | null>(null);
+const activeItemLineIdx = ref<{groupId: string, lineId: string} | null>(null);
 
-const activeBatchIdx = ref<{gIdx: number, iIdx: number} | null>(null);
+const activeBatchIdx = ref<{groupId: string, lineId: string} | null>(null);
 
 const form = ref<TransactionForm>({
   document_type: props.type === 'Sales' ? 'Invoice' : 'Bill',
   party_id: '',
-  date: new Date().toISOString().split('T')[0],
+  date: new Date().toISOString().split('T')[0] as string,
   sales_manager: '',
   ssr_id: '',
   dsr_id: '',
@@ -419,7 +421,7 @@ const form = ref<TransactionForm>({
   notes: '',
   tax_id: '',
   groups: [
-    { company: 'General', items: [{ item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] }
+    { id: 'general-' + Date.now(), company: 'General', items: [{ id: 'item-' + Date.now(), item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] }
   ]
 });
 
@@ -435,6 +437,7 @@ onMounted(async () => {
        const brand = i.brand || info?.brand || 'General';
        if (!grouped[brand]) grouped[brand] = [];
        grouped[brand].push({
+         id: 'item-' + Date.now() + Math.random(),
          ...i,
          qtyInput: i.bonus_quantity > 0 ? `${i.quantity}+${i.bonus_quantity}` : i.quantity.toString()
        });
@@ -443,11 +446,12 @@ onMounted(async () => {
     form.value = {
       ...form.value,
       ...data,
+      date: data.date || new Date().toISOString().split('T')[0],
       party_id: (props.type === 'Sales' ? data.customer_id : data.supplier_id) || '',
-      groups: Object.keys(grouped).map(k => ({ company: k, items: grouped[k] })) || []
+      groups: Object.keys(grouped).map(k => ({ id: k + '-' + Date.now() + Math.random(), company: k, items: grouped[k] })) || []
     };
     if (form.value.groups.length === 0) {
-      form.value.groups = [{ company: 'General', items: [{ item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] }];
+      form.value.groups = [{ id: 'general-' + Date.now(), company: 'General', items: [{ id: 'item-' + Date.now(), item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }] }];
     }
   }
   
@@ -478,14 +482,15 @@ function handleCreateParty(q: string) {
   showPartyModal.value = true;
 }
 
-function handleCreateItem(gIdx: number, iIdx: number, q: string) {
-  activeItemLineIdx.value = {gIdx, iIdx};
+function handleCreateItem(groupId: string, lineId: string, q: string) {
+  activeItemLineIdx.value = {groupId, lineId};
   initialSearchTerm.value = q;
   showItemModal.value = true;
 }
 
-function onItemSelect(gIdx: number, iIdx: number, suggestion: any) {
-    const line = form.value.groups[gIdx].items[iIdx];
+function onItemSelect(groupId: string, lineId: string, suggestion: any) {
+    const group = form.value.groups.find(g => g.id === groupId);
+    const line = group?.items.find(l => l.id === lineId);
     if (!line) return;
     const item = inventoryStore.items.find(i => i.id === suggestion.id);
     if (item) {
@@ -519,22 +524,24 @@ async function onPartySubmit(payload: any) {
 async function onItemSubmit(payload: any) {
     const id = await inventoryStore.addItem(payload);
     if (activeItemLineIdx.value !== null) {
-        const {gIdx, iIdx} = activeItemLineIdx.value;
-        if (form.value.groups[gIdx] && form.value.groups[gIdx].items[iIdx]) {
-            (form.value.groups[gIdx].items[iIdx] as any).item_id = id as any;
+        const {groupId, lineId} = activeItemLineIdx.value;
+        const group = form.value.groups.find(g => g.id === groupId);
+        const line = group?.items.find(l => l.id === lineId);
+        if (line) {
+            line.item_id = id as any;
             const item = inventoryStore.items.find(i => i.id === (id as any));
             if (item) {
                  if (props.type === 'Sales') {
-                      (form.value.groups[gIdx].items[iIdx] as any).rate = ((item as any).sales_rate || 0);
+                      line.rate = ((item as any).sales_rate || 0);
                  } else {
                       const party = partyStore.suppliers.find(s => s.id === form.value.party_id);
                       if (party && (party as any).company_type === 'Percentage') {
                           const basePrice = (item as any).mrp || (item as any).trade_price || (item as any).sales_rate || 0;
                           const defaultPct = (party as any).default_percentage || 0;
-                          (form.value.groups[gIdx].items[iIdx] as any).rate = basePrice;
-                          (form.value.groups[gIdx].items[iIdx] as any).discount_pct = defaultPct;
+                          line.rate = basePrice;
+                          line.discount_pct = defaultPct;
                       } else {
-                          (form.value.groups[gIdx].items[iIdx] as any).rate = ((item as any).purchase_rate || 0);
+                          line.rate = ((item as any).purchase_rate || 0);
                       }
                  }
             }
@@ -547,8 +554,9 @@ function getItemBatches(itemId: string) {
   return batchStore.getBatchesForItem(itemId);
 }
 
-function onLineBatchChange(gIdx: number, iIdx: number, batchId: string) {
-  const line = form.value.groups[gIdx]?.items[iIdx];
+function onLineBatchChange(groupId: string, lineId: string, batchId: string) {
+  const group = form.value.groups.find(g => g.id === groupId);
+  const line = group?.items.find(l => l.id === lineId);
   const b = batchStore.batches.find(x => x.id === batchId);
   if (line && b) {
     line.batch_id = b.id;
@@ -558,17 +566,17 @@ function onLineBatchChange(gIdx: number, iIdx: number, batchId: string) {
   activeBatchIdx.value = null;
 }
 
-function openInlineBatchModal(gIdx: number, iIdx: number) {
-  activeBatchIdx.value = { gIdx, iIdx };
+function openInlineBatchModal(groupId: string, lineId: string) {
+  activeBatchIdx.value = { groupId, lineId };
   showBatchModal.value = true;
 }
 
 async function handleBatchSaved() {
   if (!activeBatchIdx.value) return;
-  const { gIdx, iIdx } = activeBatchIdx.value;
-  const group = form.value.groups[gIdx];
+  const { groupId, lineId } = activeBatchIdx.value;
+  const group = form.value.groups.find(g => g.id === groupId);
   if (!group) return;
-  const line = group.items[iIdx];
+  const line = group.items.find(l => l.id === lineId);
   if (!line) return;
   
   // The store has already been updated via fetchBatches in the addBatch call.
@@ -578,15 +586,15 @@ async function handleBatchSaved() {
     .sort((a,b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0];
 
   if (latestBatch && latestBatch.id) {
-     onLineBatchChange(gIdx, iIdx, latestBatch.id as string);
+     onLineBatchChange(groupId, lineId, latestBatch.id as string);
   }
   
   showBatchModal.value = false;
   activeBatchIdx.value = null;
 }
 
-function getBatchPopperPos(gIdx: number, iIdx: number) {
-  const target = document.getElementById(`batch-input-${gIdx}-${iIdx}`);
+function getBatchPopperPos(groupId: string, lineId: string) {
+  const target = document.getElementById(`batch-input-${groupId}-${lineId}`);
   if (target) {
      const rect = target.getBoundingClientRect();
      return { top: rect.bottom + 5, left: rect.left };
@@ -594,14 +602,15 @@ function getBatchPopperPos(gIdx: number, iIdx: number) {
   return { top: 0, left: 0 };
 }
 
-function parseQuantity(gIdx: number, iIdx: number) {
-  const line = form.value.groups[gIdx]?.items[iIdx];
+function parseQuantity(groupId: string, lineId: string) {
+  const group = form.value.groups.find(g => g.id === groupId);
+  const line = group?.items.find(l => l.id === lineId);
   if (!line) return;
   const val = line.qtyInput || '';
   if (val.includes('+')) {
     const [q, b] = val.split('+');
-    line.quantity = parseFloat(q) || 0;
-    line.bonus_quantity = parseFloat(b) || 0;
+    line.quantity = parseFloat(q || '0') || 0;
+    line.bonus_quantity = parseFloat(b || '0') || 0;
   } else {
     line.quantity = parseFloat(val) || 0;
     line.bonus_quantity = 0;
@@ -660,26 +669,26 @@ const isFormValid = computed(() => {
   return !!form.value.party_id && form.value.groups.every(g => g.items.every(i => !!i.item_id && i.quantity > 0));
 });
 
-function addLine(gIdx: number) {
-  form.value.groups[gIdx].items.push({ item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 });
-}
-
-function removeLine(gIdx: number, iIdx: number) {
-  const group = form.value.groups[gIdx];
-  if (!group) return;
-  if (group.items.length > 1) {
-    group.items.splice(iIdx, 1);
-  } else {
-    // If last line of the group, and there are other groups, remove the group
-    if (form.value.groups.length > 1) {
-       form.value.groups.splice(gIdx, 1);
-    }
+function addLine(groupId: string) {
+  const group = form.value.groups.find(g => g.id === groupId);
+  if (group) {
+    group.items = [...group.items, { id: 'item-' + Date.now() + Math.random(), item_id: '', qtyInput: '1', quantity: 1, bonus_quantity: 0, batch_number: '', expiry_date: '', rate: 0, discount_pct: 0, total: 0 }];
   }
 }
 
-function removeGroup(gIdx: number) {
+function removeLine(groupId: string, lineId: string) {
+  const group = form.value.groups.find(g => g.id === groupId);
+  if (!group) return;
+  
+  // Remove the item by creating a new array (ensures Vue reactivity)
+  group.items = group.items.filter(item => item.id !== lineId);
+  
+  // Keep the group even if empty, so user can add items back
+}
+
+function removeGroup(groupId: string) {
    if (form.value.groups.length > 1) {
-      form.value.groups.splice(gIdx, 1);
+      form.value.groups = form.value.groups.filter(g => g.id !== groupId);
    }
 }
 

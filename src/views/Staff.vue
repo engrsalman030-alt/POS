@@ -1,13 +1,13 @@
 <template>
-  <div class="p-4 md:p-8 max-w-6xl mx-auto font-inter min-h-screen pb-20">
+  <div class="page-container">
     
     <!-- HEADER -->
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
       <div>
-        <h1 class="text-2xl font-black text-text-primary tracking-tight">Sales Team</h1>
-        <p class="text-sm text-text-muted font-medium mt-1 uppercase tracking-widest" style="font-size: 10px;">Manage SSR, DSR, and Managers</p>
+        <h1 class="text-heading uppercase">Staff Management</h1>
+        <p class="text-subheading underline decoration-brand/20 underline-offset-4 uppercase italic tracking-widest">HR, Sales & Delivery Force Personnel</p>
       </div>
-      <button @click="openModal()" class="w-full md:w-auto px-6 py-2.5 rounded-xl bg-brand text-white font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-brand/20 flex items-center justify-center gap-2">
+      <button @click="openModal()" class="btn-primary w-full md:w-auto px-6">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
         Add Staff
       </button>
@@ -136,8 +136,8 @@
 
           <!-- Footer Buttons -->
           <div class="pt-6 mt-2 border-t border-border flex gap-4 bg-card-bg">
-             <button type="button" @click="showModal = false" class="flex-1 px-6 py-3 rounded-xl border border-border text-text-muted font-bold text-[10px] uppercase tracking-widest hover:bg-hover-bg transition-all">Cancel</button>
-             <button type="submit" class="flex-1 px-6 py-3 rounded-xl bg-brand text-white font-bold text-[10px] uppercase tracking-widest hover:opacity-90 shadow-lg shadow-brand/20 transition-all active:scale-95">Save Profile</button>
+             <button type="button" @click="showModal = false" class="btn-ghost border border-border flex-1">Cancel</button>
+             <button type="submit" class="btn-primary flex-1">Save Profile</button>
           </div>
         </form>
       </div>

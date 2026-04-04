@@ -43,7 +43,7 @@
 
           <!-- Print -->
           <button @click="handlePrintReport"
-            class="flex-none px-4 py-2 rounded-xl bg-black text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all flex items-center gap-2">
+            class="btn-primary flex items-center gap-2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
             Print
           </button>
@@ -622,7 +622,7 @@ import { ReportService } from '../services/reportService';
 import { shiftService } from '../services/shiftService';
 import { useCompanyStore } from '../stores/company';
 import { ERPService } from '../services/erpService';
-import { ExportService } from '../services/exportService';
+
 import { reportLabels } from '../services/reportEngine';
 
 const route = useRoute();
@@ -753,64 +753,7 @@ async function runShortcut(type: 'today_dsr' | 'salesman' | 'customer_sales' | '
   await refreshData();
 }
 
-// ─── Export ───────────────────────────────────────────────────────────────────
-function handleExport(format: 'csv' | 'excel') {
-  showExportMenu.value = false;
-  const tab = activeTab.value;
-  const filename = tab.replace('_', '-');
 
-  const colMap: Record<string, any[]> = {
-    ssr: [
-      { key: 'name', label: 'Item', format: 'text' },
-      { key: 'opening', label: 'Opening', format: 'number' },
-      { key: 'purchased', label: 'Purchased', format: 'number' },
-      { key: 'sold', label: 'Sold', format: 'number' },
-      { key: 'closing', label: 'Closing', format: 'number' },
-    ],
-    dsr: [
-      { key: 'date', label: 'Date', format: 'text' },
-      { key: 'invoice_id', label: 'Invoice #', format: 'text' },
-      { key: 'customer_name', label: 'Customer', format: 'text' },
-      { key: 'ssr_name', label: 'SSR', format: 'text' },
-      { key: 'total_amount', label: 'Total', format: 'currency' },
-      { key: 'paid_amount', label: 'Paid', format: 'currency' },
-      { key: 'credit_amount', label: 'Credit', format: 'currency' },
-      { key: 'profit', label: 'Profit', format: 'currency' },
-    ],
-    customer_ledger: [
-      { key: 'date', label: 'Date', format: 'text' },
-      { key: 'reference', label: 'Reference', format: 'text' },
-      { key: 'description', label: 'Description', format: 'text' },
-      { key: 'debit', label: 'Debit', format: 'currency' },
-      { key: 'credit', label: 'Credit', format: 'currency' },
-      { key: 'balance', label: 'Balance', format: 'currency' },
-    ],
-    supplier_ledger: [
-      { key: 'date', label: 'Date', format: 'text' },
-      { key: 'reference', label: 'Reference', format: 'text' },
-      { key: 'description', label: 'Description', format: 'text' },
-      { key: 'debit', label: 'Debit', format: 'currency' },
-      { key: 'credit', label: 'Credit', format: 'currency' },
-      { key: 'balance', label: 'Balance', format: 'currency' },
-    ],
-  };
-
-  const rowMap: Record<string, any[]> = {
-    ssr: ssrData.value,
-    dsr: dsrData.value,
-    customer_ledger: ledgerData.value,
-    supplier_ledger: ledgerData.value,
-  };
-
-  const cols = colMap[tab];
-  const rows = rowMap[tab];
-  if (!cols || !rows) return;
-
-  const summary = tab === 'customer_ledger' || tab === 'supplier_ledger' ? ledgerSummary.value : undefined;
-
-  if (format === 'csv') ExportService.toCSV(cols, rows, filename, summary);
-  else ExportService.toExcel(cols, rows, filename, summary);
-}
 
 // ─── Print ────────────────────────────────────────────────────────────────────
 function handlePrintReport() {

@@ -6,8 +6,8 @@
       <div class="p-10">
         <!-- Header -->
         <div class="text-center mb-10">
-          <h1 class="text-2xl font-bold text-text-primary">Setup Your Company</h1>
-          <p class="text-sm mt-2 font-medium text-text-muted">Initialize your local-first accounting system</p>
+          <h1 class="text-heading">Setup Your Company</h1>
+          <p class="text-subheading">Initialize your local-first accounting system</p>
         </div>
 
         <!-- Form -->
@@ -17,7 +17,7 @@
             <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Company Name</label>
             <input v-model="form.name" type="text" required
               placeholder="e.g. Acme Pakistan (Pvt) Ltd"
-              class="w-full px-3 py-2 border border-border bg-app-bg rounded text-sm outline-none transition-all focus:border-text-primary focus:bg-card-bg text-text-primary placeholder:text-text-muted"
+              class="w-full px-3 py-2 border border-border bg-app-bg rounded-xl text-sm outline-none transition-all focus:border-text-primary focus:bg-card-bg text-text-primary placeholder:text-text-muted"
             >
           </div>
 
@@ -25,7 +25,7 @@
             <div>
               <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Base Currency</label>
               <select v-model="form.currency"
-                class="w-full px-3 py-2 border border-border bg-app-bg rounded text-sm outline-none focus:border-text-primary text-text-primary"
+                class="w-full px-3 py-2 border border-border bg-app-bg rounded-xl text-sm outline-none focus:border-text-primary text-text-primary"
               >
                 <option value="PKR">PKR (Rs.)</option>
                 <option value="USD">USD ($)</option>
@@ -36,7 +36,7 @@
             <div>
               <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">NTN / Tax ID</label>
               <input v-model="form.ntn" type="text" placeholder="Optional"
-                class="w-full px-3 py-2 border border-border bg-app-bg rounded text-sm outline-none font-mono focus:border-text-primary focus:bg-card-bg text-text-primary placeholder:text-text-muted"
+                class="w-full px-3 py-2 border border-border bg-app-bg rounded-xl text-sm outline-none font-mono focus:border-text-primary focus:bg-card-bg text-text-primary placeholder:text-text-muted"
               >
             </div>
           </div>
@@ -52,13 +52,13 @@
             <div>
               <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Country</label>
               <input v-model="form.country" type="text" placeholder="Pakistan"
-                class="w-full px-3 py-2 border border-border bg-app-bg rounded text-sm outline-none focus:border-text-primary focus:bg-card-bg text-text-primary placeholder:text-text-muted"
+                class="w-full px-3 py-2 border border-border bg-app-bg rounded-xl text-sm outline-none focus:border-text-primary focus:bg-card-bg text-text-primary placeholder:text-text-muted"
               >
             </div>
             <div>
               <label class="block text-[10px] font-bold uppercase tracking-widest mb-1.5 text-text-muted">Fiscal Year Start</label>
               <input v-model="form.fiscalYearStart" type="date" required
-                class="w-full px-3 py-2 border border-border bg-app-bg rounded text-sm outline-none focus:border-text-primary focus:bg-card-bg text-text-primary"
+                class="w-full px-3 py-2 border border-border bg-app-bg rounded-xl text-sm outline-none focus:border-text-primary focus:bg-card-bg text-text-primary"
               >
             </div>
           </div>
@@ -73,8 +73,7 @@
 
           <!-- Submit -->
           <button type="submit" :disabled="loading"
-            class="w-full py-2.5 rounded text-sm font-bold transition-all disabled:opacity-50 mt-2 bg-text-primary text-card-bg hover:opacity-90 uppercase tracking-widest"
-          >
+            class="btn-primary w-full py-3 h-auto mt-2">
             {{ loading ? 'Initializing...' : (isExistingCompany ? 'Login to Company' : 'Create Company') }}
           </button>
 

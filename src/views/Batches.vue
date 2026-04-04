@@ -1,12 +1,12 @@
 <template>
-  <div class="p-4 md:p-6 space-y-5 font-sans">
+  <div class="page-container">
     <!-- Header -->
     <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div>
-        <h1 class="text-xl font-bold text-text-primary tracking-tight">Batch Management</h1>
-        <p class="text-xs text-text-muted mt-1">Track and manage medicine batches, expiry dates, and stock levels.</p>
+        <h1 class="text-heading">Batch Management</h1>
+        <p class="text-subheading">Track and manage medicine batches, expiry dates, and stock levels.</p>
       </div>
-      <button @click="showForm = true; editingBatch = undefined" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all shadow-sm flex items-center gap-2">
+      <button @click="showForm = true; editingBatch = undefined" class="btn-primary flex items-center gap-2">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
         Add Batch
       </button>
@@ -36,7 +36,7 @@
     <div class="flex flex-col sm:flex-row gap-3">
       <div class="relative flex-1">
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input v-model="search" type="text" placeholder="Search batches by item, batch # ..." class="w-full bg-card-bg border border-border rounded-lg pl-9 pr-3 py-2 text-xs font-medium text-text-primary outline-none focus:ring-1 focus:ring-emerald-500/20" />
+        <input v-model="search" type="text" placeholder="Search batches by item, batch # ..." class="w-full bg-card-bg border border-border rounded-lg pl-9 pr-3 py-2 text-xs font-medium text-text-primary outline-none focus:ring-1 focus:ring-brand/20" />
       </div>
       <select v-model="statusFilter" class="bg-card-bg border border-border rounded-lg px-3 py-2 text-xs font-semibold text-text-primary outline-none appearance-none cursor-pointer">
         <option value="all">All Batches</option>

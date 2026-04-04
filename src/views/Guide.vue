@@ -15,7 +15,7 @@
         <div class="flip-card">
           <div class="flip-card-inner">
             <div class="flip-card-front card-base flex flex-col items-center justify-center text-center p-8 bg-card-bg border border-border shadow-sm">
-              <div class="w-16 h-16 rounded-full bg-text-primary text-card-bg flex items-center justify-center text-2xl font-black mb-6">1</div>
+              <div class="w-16 h-16 rounded-full bg-brand text-white flex items-center justify-center text-2xl font-black mb-6">1</div>
               <h3 class="text-xl font-bold uppercase tracking-widest text-text-primary">Company Registration</h3>
               <p class="mt-4 text-sm text-text-muted font-medium">Click to see form fields</p>
             </div>
@@ -52,7 +52,7 @@
         <div class="flip-card">
           <div class="flip-card-inner">
             <div class="flip-card-front card-base flex flex-col items-center justify-center text-center p-8 bg-card-bg border border-border shadow-sm">
-              <div class="w-16 h-16 rounded-full bg-text-primary text-card-bg flex items-center justify-center text-2xl font-black mb-6">2</div>
+              <div class="w-16 h-16 rounded-full bg-brand text-white flex items-center justify-center text-2xl font-black mb-6">2</div>
               <h3 class="text-xl font-bold uppercase tracking-widest text-text-primary">Items & Inventory</h3>
               <p class="mt-4 text-sm text-text-muted font-medium">SKU and Rate definition</p>
             </div>
@@ -89,7 +89,7 @@
         <div class="flip-card">
           <div class="flip-card-inner">
             <div class="flip-card-front card-base flex flex-col items-center justify-center text-center p-8 bg-card-bg border border-border shadow-sm">
-              <div class="w-16 h-16 rounded-full bg-text-primary text-card-bg flex items-center justify-center text-2xl font-black mb-6">3</div>
+              <div class="w-16 h-16 rounded-full bg-brand text-white flex items-center justify-center text-2xl font-black mb-6">3</div>
               <h3 class="text-xl font-bold uppercase tracking-widest text-text-primary">Parties</h3>
               <p class="mt-4 text-sm text-text-muted font-medium">Customer & Supplier Setup</p>
             </div>
@@ -126,7 +126,7 @@
         <div class="flip-card">
           <div class="flip-card-inner">
             <div class="flip-card-front card-base flex flex-col items-center justify-center text-center p-8 bg-card-bg border border-border shadow-sm">
-              <div class="w-16 h-16 rounded-full bg-text-primary text-card-bg flex items-center justify-center text-2xl font-black mb-6">4</div>
+              <div class="w-16 h-16 rounded-full bg-brand text-white flex items-center justify-center text-2xl font-black mb-6">4</div>
               <h3 class="text-xl font-bold uppercase tracking-widest text-text-primary">Transactions</h3>
               <p class="mt-4 text-sm text-text-muted font-medium">Invoices & Bills</p>
             </div>
@@ -163,7 +163,7 @@
         <div class="flip-card">
           <div class="flip-card-inner">
             <div class="flip-card-front card-base flex flex-col items-center justify-center text-center p-8 bg-card-bg border border-border shadow-sm">
-              <div class="w-16 h-16 rounded-full bg-text-primary text-card-bg flex items-center justify-center text-2xl font-black mb-6">5</div>
+              <div class="w-16 h-16 rounded-full bg-brand text-white flex items-center justify-center text-2xl font-black mb-6">5</div>
               <h3 class="text-xl font-bold uppercase tracking-widest text-text-primary">Reports</h3>
               <p class="mt-4 text-sm text-text-muted font-medium">Business Health</p>
             </div>

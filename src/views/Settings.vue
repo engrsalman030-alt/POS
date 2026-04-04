@@ -250,8 +250,8 @@
                 <p class="text-xs text-text-muted font-bold leading-relaxed px-4">All transactions, batches, and records will be purged. This action is definitive.</p>
              </div>
              <div class="grid grid-cols-2 gap-4">
-                <button @click="showWipeConfirm = false" class="py-4 rounded-2xl bg-hover-bg text-text-primary text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all">Go Back</button>
-                <button @click="wipeAll" class="py-4 rounded-2xl bg-rose-500 text-white text-xs font-black uppercase tracking-widest shadow-xl shadow-rose-500/20 active:scale-95 transition-all">Yes, Reset</button>
+                <button @click="showWipeConfirm = false" class="btn-ghost py-4 h-auto">Go Back</button>
+                <button @click="wipeAll" class="btn-danger py-4 h-auto">Yes, Reset</button>
              </div>
           </div>
        </div>

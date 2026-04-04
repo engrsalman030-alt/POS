@@ -14,7 +14,7 @@
             @click="currentTab = 'Bills'"
             :class="[
               'px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300',
-              currentTab === 'Bills' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'text-text-muted hover:text-text-primary hover:bg-hover-bg'
+              currentTab === 'Bills' ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'text-text-muted hover:text-text-primary hover:bg-hover-bg'
             ]"
           >
             Bills
@@ -23,7 +23,7 @@
             @click="currentTab = 'Returns'"
             :class="[
               'px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300',
-              currentTab === 'Returns' ? 'bg-orange-600 text-white shadow-lg shadow-orange-200' : 'text-text-muted hover:text-orange-600 hover:bg-orange-50'
+              currentTab === 'Returns' ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'text-text-muted hover:text-brand hover:bg-brand/5'
             ]"
           >
             Returns
@@ -32,8 +32,7 @@
 
         <button @click="openCreate" 
           :class="[
-            'px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl flex items-center gap-2 active:scale-95',
-            currentTab === 'Bills' ? 'bg-emerald-600 text-white shadow-emerald-200 hover:bg-emerald-700' : 'bg-orange-600 text-white shadow-orange-200 hover:bg-orange-700'
+            'px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl flex items-center gap-2 active:scale-95 bg-brand text-white shadow-brand/20 hover:bg-brand-hover'
           ]"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -48,28 +47,23 @@
     <div class="space-y-4">
       <div class="grid grid-cols-1 gap-3">
         <div v-for="bill in paginatedBills" :key="bill.id" 
-          @click="openDetail(bill)"
-          :class="[
-            'group bg-card-bg border rounded-[2rem] p-5 hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6',
-            currentTab === 'Returns' ? 'hover:border-orange-400/40' : 'hover:border-emerald-400/40'
-          ]"
+          class="group bg-card-bg border rounded-[2rem] p-5 hover:shadow-2xl transition-all relative overflow-hidden flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 hover:border-brand/40"
         >
           <!-- Status Ribbon -->
           <div class="absolute top-0 right-0 px-4 py-1 rounded-bl-2xl text-[8px] font-black uppercase tracking-[0.25em] z-20"
-            :class="bill.document_type === 'Return' ? 'bg-orange-600 text-white' : 'bg-emerald-500/10 text-emerald-600'">
+            :class="bill.document_type === 'Return' ? 'bg-brand text-white' : 'bg-brand/10 text-brand'">
             {{ bill.document_type === 'Return' ? 'Purchase Return' : bill.status }}
           </div>
 
           <!-- Vertical Type Indicator -->
           <div class="absolute inset-y-0 left-0 w-1 pt-12">
-             <div :class="['h-1/2 w-full', currentTab === 'Returns' ? 'bg-orange-500' : 'bg-emerald-500']"></div>
+             <div class="h-1/2 w-full bg-brand"></div>
           </div>
 
           <!-- Primary Info -->
           <div class="flex items-center gap-6 pl-2">
-            <div :class="['w-14 h-14 rounded-2xl flex items-center justify-center border transition-all duration-500 relative overflow-hidden', 
-              currentTab === 'Returns' ? 'bg-orange-50 border-orange-100 group-hover:scale-110' : 'bg-emerald-50 border-emerald-100 group-hover:scale-110']">
-               <span class="text-[11px] font-black relative z-10" :class="currentTab === 'Returns' ? 'text-orange-600' : 'text-emerald-600'">{{ currentTab === 'Returns' ? 'RET' : 'BILL' }}</span>
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center border transition-all duration-500 relative overflow-hidden bg-brand/5 border-brand/10 group-hover:scale-110">
+               <span class="text-[11px] font-black relative z-10 text-brand">{{ currentTab === 'Returns' ? 'RET' : 'BILL' }}</span>
             </div>
             <div>
               <h3 class="font-black text-xs md:text-sm text-text-primary uppercase tracking-tight truncate max-w-[200px] md:max-w-md">
@@ -84,15 +78,24 @@
           </div>
 
           <!-- Financial Section -->
-          <div class="w-full lg:w-auto flex items-center justify-between lg:justify-end gap-10 pt-4 lg:pt-0 border-t lg:border-t-0 border-border border-dashed">
+          <div class="w-full lg:w-auto flex items-center justify-between lg:justify-end gap-4 pt-4 lg:pt-0 border-t lg:border-t-0 border-border border-dashed">
             <div class="text-right">
               <p class="text-[9px] font-black uppercase tracking-widest text-text-muted mb-1">{{ currentTab === 'Returns' ? 'Return Total' : 'Grand Total' }}</p>
-              <p :class="['text-2xl font-black tracking-tighter tabular-nums', currentTab === 'Returns' ? 'text-orange-600' : 'text-emerald-600']">{{ formatCurrency(bill.total_amount) }}</p>
+              <p class="text-2xl font-black tracking-tighter tabular-nums text-brand">{{ formatCurrency(bill.total_amount) }}</p>
             </div>
 
-            <div :class="['lg:flex items-center justify-center w-10 h-10 rounded-xl bg-hover-bg text-text-muted transition-all active:scale-90 hidden group-hover:text-white shadow-sm', 
-              currentTab === 'Returns' ? 'group-hover:bg-orange-600' : 'group-hover:bg-emerald-600']">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2">
+              <button @click.stop="openDetail(bill)" 
+                class="w-10 h-10 rounded-xl bg-hover-bg text-text-muted transition-all active:scale-90 hover:text-white shadow-sm hover:bg-emerald-500 flex items-center justify-center"
+                title="View Bill">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+              <button @click.stop="handleEdit(bill)" 
+                class="w-10 h-10 rounded-xl bg-hover-bg text-text-muted transition-all active:scale-90 hover:text-white shadow-sm hover:bg-brand flex items-center justify-center"
+                title="Edit Bill">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+              </button>
             </div>
           </div>
         </div>
@@ -122,6 +125,7 @@
           :invoice="selectedBill" 
           :customerName="getSupplierName(selectedBill.supplier_id)"
           @close="showDetailModal = false"
+          @edit="handleEdit"
         />
       </div>
     </div>
@@ -129,16 +133,14 @@
     <!-- Record Bill Modal -->
     <div v-if="showModal" class="fixed inset-0 flex items-center justify-center p-0 md:p-6 z-[160] bg-black/60 backdrop-blur-md overflow-y-auto">
       <div class="w-full max-w-6xl min-h-screen md:min-h-0 md:my-auto md:rounded-[2.5rem] overflow-hidden border-0 md:border md:border-border shadow-2xl animate-in fade-in zoom-in duration-300 bg-app-bg">
-        <div class="px-8 py-5 flex justify-between items-center border-b border-border shadow-sm sticky top-0 bg-app-bg/80 backdrop-blur-xl z-[170]"
-          :class="currentTab === 'Returns' ? 'border-orange-100' : 'border-emerald-100'">
+        <div class="px-8 py-5 flex justify-between items-center border-b border-brand/10 shadow-sm sticky top-0 bg-app-bg/80 backdrop-blur-xl z-[170]">
           <div class="flex items-center gap-4">
-             <div :class="['w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-colors', 
-               currentTab === 'Returns' ? 'bg-orange-600 text-white' : 'bg-emerald-600 text-white']">
+             <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-colors bg-brand text-white">
                 <svg v-if="currentTab === 'Returns'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 18-6-6 6-6"/></svg>
                 <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
              </div>
              <div>
-               <h3 class="font-black text-xl text-text-primary uppercase tracking-tighter">{{ currentTab === 'Returns' ? 'New Purchase Return' : 'New Purchase Bill' }}</h3>
+               <h3 class="font-black text-xl text-text-primary uppercase tracking-tighter">{{ selectedBill ? (selectedBill.document_type === 'Return' ? 'Edit Purchase Return' : 'Edit Purchase Bill') : (currentTab === 'Returns' ? 'New Purchase Return' : 'New Purchase Bill') }}</h3>
                <p class="text-[9px] font-bold text-text-muted uppercase tracking-[0.2em] mt-0.5">Inventory Procurement Log</p>
              </div>
           </div>
@@ -150,7 +152,7 @@
         <div class="p-4 md:p-8 md:max-h-[85vh] overflow-y-auto custom-scrollbar">
            <TransactionForm 
              type="Purchase"
-             :initial-data="{ document_type: currentTab === 'Returns' ? 'Return' : 'Bill' }"
+             :initial-data="selectedBill || { document_type: currentTab === 'Returns' ? 'Return' : 'Bill' }"
              @submit="handleSave" 
              @cancel="showModal = false" 
            />
@@ -215,6 +217,12 @@ function openDetail(bill: any) {
   showDetailModal.value = true;
 }
 
+function handleEdit(bill: any) {
+  selectedBill.value = bill;
+  showDetailModal.value = false;
+  showModal.value = true;
+}
+
 const route = useRoute();
 
 onMounted(async () => {
@@ -235,6 +243,7 @@ async function handleSave(formData: any) {
 
     await transactionStore.createBill(formData);
     showModal.value = false;
+    selectedBill.value = null;
     await partyStore.fetchParties();
     await transactionStore.fetchBills();
 }

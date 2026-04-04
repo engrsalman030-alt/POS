@@ -271,14 +271,11 @@
          </div>
       </section>
 
-      <!-- FORM ACTIONS -->
       <div class="flex items-center gap-4 pt-2">
-        <button type="button" @click="$emit('cancel')" 
-          class="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-500 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-none">
+        <button type="button" @click="$emit('cancel')" class="btn-ghost flex-1 py-3 h-auto">
           Cancel
         </button>
-        <button type="submit" 
-          class="flex-[2] px-4 py-3 rounded-xl bg-brand text-white font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-sm">
+        <button type="submit" class="btn-primary flex-[2] py-3 h-auto">
           {{ initialData ? 'Update Profile' : 'Save Connection' }}
         </button>
       </div>
@@ -364,7 +361,11 @@ function handleCreateOption(type: keyof typeof localOptions.value, val: string) 
 
 const uniquePaymentTerms = computed(() => Array.from(new Set([...[{id:'Immediate',name:'Immediate Payment'},{id:'Net 15',name:'Net 15 Days'},{id:'Net 30',name:'Net 30 Days'},{id:'Net 60',name:'Net 60 Days'}].map(o => o.id), ...localOptions.value.payment_terms])).map(v => ({ id: String(v), name: String(v) })));
 const uniqueCategories = computed(() => Array.from(new Set([...partyStore.customers, ...partyStore.suppliers].map(p => (p as any).category).filter(Boolean).concat(localOptions.value.category))).map(v => ({ id: v, name: v })));
-const uniqueGroups = computed(() => Array.from(new Set([...[...partyStore.customers, ...partyStore.suppliers].map(p => (p as any).customer_group || (p as any).supplier_category || (p as any).party_group).filter(Boolean), 'General', 'Retailer', 'Wholesaler', 'Distributor', ...localOptions.value.party_group])).map(v => ({ id: v as string, name: v as string })));
+const defaultGroups = ['General', 'Retailer', 'Wholesaler', 'Distributor', 'Pharmacy', 'Hospital', 'Clinic', 'Medical Store', 'Chain Store', 'Government', 'Semi-Wholesaler', 'Cash Customer', 'Credit Customer', 'Walk-in', 'VIP', 'Regular', 'New', 'Blacklisted', 'Agent', 'Broker', 'Manufacturer', 'Importer', 'Exporter'];
+const uniqueGroups = computed(() => {
+  const fromParties = partyStore.parties.map((p: any) => p.party_group || p.customer_group || p.supplier_category).filter(Boolean);
+  return Array.from(new Set([...defaultGroups, ...fromParties, ...localOptions.value.party_group])).map(v => ({ id: v as string, name: v as string }));
+});
 
 onMounted(() => {
   accountStore.fetchAccounts();

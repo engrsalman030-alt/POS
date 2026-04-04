@@ -4,7 +4,7 @@
 @theme {
   --color-brand: #3b82f6;
   --color-brand-hover: #2563eb;
-  
+
   /* Light Theme Defaults */
   --color-app-bg: #FBFBFB;
   --color-card-bg: #FFFFFF;
@@ -64,50 +64,113 @@
     width: 6px;
     height: 6px;
   }
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+
   ::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 10px;
   }
+
   ::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
   }
 }
 
+/* ============================================================
+   BUTTON SYSTEM
+   ------------------------------------------------------------
+   Usage pattern:  <button class="btn-{color} btn-{size}">
+   
+   Sizes:   btn-sm | btn-md (default) | btn-lg
+   Colors:  btn-primary | btn-success | btn-danger
+            btn-dark | btn-ghost
+   Icons:   btn-icon | btn-icon-lg  (square, no text)
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   BASE — shared by every button. Never use alone.
+   ------------------------------------------------------------ */
+@utility btn-std {
+  @apply rounded-lg font-bold transition-all duration-150 shadow-sm flex items-center justify-center gap-2 whitespace-nowrap select-none active:scale-95 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40;
+}
+
+/* ------------------------------------------------------------
+   SIZE VARIANTS
+   Use these to control padding/text across the whole app.
+   
+   btn-sm  → tables, compact toolbars, tags, pill actions
+   btn-md  → default for forms, cards, modals (most common)
+   btn-lg  → hero sections, primary page CTAs only
+   ------------------------------------------------------------ */
+@utility btn-sm {
+  @apply btn-std px-3 py-1.5 text-[10px];
+}
+
+@utility btn-md {
+  @apply btn-std px-4 py-2 text-xs;
+}
+
+@utility btn-lg {
+  @apply btn-std px-6 py-3 text-sm;
+}
+
+/* ------------------------------------------------------------
+   ICON-ONLY BUTTONS — square, centered icon, no text
+   btn-icon    → small toolbar / table row actions  (32×32)
+   btn-icon-lg → card-level or header actions       (40×40)
+   ------------------------------------------------------------ */
+@utility btn-icon {
+  @apply btn-std w-8 h-8 p-0 rounded-lg;
+}
+
+@utility btn-icon-lg {
+  @apply btn-std w-10 h-10 p-0 rounded-lg;
+}
+
+/* ------------------------------------------------------------
+   COLOR VARIANTS — combine with a size utility
+   e.g. <button class="btn-primary btn-md">Save</button>
+   ------------------------------------------------------------ */
+@utility btn-primary {
+  @apply btn-md bg-brand text-white hover:bg-brand-hover shadow-brand/10;
+}
+
+@utility btn-success {
+  @apply btn-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-500/10;
+}
+
+@utility btn-danger {
+  @apply btn-md bg-danger text-white hover:bg-danger/90 shadow-danger/10;
+}
+
+@utility btn-dark {
+  @apply btn-md bg-text-primary text-card-bg hover:opacity-90 shadow-text-primary/10;
+}
+
+@utility btn-ghost {
+  @apply btn-md bg-transparent text-text-muted hover:bg-hover-bg hover:text-text-primary shadow-none;
+}
+
+/* ============================================================
+   CARD
+   ============================================================ */
 @utility card-std {
   @apply bg-card-bg rounded-xl border border-border overflow-hidden;
 }
 
-@utility btn-std {
-  @apply px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
-}
-
-@utility btn-primary {
-  @apply btn-std bg-brand text-white hover:bg-brand-hover shadow-brand/10;
-}
-
-@utility btn-success {
-  @apply btn-std bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-500/10;
-}
-
-@utility btn-danger {
-  @apply btn-std bg-danger text-white hover:bg-danger/90 shadow-danger/10;
-}
-
-@utility btn-dark {
-  @apply btn-std bg-text-primary text-card-bg hover:opacity-90 shadow-text-primary/10;
-}
-
-@utility btn-ghost {
-  @apply btn-std bg-transparent text-text-muted hover:bg-hover-bg hover:text-text-primary shadow-none;
-}
-
+/* ============================================================
+   INPUT
+   ============================================================ */
 @utility input-std {
   @apply bg-card-bg border border-border rounded-lg px-3 py-2 text-xs font-medium text-text-primary outline-none focus:ring-1 focus:ring-brand/20 transition-all placeholder:text-text-muted/50;
 }
 
+/* ============================================================
+   TYPOGRAPHY UTILITIES
+   ============================================================ */
 @utility text-heading {
   @apply text-xl font-bold text-text-primary tracking-tight;
 }
@@ -120,6 +183,9 @@
   @apply text-[9px] font-bold uppercase tracking-widest text-text-muted;
 }
 
+/* ============================================================
+   TABLE UTILITIES
+   ============================================================ */
 @utility table-th {
   @apply py-3 px-4 text-[9px] font-bold uppercase tracking-widest text-text-muted bg-hover-bg border-b border-border text-left;
 }
@@ -128,6 +194,24 @@
   @apply py-3 px-4 text-xs font-medium text-text-secondary border-b border-border;
 }
 
+/* ============================================================
+   LAYOUT
+   ============================================================ */
 @utility page-container {
   @apply p-4 md:p-6 space-y-5 font-sans min-h-screen bg-app-bg;
 }
+
+/* ============================================================
+   DEV AUDIT HELPER
+   ------------------------------------------------------------
+   Uncomment the block below during development to highlight
+   any <button> NOT using your design system (shown in red).
+   Remove or re-comment before pushing to production.
+   ============================================================ */
+
+/*
+button:not([class*="btn-"]) {
+  outline: 2px solid red !important;
+  outline-offset: 2px;
+}
+*/

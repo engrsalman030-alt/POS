@@ -1,14 +1,13 @@
 <template>
-  <div class="p-8 max-w-4xl mx-auto font-sans">
+  <div class="page-container">
     
     <!-- Header -->
     <header class="mb-8 flex justify-between items-end pb-4 border-b border-border">
       <div>
-        <h1 class="text-2xl font-bold text-text-primary">Tax Settings</h1>
-        <p class="text-sm mt-1 text-text-secondary">Configure tax rules for sales and purchases.</p>
+        <h1 class="text-heading">Tax Settings</h1>
+        <p class="text-subheading underline decoration-brand/20 underline-offset-4">Configure tax rules for global sales and regional procurement.</p>
       </div>
-      <button @click="showModal = true"
-        class="px-4 py-2 rounded text-sm font-bold transition-all bg-text-primary text-card-bg hover:opacity-90">
+      <button @click="showModal = true" class="btn-primary">
         + Create Tax Rule
       </button>
     </header>
@@ -115,12 +114,10 @@
              </div>
           </div>
           <div class="pt-4 flex gap-3">
-            <button type="button" @click="showModal = false"
-              class="flex-1 px-4 py-2 border border-border rounded text-sm font-bold transition-all bg-card-bg text-text-secondary hover:bg-hover-bg">
+            <button type="button" @click="showModal = false" class="btn-ghost border border-border flex-1">
               Dismiss
             </button>
-            <button type="submit"
-              class="flex-1 px-4 py-2 rounded text-sm font-bold transition-all bg-text-primary text-card-bg hover:opacity-90">
+            <button type="submit" class="btn-primary flex-1">
               Save Rule
             </button>
           </div>

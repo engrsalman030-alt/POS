@@ -1,13 +1,13 @@
 <template>
-  <div class="p-8 max-w-5xl mx-auto font-sans">
-    <header class="mb-6 flex justify-between items-end pb-4 border-b border-border">
+  <div class="page-container">
+    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-text-primary">Chart of Accounts</h1>
-        <p class="text-sm mt-1 text-text-secondary">Organize your accounts for double-entry bookkeeping.</p>
+        <h1 class="text-heading">Chart of Accounts</h1>
+        <p class="text-subheading">Organize your accounts for double-entry bookkeeping.</p>
       </div>
-      <button @click="showModal = true"
-        class="px-4 py-2 rounded text-sm font-bold transition-all bg-text-primary text-card-bg hover:opacity-90">
-        + Add Account
+      <button @click="showModal = true" class="btn-primary flex items-center gap-2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        Add Account
       </button>
     </header>
 
@@ -74,9 +74,9 @@
                 
                 <div class="pt-4 flex gap-3 border-t border-border">
                     <button type="button" @click="showModal = false"
-                      class="flex-1 px-4 py-2.5 border border-border rounded-lg text-sm font-semibold transition-all bg-card-bg text-text-secondary hover:bg-hover-bg">Cancel</button>
+                      class="btn-ghost flex-1 py-3 h-auto">Cancel</button>
                     <button type="submit"
-                      class="flex-1 px-4 py-2.5 rounded text-sm font-bold transition-all bg-text-primary text-card-bg hover:opacity-90">Create Account</button>
+                      class="btn-primary flex-1 py-3 h-auto">Create Account</button>
                 </div>
             </form>
         </div>

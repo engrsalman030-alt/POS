@@ -4,7 +4,7 @@
     <!-- PROFESSIONAL HEADER (IMAGE MATCH) -->
     <header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b-2 border-border pb-8">
       <div class="flex items-center gap-5">
-        <div class="w-16 h-16 bg-text-primary text-card-bg flex items-center justify-center font-black text-2xl monogram rounded-2xl shadow-xl shadow-text-primary/10">
+        <div class="w-16 h-16 bg-brand text-white flex items-center justify-center font-black text-2xl monogram rounded-2xl shadow-xl shadow-brand/10">
           {{ companyStore.getMonogram(companyStore.company?.name || 'B&H') }}
         </div>
         <div>
@@ -33,7 +33,7 @@
 
         <div class="w-[1px] h-8 bg-border mx-2"></div>
 
-        <button @click="handlePrint" class="group px-6 py-3 rounded-xl bg-text-primary text-card-bg font-black text-[10px] uppercase tracking-[0.2em] hover:opacity-90 transition-all shadow-xl active:scale-95 flex items-center gap-3">
+        <button @click="handlePrint" class="group px-6 py-3 rounded-xl bg-brand text-white font-black text-[10px] uppercase tracking-[0.2em] hover:bg-brand-hover transition-all shadow-xl active:scale-95 flex items-center gap-3">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="group-hover:animate-bounce"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
           Print Ledger
         </button>
@@ -115,9 +115,7 @@ const ledgerData = ref<any[]>([]);
 const startDate = ref('');
 const endDate = ref(new Date().toISOString().split('T')[0]);
 
-const companyInitials = computed(() => {
-  return companyStore.getMonogram(companyStore.company?.name || 'B & H Pharmaceutical (PVT) LTD');
-});
+
 
 const currentBalance = computed(() => accountStore.getAccountBalance(props.id));
 

@@ -152,7 +152,7 @@
           <p class="text-xs mt-1 text-rose-500/80">{{ lowStockItems.length }} items are below their reorder level.</p>
         </div>
       </div>
-      <router-link to="/inventory" class="px-4 py-2 rounded text-xs font-bold transition-all bg-rose-500 text-white hover:bg-rose-600">
+      <router-link to="/inventory" class="btn-danger">
         Resolve Now
       </router-link>
     </div>
@@ -166,7 +166,7 @@
           <p class="text-xs mt-1 text-amber-600/80">{{ expiringSoonBatches.length }} batches are expiring in the next 30 days.</p>
         </div>
       </div>
-      <router-link to="/batches" class="px-4 py-2 rounded text-xs font-bold transition-all bg-amber-500 text-white hover:bg-amber-600">
+      <router-link to="/batches" class="btn-primary bg-amber-500 hover:bg-amber-600 border-amber-600">
         View Batches
       </router-link>
     </div>
